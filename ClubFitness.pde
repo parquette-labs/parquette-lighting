@@ -71,6 +71,13 @@ void setup() {
   // ------ Graphics ------ //
 
   size(1500, 800);
+
+  NoiseGenerator noise1 = new NoiseGenerator(this, 1, 0, 1000);
+  NoiseGenerator noise2 = new NoiseGenerator(this, 1, 0, 1000);
+  WaveGenerator wave1 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
+  WaveGenerator wave2 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
+  WaveGenerator wave3 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
+
    //fullScreen(P3D);
 
   background(bgr_color);
