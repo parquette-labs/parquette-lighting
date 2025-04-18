@@ -30,7 +30,7 @@ public class ImpulseGenerator extends Generator {
 	public float value(int millis) {
 		int ellapse = millis - punchPointMillis;
 		int count = ellapse / period;
-		if (count > echo) return 0.0f;
+		if (count >= echo) return 0.0f;
 
 		if (ellapse % period > 0 && ellapse % period < duty) {
 			return amp * p.pow(echoDecay, count);
