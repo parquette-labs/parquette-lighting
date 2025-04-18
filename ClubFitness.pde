@@ -67,16 +67,45 @@ int[] dmxValues = new int[8];
 
 MidiBus midiBus; // The MidiBus
 
+Generator[] generators;
+
+NoiseGenerator noise1;
+NoiseGenerator noise2;
+WaveGenerator wave1;
+WaveGenerator wave2;
+WaveGenerator wave3;
+ImpulseGenerator impulse;
+ImpulseGenerator fft1;
+ImpulseGenerator fft2;
+
+CheckBox checkbox;
+
+float[] channels = new float[10];
+
 void setup() {
   // ------ Graphics ------ //
 
   size(1500, 800);
 
-  NoiseGenerator noise1 = new NoiseGenerator(this, 1, 0, 1000);
-  NoiseGenerator noise2 = new NoiseGenerator(this, 1, 0, 1000);
-  WaveGenerator wave1 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
-  WaveGenerator wave2 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
-  WaveGenerator wave3 = new WaveGenerator(this, WaveGenerator.Shape.SIN, 1, 0, 1000);
+  noise1 = new NoiseGenerator(this, "Noise1", 1, 0, 1000);
+  noise2 = new NoiseGenerator(this, "Noise2", 1, 0, 1000);
+  wave1 = new WaveGenerator(this, "SIN1", WaveGenerator.Shape.SIN, 255, 0, 1000);
+  wave2 = new WaveGenerator(this, "SQ1", WaveGenerator.Shape.SQUARE, 255, 500, 1000);
+  wave3 = new WaveGenerator(this, "TRI1", WaveGenerator.Shape.TRIANGLE, 255, 0, 1000);
+  impulse = new ImpulseGenerator(this, "Impulse", 1.0, 500, 10, 3, 0.75f);
+  fft1 = new ImpulseGenerator(this, "FFT1", 1.0, 500, 10, 3, 0.75f);
+  fft2 = new ImpulseGenerator(this, "FFT2", 1.0, 500, 10, 3, 0.75f);
+
+  generators = new Generator[] {
+    noise1,
+    noise2,
+    wave1,
+    wave2,
+    wave3,
+    impulse,
+    fft1,
+    fft2,
+  };
 
    //fullScreen(P3D);
 
@@ -110,6 +139,27 @@ void setup() {
   controlP5.addSlider("L1",0, 255, 0, 60, 350, 10, 250).setGroup(controls);
   controlP5.addSlider("L2",0, 255, 0, 110, 350, 10, 250).setGroup(controls);
   controlP5.addSlider("L3",0, 255, 0, 160, 350, 10, 250).setGroup(controls);
+
+  checkbox = controlP5.addCheckBox("checkBox")
+    .setPosition(300, 450)
+    .setColorForeground(color(120))
+    .setColorActive(color(255))
+    .setSize(15, 15)
+    .setItemsPerRow(channels.length)
+    .setSpacingColumn(50)
+    .setSpacingRow(12);
+
+  for (int i = 0; i < generators.length*channels.length; i++) {
+    checkbox.addItem("C"+i%channels.length+" "+generators[i/channels.length].getName(), i);
+  }
+
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 10; j++) {
+      int x = 200;
+      int y = 350;
+      controlP5.addRadioButton("X"+i+"Y"+j).setGroup(controls).setSize(10, 10).setPosition(x + i * 12, y + j*12);
+    }
+  }
 
   ScrollableList default_weights = controlP5.addScrollableList("Weights",600,20,100,250);
   default_weights.setGroup(controls);
@@ -258,6 +308,9 @@ void draw() {
     endShape();
   }
 
+  setRedLights(true, 0, (int)wave1.value(millis()));
+  setRedLights(true, 1, (int)wave2.value(millis()));
+
   updateDMX();
 }
 
@@ -305,6 +358,21 @@ void controllerChange(ControlChange change) {
 }
 
 void controlEvent(ControlEvent theEvent) {
+
+  if (theEvent.isFrom(checkbox)) {
+    print("got an event from "+checkbox.getName()+"\t\n");
+    // checkbox uses arrayValue to store the state of 
+    // individual checkbox-items. usage:
+    println(checkbox.getArrayValue());
+    int col = 0;
+    for (int i=0;i<checkbox.getArrayValue().length;i++) {
+      int n = (int)checkbox.getArrayValue()[i];
+      print(n);
+    }
+    println();    
+    return;
+  }
+
  if(theEvent.getController().getName() == "Symm") symm = !symm;
  if(theEvent.getController().getName() == "Fade") fade = !fade;
 

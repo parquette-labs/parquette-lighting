@@ -10,8 +10,8 @@ public class WaveGenerator extends Generator {
 
 	Shape shape;
 
-	public WaveGenerator(PApplet p, Shape shape, float amp, int phase, int period) {
-		super(p, amp, phase, period);
+	public WaveGenerator(PApplet p, String name, Shape shape, float amp, int phase, int period) {
+		super(p, name, amp, phase, period);
 		this.shape = shape;
 	}
 

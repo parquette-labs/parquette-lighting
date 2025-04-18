@@ -3,15 +3,21 @@ import processing.core.PApplet;
 public abstract class Generator {
 
 	PApplet p;
+	String name;
 	float amp;
 	int phase;
 	int period;
 
-	public Generator(PApplet p, float amp, int phase, int period) {
+	public Generator(PApplet p, String name, float amp, int phase, int period) {
+		this.name = name;
 		this.p = p;
 		this.amp = amp;
 		this.phase = phase;
 		this.period = period;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public void setAmp(float amp) {

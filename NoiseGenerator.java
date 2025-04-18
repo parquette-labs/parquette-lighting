@@ -6,8 +6,8 @@ public class NoiseGenerator extends Generator {
 	float lastValue;
 	int lastMillis;
 
-	public NoiseGenerator(PApplet p, float amp, int phase, int period) {
-		super(p, amp, phase, period);
+	public NoiseGenerator(PApplet p, String name, float amp, int phase, int period) {
+		super(p, name, amp, phase, period);
 	}
 
 	public float value(int millis) {

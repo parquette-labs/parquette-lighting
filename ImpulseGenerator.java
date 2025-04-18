@@ -7,8 +7,8 @@ public class ImpulseGenerator extends Generator {
 	int echo;
 	float echoDecay;
 
-	public ImpulseGenerator(PApplet p, float amp, int period, int duty, int echo, float echoDecay) {
-		super(p, amp, 0, period);
+	public ImpulseGenerator(PApplet p, String name, float amp, int period, int duty, int echo, float echoDecay) {
+		super(p, name, amp, 0, period);
 		this.duty = duty;
 		this.echo = echo;
 		this.echoDecay = echoDecay;
