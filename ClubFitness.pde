@@ -46,7 +46,8 @@ AudioInput in; // Comment this out to use and audio file
 ControlP5 controlP5;
 boolean show_controls = false;
 
-boolean show_envelope = false;
+boolean show_envelopeA = false;
+boolean show_envelopeB = false;
 color envelope_color = color(255, 192, 203);
 
 float constant = 40;
@@ -75,8 +76,8 @@ WaveGenerator wave1;
 WaveGenerator wave2;
 WaveGenerator wave3;
 ImpulseGenerator impulse;
-ImpulseGenerator fft1;
-ImpulseGenerator fft2;
+FFTGenerator fft1;
+FFTGenerator fft2;
 
 CheckBox signalMatrix;
 
@@ -105,14 +106,42 @@ void setup() {
 
   size(1500, 800);
 
+  // ------ Audio ------ //
+
+  minim = new Minim(this);
+
+  in = minim.getLineIn(Minim.MONO); //Comment this out to use an audio file
+
+  //in = minim.loadFile("song.mp3", 1024); // Uncomment this to use an audio file
+  //in.loop(); // Uncomment this to use an audio file
+
+  fft = new FFT(in.bufferSize(), in.sampleRate());
+  fft.logAverages(smallest_octave, octave_bands);
+
+  subdivisions = fft.avgSize();
+  memory = new float[memory_length][subdivisions];
+
+  weighting = new float[subdivisions];
+  weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
+
+  println("Subdivision Accuracy:");
+  println("---------------");
+  println("Smallest Octave - " + smallest_octave + " Hz");
+  println("Octave Bands - " + octave_bands);
+  println("Subdivisions - " + subdivisions);
+  println();
+
   noise1 = new NoiseGenerator(this, "Noise1", 255, 0, 500);
   noise2 = new NoiseGenerator(this, "Noise2", 255, 0, 500);
   wave1 = new WaveGenerator(this, "SIN1", WaveGenerator.Shape.SIN, 255, 0, 3000);
   wave2 = new WaveGenerator(this, "SQ1", WaveGenerator.Shape.SQUARE, 255, 0, 3000);
   wave3 = new WaveGenerator(this, "TRI1", WaveGenerator.Shape.TRIANGLE, 255, 0, 3000);
   impulse = new ImpulseGenerator(this, "IMP", 255, 500, 150, 1, 0.9f);
-  fft1 = new ImpulseGenerator(this, "FFT1", 255, 500, 10, 3, 0.75f);
-  fft2 = new ImpulseGenerator(this, "FFT2", 255, 500, 10, 3, 0.75f);
+  fft1 = new FFTGenerator(this, "FFT1", 1, subdivisions, memory_length);
+  fft2 = new FFTGenerator(this, "FFT2", 1, subdivisions, memory_length);
+
+  fft1.setWeights(weighting);
+  fft2.setWeights(weighting);
 
   generators = new Generator[] {
     noise1,
@@ -214,31 +243,6 @@ void setup() {
 
   if (!show_controls) controlP5.hide();
 
-  // ------ Audio ------ //
-
-  minim = new Minim(this);
-
-  in = minim.getLineIn(Minim.MONO); //Comment this out to use an audio file
-
-  //in = minim.loadFile("song.mp3", 1024); // Uncomment this to use an audio file
-  //in.loop(); // Uncomment this to use an audio file
-
-  fft = new FFT(in.bufferSize(), in.sampleRate());
-  fft.logAverages(smallest_octave, octave_bands);
-
-  subdivisions = fft.avgSize();
-  memory = new float[memory_length][subdivisions];
-
-  weighting = new float[subdivisions];
-  weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
-
-  println("Subdivision Accuracy:");
-  println("---------------");
-  println("Smallest Octave - " + smallest_octave + " Hz");
-  println("Octave Bands - " + octave_bands);
-  println("Subdivisions - " + subdivisions);
-  println();
-
   // ------ DMX ------ //
 
   try {
@@ -261,6 +265,7 @@ void setup() {
 }
 
 void draw() {
+  println(fft1.value(millis()) + " - " + fft2.value(millis()));
   background(bgr_color);
 
   noFill();
@@ -270,7 +275,14 @@ void draw() {
   fft.forward(in.mix);
 
   for (int i = 0; i < subdivisions; i++) {
-    memory[0][i] = fft.getAvg(i)*weighting[i];
+    memory[0][i] = fft.getAvg(i);
+  }
+
+  fft1.forward(memory[0], millis());
+  fft2.forward(memory[0], millis());
+
+  for (int i = 0; i < subdivisions; i++) {
+    memory[0][i] *= weighting[i];
 
     if (memory[0][i] < thres) {
       memory[0][i] = 0;
@@ -327,7 +339,15 @@ void draw() {
     }
   }
 
-  if (show_envelope) {
+  if (show_envelopeA || show_envelopeB) {
+    float[] localWeighting;
+
+    if (show_envelopeA) {
+      localWeighting = fft1.getWeighting();
+    } else {
+      localWeighting = fft2.getWeighting();
+    }
+
     stroke(envelope_color);
     if (mousePressed && !show_controls) {
       int i = 0;
@@ -338,15 +358,16 @@ void draw() {
       } else {
         i = 0;
       }
-      weighting[i] = constrain((float)(height-mouseY)/height, 0, 1);
+      localWeighting[i] = constrain((float)(height-mouseY)/height, 0, 1);
     }
+
     for (int i = 0; i < subdivisions; i++) {
-      rect((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset, height-height*weighting[i], 5, 5);
+      rect((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset, height-height*localWeighting[i], 5, 5);
     }
     beginShape();
     for (int i = 0; i < subdivisions; i++) {
-      // vertex((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset,height-height*weighting[i],0);
-      vertex((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset, height-height*weighting[i]);
+      // vertex((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset,height-height*localWeighting[i],0);
+      vertex((float)(width-x_offset*2)/(subdivisions-1)*i+x_offset, height-height*localWeighting[i]);
     }
     endShape();
   }
@@ -479,19 +500,23 @@ void controlEvent(ControlEvent theEvent) {
     memory_length = round(theEvent.controller().getValue());
     memory = new float[memory_length][subdivisions];
   }
-  if (theEvent.getController().getName() == "Threshold") thres = theEvent.getController().getValue();
-
-  if (theEvent.label() == "A Curve") weighting = normalize(weigh_A(smallest_octave, octave_bands, subdivisions));
-  if (theEvent.label() == "B Curve") weighting = normalize(weigh_B(smallest_octave, octave_bands, subdivisions));
-  if (theEvent.label() == "C Curve") weighting = normalize(weigh_C(smallest_octave, octave_bands, subdivisions));
-  if (theEvent.label() == "Linear") weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
-  if (theEvent.label() == "Manual") weighting = normalize(weigh_manual(smallest_octave, octave_bands, subdivisions));
-  if (theEvent.label() == "Neutral") weighting = normalize(weigh_neutral(smallest_octave, octave_bands, subdivisions));
-
-  if (theEvent.getController().getName() == "Constant") {
-    constant = theEvent.getController().getValue();
-    weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
+  if (theEvent.getController().getName() == "Threshold") {
+    thres = theEvent.getController().getValue();
+    fft1.setThreadshold(thres);
+    fft2.setThreadshold(thres);
   }
+
+  // if (theEvent.label() == "A Curve") weighting = normalize(weigh_A(smallest_octave, octave_bands, subdivisions));
+  // if (theEvent.label() == "B Curve") weighting = normalize(weigh_B(smallest_octave, octave_bands, subdivisions));
+  // if (theEvent.label() == "C Curve") weighting = normalize(weigh_C(smallest_octave, octave_bands, subdivisions));
+  // if (theEvent.label() == "Linear") weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
+  // if (theEvent.label() == "Manual") weighting = normalize(weigh_manual(smallest_octave, octave_bands, subdivisions));
+  // if (theEvent.label() == "Neutral") weighting = normalize(weigh_neutral(smallest_octave, octave_bands, subdivisions));
+
+  // if (theEvent.getController().getName() == "Constant") {
+  //   constant = theEvent.getController().getValue();
+  //   weighting = normalize(weigh_lin(smallest_octave, octave_bands, subdivisions));
+  // }
 }
 
 void keyPressed() {
@@ -505,7 +530,12 @@ void keyPressed() {
     }
     break;
   case 'e':
-    show_envelope = !show_envelope;
+    show_envelopeA = !show_envelopeA;
+    show_envelopeB = false;
+    break;
+  case 'r':
+    show_envelopeA = false;
+    show_envelopeB = !show_envelopeB;
     break;
   case 'p':
     impulse.punch(millis());
