@@ -110,7 +110,7 @@ void setup() {
   wave1 = new WaveGenerator(this, "SIN1", WaveGenerator.Shape.SIN, 255, 0, 3000);
   wave2 = new WaveGenerator(this, "SQ1", WaveGenerator.Shape.SQUARE, 255, 0, 3000);
   wave3 = new WaveGenerator(this, "TRI1", WaveGenerator.Shape.TRIANGLE, 255, 0, 3000);
-  impulse = new ImpulseGenerator(this, "IMP", 255, 500, 150, 2, 0.9f);
+  impulse = new ImpulseGenerator(this, "IMP", 255, 500, 150, 1, 0.9f);
   fft1 = new ImpulseGenerator(this, "FFT1", 255, 500, 10, 3, 0.75f);
   fft2 = new ImpulseGenerator(this, "FFT2", 255, 500, 10, 3, 0.75f);
 
@@ -645,7 +645,7 @@ class ComputeThread extends Thread {
       int lastMillis = millis();
       
       while(true) {
-        while (millis() < lastMillis + 10) {
+        while (millis() < lastMillis + 2) {
           yield();
         };
 
