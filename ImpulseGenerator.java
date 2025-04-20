@@ -18,8 +18,11 @@ public class ImpulseGenerator extends Generator {
 		punchPointMillis = millis;
 	}
 
-	public void setEcho(int echo, float echoDecay) {
+	public void setEcho(int echo) {
 		this.echo = echo;
+	}
+
+	public void setDecay(float echoDecay) {
 		this.echoDecay = echoDecay;
 	}
 

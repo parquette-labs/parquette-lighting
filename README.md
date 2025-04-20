@@ -24,3 +24,5 @@
 	* Always + 2 for whites
 * Ideas
 	* dealy effects / stutter
+* Last minute todos
+	* tap tempo

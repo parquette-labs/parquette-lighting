@@ -44,7 +44,7 @@ AudioInput in; // Comment this out to use and audio file
 //AudioPlayer in; // Uncomment this to use an audio file
 
 ControlP5 controlP5;
-boolean show_controls = false;
+boolean show_controls = true;
 
 boolean show_envelopeA = false;
 boolean show_envelopeB = false;
@@ -85,7 +85,9 @@ public enum OutputModes {
   MONO(0),
   QUAD(1),
   OCTO(2),
-  STUTTER(3);
+  FWD(3),
+  BACK(4),
+  ZIG(5);
 
   public final int index;   
 
@@ -95,11 +97,17 @@ public enum OutputModes {
 }
 
 RadioButton outputMode;
+Slider master;
+Slider stutterPeriod;
+Slider masterPeriod;
 
 float[] channelOffsets = new float[10];
 float[] channels = new float[10];
+float [][] channelshistory = new float[400][10];
 
 ComputeThread compThread;
+
+int lastTempo = 0;
 
 void setup() {
   // ------ Graphics ------ //
@@ -131,14 +139,25 @@ void setup() {
   println("Subdivisions - " + subdivisions);
   println();
 
-  noise1 = new NoiseGenerator(this, "Noise1", 255, 0, 500);
-  noise2 = new NoiseGenerator(this, "Noise2", 255, 0, 500);
-  wave1 = new WaveGenerator(this, "SIN1", WaveGenerator.Shape.SIN, 255, 0, 3000);
-  wave2 = new WaveGenerator(this, "SQ1", WaveGenerator.Shape.SQUARE, 255, 0, 3000);
-  wave3 = new WaveGenerator(this, "TRI1", WaveGenerator.Shape.TRIANGLE, 255, 0, 3000);
-  impulse = new ImpulseGenerator(this, "IMP", 255, 500, 150, 1, 0.9f);
-  fft1 = new FFTGenerator(this, "FFT1", 1, subdivisions, memory_length);
-  fft2 = new FFTGenerator(this, "FFT2", 1, subdivisions, memory_length);
+  float initialAmp = 100;
+  int initialPeriod = 300;
+  float initialAmpImp = 255;
+  float initialAmpFFT1 = 3;
+  float initialAmpFFT2 = 3;
+  int initialImpPeriod = 200;
+  int initialImpDuty = 100;
+  int initialImpEcho = 6;
+  float initialImpDecay = 0.66f;
+  int initialStutter = 500;
+
+  noise1 = new NoiseGenerator(this, "Noise1", initialAmp, 0, initialPeriod);
+  noise2 = new NoiseGenerator(this, "Noise2", initialAmp, 0, initialPeriod);
+  wave1 = new WaveGenerator(this, "SIN1", WaveGenerator.Shape.SIN, initialAmp, 0, initialPeriod);
+  wave2 = new WaveGenerator(this, "SQ1", WaveGenerator.Shape.SQUARE, initialAmp, 0, initialPeriod);
+  wave3 = new WaveGenerator(this, "TRI1", WaveGenerator.Shape.TRIANGLE, initialAmp, 0, initialPeriod);
+  impulse = new ImpulseGenerator(this, "IMP", initialAmpImp, initialImpPeriod, initialImpDuty, initialImpEcho, initialImpDecay);
+  fft1 = new FFTGenerator(this, "FFT1", initialAmpFFT1, subdivisions, memory_length);
+  fft2 = new FFTGenerator(this, "FFT2", initialAmpFFT2, subdivisions, memory_length);
 
   fft1.setWeights(weighting);
   fft2.setWeights(weighting);
@@ -169,33 +188,48 @@ void setup() {
 
   controlP5 = new ControlP5(this);
 
-  ControlGroup controls = controlP5.addGroup("Controls", 50, 50, 150);
+  ControlGroup controls = controlP5.addGroup("Controls", 20, 30, 150);
   controls.open();
 
-  controlP5.addBang("Symm", 10, 10, 10, 10).setGroup(controls);
-  controlP5.addBang("Fade", 60, 10, 10, 10).setGroup(controls);
+  controlP5.addBang("Tempo", 600, 30, 40, 40).setGroup(controls);
 
-  controlP5.addSlider("Y scale", 0, 150, scale_y, 110, 10, 10, 250).setGroup(controls);
-  controlP5.addSlider("Z scale", 0, 150, scale_z, 160, 10, 10, 250).setGroup(controls);
-  controlP5.addSlider("Z recesion", 0, 100, default_recession, 210, 10, 10, 250).setGroup(controls);
 
-  controlP5.addSlider("Frame Drop", 1, 30, frame_drop, 300, 10, 10, 250).setGroup(controls);
-  controlP5.addSlider("Memory Length", 1, 70, memory_length, 360, 10, 10, 250).setGroup(controls);
-  controlP5.addSlider("Threshold", 0, 20, thres, 420, 10, 10, 250).setGroup(controls);
+  // controlP5.addBang("Symm", 10, 10, 10, 10).setGroup(controls);
+  // controlP5.addBang("Fade", 60, 10, 10, 10).setGroup(controls);
 
-  controlP5.addSlider("L0", 0, 255, 0, 10, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L1", 0, 255, 0, 40, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L2", 0, 255, 0, 70, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L3", 0, 255, 0, 100, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L4", 0, 255, 0, 130, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L5", 0, 255, 0, 160, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L6", 0, 255, 0, 190, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L7", 0, 255, 0, 220, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L8", 0, 255, 0, 250, 350, 10, 250).setGroup(controls);
-  controlP5.addSlider("L9", 0, 255, 0, 280, 350, 10, 250).setGroup(controls);
+  // controlP5.addSlider("Y scale", 0, 150, scale_y, 110, 10, 10, 250).setGroup(controls);
+  // controlP5.addSlider("Z scale", 0, 150, scale_z, 160, 10, 10, 250).setGroup(controls);
+  // controlP5.addSlider("Z recesion", 0, 100, default_recession, 210, 10, 10, 250).setGroup(controls);
+
+  // controlP5.addSlider("Frame Drop", 1, 30, frame_drop, 300, 10, 10, 250).setGroup(controls);
+  // controlP5.addSlider("Memory Length", 1, 70, memory_length, 360, 10, 10, 250).setGroup(controls);
+  controlP5.addSlider("Threshold", 0, 20, thres, 20, 400, 10, 250).setGroup(controls);
+  master = controlP5.addSlider("Master", 0, 1, 1, 20, 40, 10, 250).setGroup(controls);
+
+  controlP5.addSlider("L0", 0, 255, 0, 100+65*0, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L1", 0, 255, 0, 100+65*1, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L2", 0, 255, 0, 100+65*2, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L3", 0, 255, 0, 100+65*3, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L4", 0, 255, 0, 100+65*4, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L5", 0, 255, 0, 100+65*5, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L6", 0, 255, 0, 100+65*6, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L7", 0, 255, 0, 100+65*7, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L8", 0, 255, 0, 100+65*8, 100, 10, 250).setGroup(controls);
+  controlP5.addSlider("L9", 0, 255, 0, 100+65*9, 100, 10, 250).setGroup(controls);
+
+  controlP5.addSlider("Amp", 0, 255, initialAmp, 750+55*0, 20, 10, 250).setGroup(controls);
+  masterPeriod = controlP5.addSlider("Period", 1, 5000, initialPeriod, 750+55*1, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("FFT1 Amp", 0, 255, initialAmpFFT1, 750+55*2, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("FFT2 Amp", 0, 255, initialAmpFFT2, 750+55*3, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("Imp Amp", 0, 255, initialAmpImp, 750+55*4, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("Imp Period", 1, 5000, initialImpPeriod, 750+55*5, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("Imp Duty", 0, 1000, initialImpDuty, 750+55*6, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("Imp Echo", 1, 50, initialImpEcho, 750+55*7, 20, 10, 250).setGroup(controls);
+  controlP5.addSlider("Imp Decay", 0, 1, initialImpDecay, 750+55*8, 20, 10, 250).setGroup(controls);
+  stutterPeriod = controlP5.addSlider("Stutter Period", 0, 2000/3, initialStutter, 750+55*9, 20, 10, 250).setGroup(controls);
 
   signalMatrix = controlP5.addCheckBox("checkBox")
-    .setPosition(400, 450)
+    .setPosition(400-290, 450)
     .setColorForeground(color(120))
     .setColorActive(color(255))
     .setSize(15, 15)
@@ -208,17 +242,19 @@ void setup() {
   }
 
   outputMode = controlP5.addRadioButton("radioButton")
-         .setPosition(1100,450)
+         .setPosition(150, 80)
          .setSize(40,20)
          .setColorForeground(color(120))
          .setColorActive(color(255))
          .setColorLabel(color(255))
-         .setItemsPerRow(1)
+         .setItemsPerRow(4)
          .setSpacingColumn(50)
          .addItem("mono + 2",OutputModes.MONO.index)
          .addItem("4 chan + 2",OutputModes.QUAD.index)
          .addItem("8 chan + 2",OutputModes.OCTO.index)
-         .addItem("stutter",OutputModes.STUTTER.index);
+         .addItem("FWD",OutputModes.FWD.index)
+         .addItem("BACK",OutputModes.BACK.index)
+         .addItem("ZIG",OutputModes.ZIG.index);
 
 
   for (int i = 0; i < 10; i++) {
@@ -239,7 +275,7 @@ void setup() {
   // default_weights.addItem("Manual", 0);
   // default_weights.addItem("Neutral", 0);
 
-  controlP5.addSlider("Constant", 0, 250, constant, 500, 10, 10, 250).setGroup(controls);
+  // controlP5.addSlider("Constant", 0, 250, constant, 500, 10, 10, 250).setGroup(controls);
 
   if (!show_controls) controlP5.hide();
 
@@ -265,7 +301,6 @@ void setup() {
 }
 
 void draw() {
-  println(fft1.value(millis()) + " - " + fft2.value(millis()));
   background(bgr_color);
 
   noFill();
@@ -293,6 +328,8 @@ void draw() {
 
   //Here we have OpenGL alpha interference, this could be solve by Z-axis sorting ... for now we'll stick to these options
   //for(int k = memory_length-1;k >= 0;k--) {  //Better for recession
+  push();
+  translate(0, 320);
   for (int k = 0; k < memory_length; k++) {   //Better For Overlap
     if (k%frame_drop == 0) {
       if (!fade || k==0) {
@@ -329,6 +366,7 @@ void draw() {
       endShape();
     }
   }
+  pop();
 
   //This is currently in a sperate loop from the drawing because of ongoing mods due to the z-axis transparency problems
   for (int k = memory_length-1; k >= 0; k--) {
@@ -378,6 +416,13 @@ void draw() {
 }
 
 void runChannelMix() {
+
+  for (int k = channelshistory.length-1; k >= 0; k--) {
+    if (k != 0) arraycopy(channelshistory[k-1], channelshistory[k]);
+  }
+
+  arraycopy(channels, channelshistory[0]);
+
   for (int i = 0; i < channels.length; i++) channels[i] = channelOffsets[i];
 
   for (int i = 0; i < generators.length*channels.length; i++) {
@@ -390,22 +435,56 @@ void runChannelMix() {
 void runOutputMix() {
   if ((int)outputMode.getValue() == OutputModes.MONO.index) {
     for (int i = 0; i < 8; i++) {
-      dmxValues[i] = constrain((int)channels[0], 0, 255);
+      dmxValues[i] = constrain((int)(channels[0]*master.getValue()), 0, 255);
     }
-    dmxValues[8] = constrain((int)channels[8], 0, 255);
-    dmxValues[9] = constrain((int)channels[9], 0, 255);
+    dmxValues[8] = constrain((int)(channels[8]*master.getValue()), 0, 255);
+    dmxValues[9] = constrain((int)(channels[9]*master.getValue()), 0, 255);
   } else if((int)outputMode.getValue() == OutputModes.QUAD.index) {
     for (int i = 0; i < 4; i++) {
-      dmxValues[i] = constrain((int)channels[i], 0, 255);
-      dmxValues[i*2] = constrain((int)channels[i], 0, 255);
+      dmxValues[i] = constrain((int)(channels[i]*master.getValue()), 0, 255);
+      dmxValues[i+4] = constrain((int)(channels[i]*master.getValue()), 0, 255);
     }
-    dmxValues[8] = constrain((int)channels[8], 0, 255);
-    dmxValues[9] = constrain((int)channels[9], 0, 255);
+    dmxValues[8] = constrain((int)(channels[8]*master.getValue()), 0, 255);
+    dmxValues[9] = constrain((int)(channels[9]*master.getValue()), 0, 255);
   } else if((int)outputMode.getValue() == OutputModes.OCTO.index) {
     for (int i = 0; i < 10; i++) {
-      dmxValues[i] = constrain((int)channels[i], 0, 255);
+      dmxValues[i] = constrain((int)(channels[i]*master.getValue()), 0, 255);
     }
-  } else if((int)outputMode.getValue() == OutputModes.STUTTER.index) {
+  } else if((int)outputMode.getValue() == OutputModes.FWD.index) {
+    dmxValues[3] = constrain((int)(channels[0]*master.getValue()), 0, 255);
+    dmxValues[7] = constrain((int)(channels[1]*master.getValue()), 0, 255);
+
+    dmxValues[2] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*1, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[6] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*1, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+    dmxValues[1] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*2, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[5] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*2, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+    dmxValues[0] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*3, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[4] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*3, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+  } else if((int)outputMode.getValue() == OutputModes.BACK.index) {
+    dmxValues[0] = constrain((int)(channels[0]*master.getValue()), 0, 255);
+    dmxValues[4] = constrain((int)(channels[1]*master.getValue()), 0, 255);
+
+    dmxValues[1] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*1, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[5] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*1, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+    dmxValues[2] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*2, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[6] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*2, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+    dmxValues[3] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*3, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[7] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/10.0*3, 0, channelshistory.length-1))][1]*master.getValue()), 0, 255);
+
+  } else if((int)outputMode.getValue() == OutputModes.ZIG.index) {
+    dmxValues[3] = constrain((int)(channels[0]*master.getValue()), 0, 255);
+    dmxValues[7] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*1.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[2] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*2.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[6] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*3.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[1] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*4.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[5] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*5.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[0] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*6.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
+    dmxValues[4] = constrain((int)(channelshistory[(int)(constrain(stutterPeriod.getValue()/20.0*7.0, 0, channelshistory.length-1))][0]*master.getValue()), 0, 255);
   }
 }
 
@@ -477,6 +556,32 @@ void controlEvent(ControlEvent theEvent) {
   }
 
   if (theEvent.getController().getName() == "Symm") symm = !symm;
+  if (theEvent.getController().getName() == "Tempo") {
+    if (millis() - lastTempo > 3000) {
+      lastTempo = millis();
+      return; 
+    }
+
+    int curr = (int)masterPeriod.getValue();
+
+
+    println("--");
+    println(curr);
+    println(curr);
+    curr = constrain((int)(curr*0.8f + (millis()-lastTempo)*0.2f), 1, 5000);
+    println(curr);
+
+    masterPeriod.setValue(curr);
+
+    for (int i = 0; i < generators.length; i++) {
+      if (generators[i] == fft1) continue;
+      if (generators[i] == fft2) continue;
+      if (generators[i] == impulse) continue;
+      generators[i].setPeriod(curr);
+    }
+    
+    lastTempo = millis();
+  }
   if (theEvent.getController().getName() == "Fade") fade = !fade;
 
   if (theEvent.getController().getName() == "L0") channelOffsets[0] = theEvent.controller().getValue();
@@ -489,6 +594,30 @@ void controlEvent(ControlEvent theEvent) {
   if (theEvent.getController().getName() == "L7") channelOffsets[7] = theEvent.controller().getValue();
   if (theEvent.getController().getName() == "L8") channelOffsets[8] = theEvent.controller().getValue();
   if (theEvent.getController().getName() == "L9") channelOffsets[9] = theEvent.controller().getValue();
+
+  if (theEvent.getController().getName() == "Amp") {
+    for (int i = 0; i < generators.length; i++) {
+      if (generators[i] == fft1) continue;
+      if (generators[i] == fft2) continue;
+      if (generators[i] == impulse) continue;
+      generators[i].setAmp(theEvent.controller().getValue());
+    }
+  }
+  if (theEvent.getController().getName() == "Period") {
+    for (int i = 0; i < generators.length; i++) {
+      if (generators[i] == fft1) continue;
+      if (generators[i] == fft2) continue;
+      if (generators[i] == impulse) continue;
+      generators[i].setPeriod((int)theEvent.controller().getValue());
+    }
+  }
+  if (theEvent.getController().getName() == "FFT1 Amp") fft1.setAmp(theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "FFT2 Amp") fft2.setAmp(theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "Imp Amp") impulse.setAmp((int)theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "Imp Period") impulse.setPeriod((int)theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "Imp Duty") impulse.setDuty((int)theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "Imp Echo") impulse.setEcho((int)theEvent.controller().getValue());
+  if (theEvent.getController().getName() == "Imp Decay") impulse.setDecay(theEvent.controller().getValue());
 
 
   if (theEvent.getController().getName() == "Y scale") scale_y = theEvent.controller().getValue();
@@ -675,13 +804,15 @@ class ComputeThread extends Thread {
       int lastMillis = millis();
       
       while(true) {
-        while (millis() < lastMillis + 2) {
+        while (millis() < lastMillis + 10) {
           yield();
         };
 
         runChannelMix();
         runOutputMix();
         updateDMX();
+
+        lastMillis = millis();
       }
     }
   }
