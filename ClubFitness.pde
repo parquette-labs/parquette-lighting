@@ -112,7 +112,8 @@ int lastTempo = 0;
 void setup() {
   // ------ Graphics ------ //
 
-  size(1500, 800);
+  //size(1500, 800);
+  fullScreen();
 
   // ------ Audio ------ //
 
