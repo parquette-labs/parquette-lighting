@@ -564,13 +564,7 @@ void controlEvent(ControlEvent theEvent) {
     }
 
     int curr = (int)masterPeriod.getValue();
-
-
-    println("--");
-    println(curr);
-    println(curr);
     curr = constrain((int)(curr*0.8f + (millis()-lastTempo)*0.2f), 1, 5000);
-    println(curr);
 
     masterPeriod.setValue(curr);
 
