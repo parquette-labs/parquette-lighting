@@ -63,7 +63,7 @@ def test_wave_sq():
 def test_imp():
     imp = ImpulseGenerator(
         name="imp",
-        amp=1,
+        amp=2,
         offset=0.5,
         period=1000,
         echo=2,
@@ -71,8 +71,8 @@ def test_imp():
         duty=300,
     )
     assert imp.name == "imp"
-    assert math.isclose(imp.value(0), 1.5)
-    assert math.isclose(imp.value(150), 1.5)
+    assert math.isclose(imp.value(0), 2.5)
+    assert math.isclose(imp.value(150), 2.5)
     assert math.isclose(imp.value(300), 0.5)
     assert math.isclose(imp.value(900), 0.5)
     assert math.isclose(imp.value(1000 + 0), 1.25)
@@ -96,3 +96,13 @@ def test_noise():
     assert noise.value(0) == noise.value(600)
     assert noise.value(0) != noise.value(1100)
     assert noise.value(1200) == noise.value(1100)
+
+
+def test_fft():
+    fft = FFTGenerator(
+        name="fft",
+        amp=1,
+        offset=0.5,
+        subdivisions=20,
+        memory=20,
+    )
