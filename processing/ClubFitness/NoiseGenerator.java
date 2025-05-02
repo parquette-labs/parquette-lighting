@@ -14,7 +14,7 @@ public class NoiseGenerator extends Generator {
 		if (millis % (period * 2) > period) {
 			lastValue = (float)Math.random() * amp;
 			lastMillis = millis;
-		} 
+		}
 
 		return lastValue;
 	}

@@ -89,7 +89,7 @@ public enum OutputModes {
   BACK(4),
   ZIG(5);
 
-  public final int index;   
+  public final int index;
 
   OutputModes(int index) {
       this.index = index;
@@ -560,7 +560,7 @@ void controlEvent(ControlEvent theEvent) {
   if (theEvent.getController().getName() == "Tempo") {
     if (millis() - lastTempo > 3000) {
       lastTempo = millis();
-      return; 
+      return;
     }
 
     int curr = (int)masterPeriod.getValue();
@@ -574,7 +574,7 @@ void controlEvent(ControlEvent theEvent) {
       if (generators[i] == impulse) continue;
       generators[i].setPeriod(curr);
     }
-    
+
     lastTempo = millis();
   }
   if (theEvent.getController().getName() == "Fade") fade = !fade;
@@ -797,7 +797,7 @@ class ComputeThread extends Thread {
   public void run () {
     while(true) {
       int lastMillis = millis();
-      
+
       while(true) {
         while (millis() < lastMillis + 10) {
           yield();
