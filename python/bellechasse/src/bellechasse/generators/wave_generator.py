@@ -12,8 +12,8 @@ class WaveGenerator(Generator):
         SQUARE = 2
         SIN = 3
 
-    def __init__(self, name, shape, amp, period, phase=0, offset=0.5):
-        super().__init__(name=name, amp=amp, period=period, phase=phase, offset=offset)
+    def __init__(self, *, name=None, amp=0.5, period=1000, phase=0, offset=0.5, shape=Shape.SIN):
+        super().__init__(name=name, amp=amp, offset=offset, period=period, phase=phase)
 
         if not isinstance(shape, self.Shape):
             raise TypeError("Shape Enum not provided")
@@ -21,7 +21,7 @@ class WaveGenerator(Generator):
 
     def value(self, millis):
         if self.shape == WaveGenerator.Shape.TRIANGLE:
-            modtime = (millis + self.phase + 250) % self.period
+            modtime = (millis + self.phase + self.period/4) % self.period
             if modtime < (self.period / 2):
                 return value_map(
                     modtime,

@@ -6,11 +6,11 @@ import random
 def test_wave_gen_sin():
     wg = WaveGenerator(
         name="sin1",
-        shape=WaveGenerator.Shape.SIN,
         amp=0.5,
-        phase=247,
-        period=1000,
         offset=0.5,
+        period=1000,
+        phase=247,
+        shape=WaveGenerator.Shape.SIN,
     )
     assert wg.name == "sin1"
     assert math.isclose(wg.value(-247 + 0 + random.randint(0, 100) * 1000), 0.5)
@@ -25,11 +25,11 @@ def test_wave_gen_sin():
 def test_wave_gen_tri():
     wg = WaveGenerator(
         name="tri1",
-        shape=WaveGenerator.Shape.TRIANGLE,
         amp=0.5,
+        offset=0.5,
         phase=247,
         period=1000,
-        offset=0.5,
+        shape=WaveGenerator.Shape.TRIANGLE,
     )
     assert wg.name == "tri1"
     assert math.isclose(wg.value(-247 + 0 + random.randint(0, 100) * 1000), 0.5)
@@ -44,11 +44,11 @@ def test_wave_gen_tri():
 def test_wave_sq():
     wg = WaveGenerator(
         name="sq1",
-        shape=WaveGenerator.Shape.SQUARE,
         amp=0.5,
+        offset=0.5,
         phase=247,
         period=1000,
-        offset=0.5,
+        shape=WaveGenerator.Shape.SQUARE,
     )
     assert wg.name == "sq1"
     assert math.isclose(wg.value(-247 + 0 + random.randint(0, 100) * 1000), 1)

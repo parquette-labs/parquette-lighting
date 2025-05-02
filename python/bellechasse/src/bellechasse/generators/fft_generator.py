@@ -3,8 +3,8 @@ from .generator import Generator
 
 class FFTGenerator(Generator):
 
-    def __init__(self, name, amp, subdivisions, memory_length, offset=0.5):
-        super().__init__(name=name, amp=amp, period=0, phase=0, offset=offset)
+    def __init__(self, *, name=None, amp=1, offset=0.5, subdivisions=0, memory_length=0):
+        super().__init__(name=name, amp=amp, offset=offset, period=0, phase=0)
         self.set_subdivisions_and_memory(subdivisions, memory_length)
 
         self.thres = 0

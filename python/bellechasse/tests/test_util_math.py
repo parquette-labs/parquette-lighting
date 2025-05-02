@@ -14,7 +14,7 @@ def test_constrain():
 
 
 def test_map():
-    assert map(10, 5, 15, 10, 30) == 20
-    assert map(2, 0, 10, 0, 100) == 20
-    assert map(-1.5, -1, -2.5, -8, -20) == -12
-    assert map(-1.5, -1, -2.5, 0, 60) == 20
+    assert value_map(10, 5, 15, 10, 30) == 20
+    assert value_map(2, 0, 10, 0, 100) == 20
+    assert value_map(-1.5, -1, -2.5, -8, -20) == -12
+    assert value_map(-1.5, -1, -2.5, 0, 60) == 20
