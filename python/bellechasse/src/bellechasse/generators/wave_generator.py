@@ -18,8 +18,8 @@ class WaveGenerator(Generator):
         *,
         name: Optional[str] = None,
         amp: float = 0.5,
-        period: int = 1000,
-        phase: int = 0,
+        period: float = 1000,
+        phase: float = 0,
         offset: float = 0.5,
         shape: Shape = Shape.SIN
     ):
@@ -29,7 +29,7 @@ class WaveGenerator(Generator):
             raise TypeError("Shape Enum not provided")
         self.shape = shape
 
-    def value(self, millis: int) -> float:
+    def value(self, millis: float) -> float:
         if self.shape == WaveGenerator.Shape.TRIANGLE:
             modtime = (millis + self.phase + self.period / 4) % self.period
             if modtime < (self.period / 2):

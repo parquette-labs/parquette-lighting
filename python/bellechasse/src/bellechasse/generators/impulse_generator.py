@@ -1,19 +1,20 @@
 from typing import Optional
+import time
+import math
 from .generator import Generator
 
 
 class ImpulseGenerator(Generator):
-
     def __init__(
         self,
         *,
         name: Optional[str] = None,
-        amp: float = 0.5,
-        offset: float = 0.5,
-        period: int = 1000,
+        amp: float = 1,
+        offset: float = 0,
+        period: float = 350,
         echo: int = 1,
         echo_decay: float = 1,
-        duty: int = 100
+        duty: float = 100
     ):
         super().__init__(name=name, amp=amp, offset=offset, period=period, phase=0)
 
@@ -29,55 +30,27 @@ class ImpulseGenerator(Generator):
     def echo(self, value: int) -> None:
         self._echo = max(value, 1)
 
-    def punch(self, millis: int) -> None:
-        self.punch_point_millis = millis
+    @property
+    def echo_decay(self) -> float:
+        return self._echo_decay
 
-    def value(self, millis) -> float:
-        return 0
+    @echo_decay.setter
+    def echo_decay(self, value: float) -> None:
+        self._echo_decay = max(value, 0)
 
+    def punch(self, millis: Optional[float] = None) -> None:
+        if millis is None:
+            millis = time.time() * 1000
+        self.punch_point = millis
 
-# import processing.core.PApplet;
+    def value(self, millis: float) -> float:
+        ellapsed: float = millis - self.punch_point
+        count: int = math.floor(ellapsed / self.period)
 
-# public class ImpulseGenerator extends Generator {
+        if count >= self.echo:
+            return 0
 
-#     int punchPointMillis;
-#     int duty;
-#     int echo;
-#     float echoDecay;
-
-#     public ImpulseGenerator(PApplet p, String name, float amp, int period, int duty, int echo, float echoDecay) {
-#         super(p, name, amp, 0, period);
-#         this.duty = duty;
-#         this.echo = echo;
-#         this.echoDecay = echoDecay;
-#     }
-
-#     public void punch(int millis) {
-#         punchPointMillis = millis;
-#     }
-
-#     public void setEcho(int echo) {
-#         this.echo = echo;
-#     }
-
-#     public void setDecay(float echoDecay) {
-#         this.echoDecay = echoDecay;
-#     }
-
-#     public void setDuty(int duty) {
-#         this.duty = duty;
-#     }
-
-#     public float value(int millis) {
-#         int ellapse = millis - punchPointMillis;
-#         int count = ellapse / period;
-#         if (count >= echo) return 0.0f;
-
-#         if (ellapse % period > 0 && ellapse % period < duty) {
-#             return amp * p.pow(echoDecay, count);
-#         } else {
-#             return 0.0f;
-#         }
-#     }
-
-# }
+        if ellapsed % self.period > 0 and ellapsed % self.period < self.duty:
+            return self.amp * self.echo_decay**count + self.offset
+        else:
+            return 0

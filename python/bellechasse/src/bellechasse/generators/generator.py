@@ -10,8 +10,8 @@ class Generator(ABC):
         name: Optional[str] = None,
         amp: float = 0.5,
         offset: float = 0.5,
-        period: int = 1000,
-        phase: int = 0
+        period: float = 1000,
+        phase: float = 0
     ):
         self.name = name
         self.amp = amp
@@ -20,5 +20,5 @@ class Generator(ABC):
         self.offset = offset
 
     @abstractmethod
-    def value(self, millis: int) -> float:
+    def value(self, millis: float) -> float:
         pass

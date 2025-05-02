@@ -5,7 +5,7 @@ from .generator import Generator
 class FFTGenerator(Generator):
 
     weighting: list[float]
-    stamps: list[int]
+    stamps: list[float]
     memory: list[list[float]]
 
     def __init__(
@@ -35,7 +35,7 @@ class FFTGenerator(Generator):
     def set_weighting(self, weighting: list[float]) -> None:
         self.weighting = weighting.copy()
 
-    def forward(self, values: list[float], millis: int) -> None:
+    def forward(self, values: list[float], millis: float) -> None:
         self.stamps[1:] = self.stamps[0:-1]
         self.stamps[0] = millis
 
@@ -49,7 +49,7 @@ class FFTGenerator(Generator):
             else:
                 self.memory[0][i] -= self.thres
 
-    def value(self, millis: int) -> float:
+    def value(self, millis: float) -> float:
         best_index = 0
         for i, _ in enumerate(self.stamps):
             best = abs(self.stamps[best_index] - millis)

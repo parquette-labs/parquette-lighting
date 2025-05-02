@@ -58,3 +58,9 @@ def test_wave_sq():
     assert math.isclose(wg.value(-247 + 500 + random.randint(0, 100) * 1000), 0)
     assert math.isclose(wg.value(-247 + 625 + random.randint(0, 100) * 1000), 0)
     assert math.isclose(wg.value(-247 + 750 + random.randint(0, 100) * 1000), 0)
+
+
+def test_imp():
+    # imp = ImpulseGenerator(
+    # name="imp",
+    pass
