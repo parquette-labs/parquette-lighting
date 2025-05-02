@@ -22,10 +22,20 @@ class WaveGenerator(Generator):
         if self.shape == WaveGenerator.Shape.TRIANGLE:
             modtime = (millis + self.phase + 250) % self.period
             if modtime < (self.period / 2):
-                return map(modtime, 0.0, self.period / 2.0, self.offset - self.amp, self.offset + self.amp)
+                return map(
+                    modtime,
+                    0.0,
+                    self.period / 2.0,
+                    self.offset - self.amp,
+                    self.offset + self.amp,
+                )
             else:
                 return map(
-                    modtime - self.period / 2, 0.0, self.period / 2, self.offset + self.amp, self.offset - self.amp
+                    modtime - self.period / 2,
+                    0.0,
+                    self.period / 2,
+                    self.offset + self.amp,
+                    self.offset - self.amp,
                 )
         elif self.shape == WaveGenerator.Shape.SQUARE:
             modtime = (millis + self.phase) % self.period
@@ -34,6 +44,9 @@ class WaveGenerator(Generator):
             else:
                 return self.offset - self.amp
         elif self.shape == WaveGenerator.Shape.SIN:
-            return self.amp * math.sin((millis + self.phase) / self.period * 2 * math.pi) + self.offset
+            return (
+                self.amp * math.sin((millis + self.phase) / self.period * 2 * math.pi)
+                + self.offset
+            )
 
         return 0

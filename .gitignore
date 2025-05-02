@@ -1,1 +1,4 @@
 *.autosave
+*.pyc
+.DS_Store
+dist
