@@ -1,6 +1,4 @@
 # import mido
-import time
-from collections import deque
 
 import argparse
 import math

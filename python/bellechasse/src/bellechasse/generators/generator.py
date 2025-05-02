@@ -1,15 +1,15 @@
-from abc import abstractclassmethod
+from abc import ABC, abstractmethod
 
 
-class Generator(object):
+class Generator(ABC):
 
-    def __init__(self, name, amp, phase, period, offset=0.5):
+    def __init__(self, name, amp, period, phase=0, offset=0.5):
         self.name = name
         self.amp = amp
         self.phase = phase
         self.period = period
         self.offset = offset
 
-    @abstractclassmethod
+    @abstractmethod
     def value(self, millis):
         pass
