@@ -1,3 +1,4 @@
+from typing import Optional
 import math
 from enum import Enum
 
@@ -12,16 +13,25 @@ class WaveGenerator(Generator):
         SQUARE = 2
         SIN = 3
 
-    def __init__(self, *, name=None, amp=0.5, period=1000, phase=0, offset=0.5, shape=Shape.SIN):
+    def __init__(
+        self,
+        *,
+        name: Optional[str] = None,
+        amp: float = 0.5,
+        period: int = 1000,
+        phase: int = 0,
+        offset: float = 0.5,
+        shape: Shape = Shape.SIN
+    ):
         super().__init__(name=name, amp=amp, offset=offset, period=period, phase=phase)
 
         if not isinstance(shape, self.Shape):
             raise TypeError("Shape Enum not provided")
         self.shape = shape
 
-    def value(self, millis):
+    def value(self, millis: int) -> float:
         if self.shape == WaveGenerator.Shape.TRIANGLE:
-            modtime = (millis + self.phase + self.period/4) % self.period
+            modtime = (millis + self.phase + self.period / 4) % self.period
             if modtime < (self.period / 2):
                 return value_map(
                     modtime,

@@ -20,6 +20,7 @@ packages = [{include = "bellechasse", from = "src"}]
 black = "^25.1.0"
 pytest = "^8.3.5"
 pylint = "^3.3.6"
+mypy = "^1.15.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
