@@ -61,6 +61,38 @@ def test_wave_sq():
 
 
 def test_imp():
-    # imp = ImpulseGenerator(
-    # name="imp",
-    pass
+    imp = ImpulseGenerator(
+        name="imp",
+        amp=1,
+        offset=0.5,
+        period=1000,
+        echo=2,
+        echo_decay=0.75,
+        duty=300,
+    )
+    assert imp.name == "imp"
+    assert math.isclose(imp.value(0), 1.5)
+    assert math.isclose(imp.value(150), 1.5)
+    assert math.isclose(imp.value(300), 0.5)
+    assert math.isclose(imp.value(900), 0.5)
+    assert math.isclose(imp.value(1000 + 0), 1.25)
+    assert math.isclose(imp.value(1000 + 150), 1.25)
+    assert math.isclose(imp.value(1000 + 300), 0.5)
+    assert math.isclose(imp.value(1000 + 900), 0.5)
+    assert math.isclose(imp.value(2000 + 0), 0.5)
+    assert math.isclose(imp.value(2000 + 150), 0.5)
+    assert math.isclose(imp.value(2000 + 300), 0.5)
+    assert math.isclose(imp.value(2000 + 900), 0.5)
+
+
+def test_noise():
+    noise = NoiseGenerator(
+        name="rand",
+        amp=1,
+        offset=0.5,
+        period=1000,
+    )
+    assert noise.name == "rand"
+    assert noise.value(0) == noise.value(600)
+    assert noise.value(0) != noise.value(1100)
+    assert noise.value(1200) == noise.value(1100)

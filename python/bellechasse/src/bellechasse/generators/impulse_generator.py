@@ -5,6 +5,8 @@ from .generator import Generator
 
 
 class ImpulseGenerator(Generator):
+    punch_point: float = 0
+
     def __init__(
         self,
         *,
@@ -48,9 +50,9 @@ class ImpulseGenerator(Generator):
         count: int = math.floor(ellapsed / self.period)
 
         if count >= self.echo:
-            return 0
+            return self.offset
 
-        if ellapsed % self.period > 0 and ellapsed % self.period < self.duty:
+        if ellapsed % self.period >= 0 and ellapsed % self.period < self.duty:
             return self.amp * self.echo_decay**count + self.offset
         else:
-            return 0
+            return self.offset

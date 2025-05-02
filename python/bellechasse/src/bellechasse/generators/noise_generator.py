@@ -17,9 +17,9 @@ class NoiseGenerator(Generator):
     ):
         super().__init__(name=name, amp=amp, offset=offset, period=period, phase=0)
 
-    def value(self, millis: float) -> float:
-        if (millis - self.last_millis) % (self.period * 2) > self.period:
-            self.last_value = random.random() * self.amp + self.offset
-            self.last_millis = 0
+        self.random_base = random.random()
 
-        return self.last_value
+    def value(self, millis: float) -> float:
+        period_range = millis // self.period
+        random.seed(period_range + self.random_base)
+        return random.random() * self.amp + self.offset
