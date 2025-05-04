@@ -22,6 +22,7 @@ pytest = "^8.3.5"
 pylint = "^3.3.6"
 mypy = "^1.15.0"
 pre-commit = "^4.2.0"
+poethepoet = "^0.34.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -29,3 +30,9 @@ build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
 server = 'bellechasse.server:run'
+
+[tool.poe.tasks]
+pylint = "pylint --rcfile=./pylintrc -f colorized ./src/"
+black = "black ./"
+pytest = "pytest"
+lintntest = ["black", "pylint", "pytest"]

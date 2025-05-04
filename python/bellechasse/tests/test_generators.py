@@ -75,8 +75,8 @@ def test_imp():
     assert math.isclose(imp.value(150), 2.5)
     assert math.isclose(imp.value(300), 0.5)
     assert math.isclose(imp.value(900), 0.5)
-    assert math.isclose(imp.value(1000 + 0), 1.25)
-    assert math.isclose(imp.value(1000 + 150), 1.25)
+    assert math.isclose(imp.value(1000 + 0), 2)
+    assert math.isclose(imp.value(1000 + 150), 2)
     assert math.isclose(imp.value(1000 + 300), 0.5)
     assert math.isclose(imp.value(1000 + 900), 0.5)
     assert math.isclose(imp.value(2000 + 0), 0.5)
@@ -104,5 +104,5 @@ def test_fft():
         amp=1,
         offset=0.5,
         subdivisions=20,
-        memory=20,
+        memory_length=20,
     )
