@@ -1,69 +1,99 @@
-# import mido
+from typing import List, Any
 
-import argparse
-import math
+import click
 
 from pythonosc.dispatcher import Dispatcher
 from pythonosc import osc_server
+from pythonosc.udp_client import SimpleUDPClient
+
+from DMXEnttecPro import Controller  # type: ignore[import-untyped]
+
+import serial.tools.list_ports as slp
 
 
-def run():
-    # print(mido.get_output_names())
-    # print(mido.get_input_names())
+class OSCManager(object):
+    def __init__(self) -> None:
+        self.dispatcher = Dispatcher()
 
-    # inport = mido.open_input('Launchkey Mini MK3 MIDI Port')
-    # outport = mido.open_output('Launchkey Mini MK3 MIDI Port')
+    def set_debug(self, debug: bool) -> None:
+        self.debug = debug
 
-    # msglog = deque()
-    # echo_delay = 2
+        if debug:
+            self._debug_handler = self.dispatcher.map(
+                "*", lambda addr, args: self.print_osc(" in", addr, args)
+            )
+        elif not self._debug_handler is None:
+            self.dispatcher.unmap("*", self._debug_handler)
 
-    # while True:
-    #     while inport.iter_pending():
-    #         msg = inport.receive()
-    #         if msg.type != "clock":
-    #             print(msg)
-    #             msglog.append({"msg": msg, "due": time.time() + echo_delay})
-    #     while len(msglog) > 0 and msglog[0]["due"] <= time.time():
-    #         outport.send(msglog.popleft()["msg"])
+    def set_local(self, local_ip: str, local_port: int) -> None:
+        self.server = osc_server.ThreadingOSCUDPServer(
+            (local_ip, local_port), self.dispatcher
+        )
 
-    # print(__name__)
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     "--ip", default="127.0.0.1", help="The ip of the OSC server"
-    # )
-    # parser.add_argument(
-    #     "--port",
-    #     type=int,
-    #     default=5005,
-    #     help="The port the OSC server is listening on",
-    # )
-    # args = parser.parse_args()
+    def set_target(self, target_ip: str, target_port: int):
+        self.client = SimpleUDPClient(target_ip, target_port)
 
-    # client = udp_client.SimpleUDPClient(args.ip, args.port)
+    def print_osc(self, label: str, address: str, *osc_arguments: List[Any]) -> None:
+        print(label, address, osc_arguments)
 
-    # for x in range(10):
-    #     client.send_message("/filter", random.random())
-    #     time.sleep(1)
+    def send_osc(self, address: str, args: List[Any]) -> None:
+        if self.debug:
+            if self.client is None:
+                print("No UDP target, not sending")
+            else:
+                self.print_osc("out", address, args)
 
-    def print_volume_handler(unused_addr, args, volume):
-        print("[{0}] ~ {1}".format(args[0], volume))
+        if not self.client is None:
+            self.client.send_message(address, args)
 
-    def print_compute_handler(unused_addr, args, volume):
-        try:
-            print("[{0}] ~ {1}".format(args[0], args[1](volume)))
-        except ValueError:
-            pass
+    def serve(self) -> None:
+        if not self.server is None:
+            self.server.serve_forever()
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ip", default="127.0.0.1", help="The ip to listen on")
-    parser.add_argument("--port", type=int, default=5005, help="The port to listen on")
-    args = parser.parse_args()
 
-    dispatcher = Dispatcher()
-    dispatcher.map("/filter", print)
-    dispatcher.map("/volume", print_volume_handler, "Volume")
-    dispatcher.map("/logvolume", print_compute_handler, "Log volume", math.log)
+class DMXManager(object):
+    def __init__(self, osc_manager) -> None:
+        self.osc_manager = osc_manager
+        self.osc_manager.dispatcher.map(
+            "/dmx_port_refresh", lambda addr, args: self.dmx_port_refresh()
+        )
+        self.osc_manager.dispatcher.map(
+            "/dmx_port_name", lambda addr, args: self.setup_dmx(args[0])
+        )
 
-    server = osc_server.ThreadingOSCUDPServer((args.ip, args.port), dispatcher)
-    print("Serving on {}".format(server.server_address))
-    server.serve_forever()
+    @classmethod
+    def list_dmx_ports(cls) -> List[str]:
+        return [l.device for l in slp.comports() if l.manufacturer == "FTDI"]
+
+    def dmx_port_refresh(self) -> None:
+        ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
+        print(ports_dict)
+        self.osc_manager.send_osc("/dmx_port_name/values", ports_dict)
+
+    def setup_dmx(self, port: str) -> None:
+        self.close()
+        self.controller = Controller(port, auto_submit=False, dmx_size=256)
+
+    def close(self) -> None:
+        if not self.controller is None:
+            self.controller.close()
+
+
+# def setup_dmx(port) -> Controller:
+#     # dmx.set_channel(1, 255)  # Sets DMX channel 1 to max 255
+#     # dmx.submit()  # Sends the update to the controller
+#     # dmx = Controller(my_port)
+
+
+@click.command()
+@click.option("--local-ip", default="127.0.0.1", type=str, help="IP address")
+@click.option("--local-port", default=5005, type=int, help="port")
+@click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
+@click.option("--target-port", default=5006, type=int, help="port")
+def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> None:
+    osc = OSCManager()
+    osc.set_target(target_ip, target_port)
+    osc.set_local(local_ip, local_port)
+    osc.set_debug(True)
+    DMXManager(osc)
+    osc.serve()
