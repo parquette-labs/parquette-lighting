@@ -7,7 +7,7 @@ import click
 import pyaudio
 import numpy as np
 
-from pythonosc.dispatcher import Dispatcher
+from pythonosc.dispatcher import Dispatcher, Handler
 from pythonosc import osc_server
 from pythonosc.udp_client import SimpleUDPClient
 
@@ -24,7 +24,7 @@ class OSCManager(object):
         self.dispatcher = Dispatcher()
 
         self.debug = False
-        self._debug_handler = None
+        self._debug_handler: Optional[Handler] = None
 
     def set_debug(self, debug: bool) -> None:
         self.debug = debug
@@ -70,6 +70,23 @@ class OSCManager(object):
     def close(self):
         if not self.server is None:
             self.server.shutdown()
+
+
+class UIDebugFrame(dict):
+    def __init__(self, osc_manager: OSCManager) -> None:
+        self.osc_manager = osc_manager
+
+    def update_ui(self) -> None:
+        self.osc_manager.send_osc("/debug_frame", [str(self)])
+
+    def __str__(self) -> str:
+        result = ""
+        for key, val in self.items():
+            result += "{}: {}\n".format(key, val)
+        return str(result)
+
+
+uidb: UIDebugFrame
 
 
 class DMXManager(object):
@@ -168,6 +185,14 @@ class FFTManager(object):
                 input=True,
                 frames_per_buffer=self.chunk,
             )
+            global uidb
+            uidb["fft_channels"] = 1
+            uidb["fft_rate"] = self.rate
+            uidb["fft_chunk"] = self.chunk
+            uidb["fft_resolution"] = self.rate / self.chunk
+            uidb["fft_nyquist"] = self.rate
+            uidb["fft_per_sec"] = self.fft_per_sec
+            uidb.update_ui()
 
             self.osc_manager.send_osc("/audio_port_name", [port])
         except SerialException as e:
@@ -199,12 +224,13 @@ class FFTManager(object):
             if self.stream is None:
                 return
             fft_time, fft_data = self.forward()
+            downsampled = 2
             if not fft_data is None:
                 banded = []
-                for i in range(len(fft_data) // 100):
+                for i in range(len(fft_data) // downsampled):
                     summation = 0
-                    for j in range(min(100, len(fft_data) - i * 100)):
-                        summation += fft_data[i * 100 + j]
+                    for j in range(min(downsampled, len(fft_data) - i * downsampled)):
+                        summation += fft_data[i * downsampled + j]
                     banded.append(summation)
                 self.osc_manager.send_osc(
                     "/fft_viz",
@@ -249,6 +275,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
     osc.set_debug(False)
+    global uidb
+    uidb = UIDebugFrame(osc)
     dmx = DMXManager(osc)
     fft = FFTManager(osc)
 
