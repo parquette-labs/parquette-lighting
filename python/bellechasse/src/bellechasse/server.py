@@ -132,7 +132,7 @@ class FFTManager(object):
         self.osc_manager.dispatcher.map(
             "/audio_port_name", lambda addr, args: self.setup_audio(args)
         )
-        self.osc_manager.dispatcher.map("/fft_test", self.test_fwd)
+        self.osc_manager.dispatcher.map("/fft_test", lambda addr, args: self.test_fwd())
         self.close()
 
     def list_audio_ports(self) -> list[Mapping[str, str | int | float]]:
@@ -178,19 +178,26 @@ class FFTManager(object):
         if self.stream is None:
             return (None, None)
 
-        window = np.blackman(self.chunk)
-        t1 = time.time()
-        data = self.stream.read(self.chunk, exception_on_overflow=False)
-        waveData = struct.unpack("%dh" % (self.chunk), data)
-        npArrayData = np.array(waveData)
-        indata = npArrayData * window
-        fftData = np.abs(np.fft.rfft(indata))
-        fftTime = np.fft.rfftfreq(self.chunk, 1.0 / self.rate)
-        print("took {} ms".format((time.time() - t1) * 1000))
+        try:
+            window = np.blackman(self.chunk)
+            t1 = time.time()
+            data = self.stream.read(self.chunk, exception_on_overflow=False)
+            waveData = struct.unpack("%dh" % (self.chunk), data)
+            npArrayData = np.array(waveData)
+            indata = npArrayData * window
+            fftData = np.abs(np.fft.rfft(indata))
+            fftTime = np.fft.rfftfreq(self.chunk, 1.0 / self.rate)
+            # print("took {} ms".format((time.time() - t1) * 1000))
+        except struct.error:
+            print("Malformed struct")
+            return (None, None)
+
         return (fftTime, fftData)
 
     def _test_fwd(self):
         while True:
+            if self.stream is None:
+                return
             fft_time, fft_data = self.forward()
             if not fft_data is None:
                 banded = []
@@ -244,8 +251,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc.set_debug(False)
     dmx = DMXManager(osc)
     fft = FFTManager(osc)
-
-    fft.test_fwd()
 
     osc.serve(threaded=True)
 
