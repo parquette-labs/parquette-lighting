@@ -1,6 +1,6 @@
 import math
 import random
-from bellechasse.generators import *
+from parquette.lights.generators import *
 
 
 def test_wave_gen_sin():

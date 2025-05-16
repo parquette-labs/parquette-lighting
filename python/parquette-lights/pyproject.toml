@@ -1,5 +1,5 @@
 [project]
-name = "bellechasse"
+name = "parquette"
 version = "0.1.0"
 description = ""
 authors = [
@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "bellechasse", from = "src"}]
+packages = [{include = "parquette", from = "src"}]
 
 
 [tool.poetry.group.dev.dependencies]
@@ -35,7 +35,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
-server = 'bellechasse.server:run'
+server = 'parquette.lights.server:run'
 
 [tool.poe.tasks]
 pylint = "pylint --rcfile=./pylintrc -f colorized ./src/"

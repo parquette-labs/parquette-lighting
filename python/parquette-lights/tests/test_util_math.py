@@ -1,4 +1,4 @@
-from bellechasse.util.math import *
+from parquette.lights.util.math import *
 
 
 def test_constrain():
