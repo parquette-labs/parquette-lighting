@@ -1,17 +1,16 @@
 from typing import Optional
 import math
-from enum import Enum
+from enum import Enum, auto
 
 from .generator import Generator
 from ..util.math import value_map
 
 
 class WaveGenerator(Generator):
-
     class Shape(Enum):
-        TRIANGLE = 1
-        SQUARE = 2
-        SIN = 3
+        TRIANGLE = auto()
+        SQUARE = auto()
+        SIN = auto()
 
     def __init__(
         self,
