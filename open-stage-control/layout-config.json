@@ -981,7 +981,7 @@
         "quantity": 10,
         "props": {
           "label": "#{$}",
-          "value": "chan offset #{$+1}",
+          "value": "chan_#{$+1} #{@{chan_levels}[$].toFixed(2)}",
           "alphaStroke": 0,
           "alphaFillOn": 0,
           "interaction": false
@@ -2619,7 +2619,7 @@
         "visible": true,
         "interaction": false,
         "comments": "",
-        "width": 60,
+        "width": 70,
         "height": 40,
         "expand": false,
         "colorText": "auto",
@@ -2634,7 +2634,7 @@
         "padding": "auto",
         "html": "",
         "css": "",
-        "value": "spot offset",
+        "value": "spot offset @{chan_levels/spot}",
         "default": "",
         "linkId": "",
         "address": "auto",
