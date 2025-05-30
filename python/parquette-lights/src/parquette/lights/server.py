@@ -474,9 +474,9 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
 
     initialAmp: float = 100
     initialPeriod: int = 300
-    initialAmpImp: float = 255
     initialAmpFFT1: float = 3
     initialAmpFFT2: float = 3
+    initialAmpImp: float = 255
     initialImpPeriod: int = 200
     initialImpDuty: int = 100
     initialImpEcho: int = 6
@@ -573,8 +573,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/mode_switch", "mode", [mixer])
 
     def chan_offests(addr, value):
-        ix = int(addr.split("/")[2])
-        mixer.channel_offsets[ix] = value
+        ix = addr.split("/")[2]
+        mixer.channel_offsets[mixer.channel_names.index(ix)] = value
 
     osc.dispatcher.map(
         "/chan_levels/*",
