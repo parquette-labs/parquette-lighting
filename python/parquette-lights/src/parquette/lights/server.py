@@ -604,6 +604,11 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         lambda addr, *args: signal_patch(*args),
     )
 
+    osc.dispatcher.map(
+        "/impulse_punch",
+        lambda addr, *args: impulse.punch(),
+    )
+
     osc.serve(threaded=False)
 
     while True:
