@@ -160,6 +160,8 @@ class FFTManager(object):
     stream: Optional[pyaudio.Stream] = None
     rate: int
     chunk: int
+    fft_thread: Optional[Thread] = None
+    fft_running: bool = False
 
     def __init__(self, osc: OSCManager, fft_per_sec: int = 30):
         self.paudio = pyaudio.PyAudio()
@@ -174,7 +176,8 @@ class FFTManager(object):
         self.osc.dispatcher.map(
             "/audio_port_name", lambda addr, args: self.setup_audio(args)
         )
-        self.osc.dispatcher.map("/fft_test", lambda addr, args: self.test_fwd())
+        self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
+        self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
         self.close()
 
     def list_audio_ports(self) -> list[Mapping[str, str | int | float]]:
@@ -244,8 +247,11 @@ class FFTManager(object):
 
         return (fftTime, fftData)
 
-    def _test_fwd(self):
-        while True:
+    def _run_fwd(self):
+        print("run")
+        while self.fft_running:
+            print("while")
+
             if self.stream is None:
                 return
             _, fft_data = self.forward()
@@ -262,10 +268,23 @@ class FFTManager(object):
                     banded,
                 )
             time.sleep(0.02)
+        print("done")
 
-    def test_fwd(self):
-        self.fft_thread = Thread(target=self._test_fwd)
+    def start_fft(self):
+        if not self.fft_thread is None:
+            print("end")
+            self.fft_running = False
+            self.fft_thread.join()
+
+        print("start")
+        self.fft_running = True
+        self.fft_thread = Thread(target=self._run_fwd)
         self.fft_thread.start()
+
+    def stop_fft(self):
+        print("stop")
+        self.fft_running = False
+        self.fft_thread.join()
 
     def close(self, deselect=True) -> None:
         if not self.stream is None:
