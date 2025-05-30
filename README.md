@@ -13,3 +13,4 @@
 * Accounting for incandescent delay
 * Add modes for the 2 new lights
 * Add controls for the tungsten spot
+* Can I move the mapping definitions for output mix into the front end fully?
