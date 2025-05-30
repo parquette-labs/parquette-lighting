@@ -338,16 +338,13 @@ class Mixer(object):
         ]
 
         self.stutter_period = 0.2
+        self.master_amp = 1
 
         # TODO register for offests
         # TODO register for mixing mode
         # TODO register for master
         # TODO register for connecting matrix
         # TODO register mode
-
-        # self.osc.dispatcher.map(
-        #     "/audio_port_refresh", lambda addr, args: self.audio_port_refresh()
-        # )
 
     def runChannelMix(self) -> None:
         # slide the channel history back one timestep
@@ -358,9 +355,11 @@ class Mixer(object):
 
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
             for chan_idx, chan_connected in enumerate(gen_connected_chans):
-                self.channels[gen_idx][chan_idx] = (
+                self.channels[0][chan_idx] += (
                     self.generators[gen_idx].value(time.time() * 1000) * chan_connected
                 )
+        for i, val in enumerate(self.channels[0]):
+            self.channels[0][i] = val * self.master_amp
 
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
@@ -486,34 +485,37 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     # TODO wrapper for controlling the variables via OSC
 
     noise1 = NoiseGenerator(
-        name="Noise1", amp=initialAmp, offset=0, period=initialPeriod
+        name="noise_1", amp=initialAmp, offset=0, period=initialPeriod
     )
     noise2 = NoiseGenerator(
-        name="Noise2", amp=initialAmp, offset=0, period=initialPeriod
+        name="noise_2", amp=initialAmp, offset=0, period=initialPeriod
     )
     wave1 = WaveGenerator(
-        name="SIN1",
+        name="sin",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
+        offset=0,
         shape=WaveGenerator.Shape.SIN,
     )
     wave2 = WaveGenerator(
-        name="SQ1",
+        name="square",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
+        offset=0,
         shape=WaveGenerator.Shape.SQUARE,
     )
     wave3 = WaveGenerator(
-        name="TRI1",
+        name="triangle",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
+        offset=0,
         shape=WaveGenerator.Shape.TRIANGLE,
     )
     impulse = ImpulseGenerator(
-        name="IMP",
+        name="impulse",
         amp=initialAmpImp,
         offset=0,
         period=initialImpPeriod,
@@ -523,10 +525,10 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     )
 
     fft1 = FFTGenerator(
-        name="FFT1", amp=initialAmpFFT1, offset=0, subdivisions=1, memory_length=1
+        name="fft_1", amp=initialAmpFFT1, offset=0, subdivisions=1, memory_length=1
     )
     fft2 = FFTGenerator(
-        name="FFT2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=1
+        name="fft_2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=1
     )
 
     generators = [
@@ -545,6 +547,61 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         dmx=dmx,
         generators=generators,
         history_len=2,
+    )
+
+    def osc_param_map(addr, field, objs):
+        def obj_param_setter(value, _field, _objs):
+            for _obj in _objs:
+                _obj.__dict__[_field] = value
+
+        osc.dispatcher.map(
+            addr,
+            lambda _, args: obj_param_setter(args, field, objs),
+        )
+
+    osc_param_map("/amp", "amp", [noise1, noise2, wave1, wave2, wave3])
+    osc_param_map("/period", "period", [noise1, noise2, wave1, wave2, wave3])
+    osc_param_map("/fft1_amp", "amp", [fft1])
+    osc_param_map("/fft2_amp", "amp", [fft2])
+    osc_param_map("/impulse_amp", "amp", [impulse])
+    osc_param_map("/impulse_period", "period", [impulse])
+    osc_param_map("/impulse_duty", "duty", [impulse])
+    osc_param_map("/impulse_echo", "echo", [impulse])
+    osc_param_map("/impulse_decay", "echo_decay", [impulse])
+    osc_param_map("/stutter_period", "stutter_period", [mixer])
+    osc_param_map("/master_fader", "master_amp", [mixer])
+    osc_param_map("/mode_switch", "mode", [mixer])
+
+    def chan_offests(addr, value):
+        ix = int(addr.split("/")[2])
+        mixer.channel_offsets[ix] = value
+
+    osc.dispatcher.map(
+        "/chan_levels/*",
+        lambda addr, args: chan_offests(addr, args),
+    )
+
+    def signal_patch(*mapping):
+        try:
+            gen_ix = list(map(lambda gen: gen.name, mixer.generators)).index(mapping[0])
+            destinations = [
+                mixer.channel_names.index(chan_name) for chan_name in mapping[1:]
+            ]
+            for i in range(len(mixer.signal_matrix[gen_ix])):
+                if i in destinations:
+                    mixer.signal_matrix[gen_ix][i] = 1
+                else:
+                    mixer.signal_matrix[gen_ix][i] = 0
+
+        except ValueError:
+            print("Couldn't parse signal mapping", mapping)
+
+        for outs in mixer.signal_matrix:
+            print(outs)
+
+    osc.dispatcher.map(
+        "/signal_patchbay",
+        lambda addr, *args: signal_patch(*args),
     )
 
     osc.serve(threaded=False)
