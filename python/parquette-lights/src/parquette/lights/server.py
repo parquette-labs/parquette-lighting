@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, cast, Tuple, Optional
+from typing import List, Any, Mapping, cast, Tuple, Optional, Union
 import time
 from copy import copy
 import math
@@ -26,6 +26,8 @@ from .generators import (
     NoiseGenerator,
     Generator,
 )
+
+from .util.math import constrain
 
 
 class OSCManager(object):
@@ -129,9 +131,14 @@ class DMXManager(object):
             print(e)
             self.close()
 
-    def set_channel(self, chan: int, val: int) -> None:
+    def set_channel(
+        self, chan: int, val: Union[int, float], clamp: bool = True
+    ) -> None:
         if self.controller is None:
             return
+
+        if clamp:
+            val = int(constrain(val, 0, 255))
 
         self.controller.set_channel(chan, val)
 
@@ -277,8 +284,8 @@ class FFTManager(object):
 class Mixer(object):
     class OutputMode(Enum):
         MONO = auto()
-        QUAD = auto()
-        OCTO = auto()
+        HEX = auto()
+        DECA = auto()
         FWD = auto()
         BACK = auto()
         ZIG = auto()
@@ -289,23 +296,48 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
-        channel_names: List[str],
         history_len: float,
     ):
         self.mode = Mixer.OutputMode.MONO
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
-        self.channel_names = channel_names
+        self.channel_names = [
+            "chan_1",
+            "chan_2",
+            "chan_3",
+            "chan_4",
+            "chan_5",
+            "chan_6",
+            "chan_7",
+            "chan_8",
+            "chan_9",
+            "chan_10",
+            "spot",
+        ]
         self.num_channels = len(self.channel_names)
+
+        self.dmx_mappings = {
+            "left": [1, 2, 3, 4],
+            "right": [5, 6, 7, 8],
+            "front": [9, 10],
+            "spot": [11],
+        }
+
         # TODO control the matrix sizing in open sound control with this var?
+        # TODO this could be initialized / resetup in a subfn that can be reused if the live setup changes
+        # This is an array of the output values at different time slices, the design is that each timeslice is 20ms back in time, so self.channels[timeslice][chan]
         self.channels = [
             [0.0] * self.num_channels for _ in range(math.ceil(history_len * 1000 / 20))
         ]
+        # This is the default base value of each chan
         self.channel_offsets = [0.0] * self.num_channels
+        # This is a matrix from the patch bay of what signals go to what chans of shape signal_matrix[num_gen][num_chan]
         self.signal_matrix = [
             [0.0] * self.num_channels for _ in range(len(self.generators))
         ]
+
+        self.stutter_period = 0.2
 
         # TODO register for offests
         # TODO register for mixing mode
@@ -318,8 +350,10 @@ class Mixer(object):
         # )
 
     def runChannelMix(self) -> None:
+        # slide the channel history back one timestep
         self.channels[1:] = self.channels[0:-1]
 
+        # setup current times
         self.channels[0] = copy(self.channel_offsets)
 
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
@@ -329,21 +363,101 @@ class Mixer(object):
                 )
 
     def runOutputMix(self) -> None:
+        self.dmx.set_channel(
+            self.dmx_mappings["spot"][0],
+            self.channels[0][self.channel_names.index("spot")],
+        )
+
         if self.mode == Mixer.OutputMode.MONO:
-            pass
-        elif self.mode == Mixer.OutputMode.QUAD:
-            pass
-        elif self.mode == Mixer.OutputMode.OCTO:
-            pass
-        elif self.mode == Mixer.OutputMode.FWD:
-            pass
-        elif self.mode == Mixer.OutputMode.BACK:
-            pass
+            for group, chans in self.dmx_mappings.items():
+                if group != "spot":
+                    for chan in chans:
+                        self.dmx.set_channel(chan, self.channels[0][0])
+
+        elif self.mode == Mixer.OutputMode.HEX:
+            for i, (chan_l, chan_r) in enumerate(
+                zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
+            ):
+                self.dmx.set_channel(chan_l, self.channels[0][i + 1])
+                self.dmx.set_channel(chan_r, self.channels[0][i + 1])
+
+            self.dmx.set_channel(self.dmx_mappings["front"][0], self.channels[0][0])
+            self.dmx.set_channel(self.dmx_mappings["front"][1], self.channels[0][0])
+        elif self.mode == Mixer.OutputMode.DECA:
+            for i, chan in enumerate(
+                self.dmx_mappings["left"]
+                + self.dmx_mappings["right"]
+                + self.dmx_mappings["front"]
+            ):
+                self.dmx.set_channel(chan, self.channels[0][i])
+        elif self.mode in (Mixer.OutputMode.FWD, Mixer.OutputMode.BACK):
+            chan_zip = list(
+                zip(
+                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
+                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
+                )
+            )
+            if self.mode == Mixer.OutputMode.BACK:
+                chan_zip = list(reversed(chan_zip))
+            for i, (chan_l, chan_r) in enumerate(chan_zip):
+                stutter_index = int(
+                    constrain(
+                        self.stutter_period * i / 10,
+                        0,
+                        len(self.channels),
+                    )
+                )
+                self.dmx.set_channel(
+                    chan_l,
+                    int(
+                        constrain(
+                            self.channels[stutter_index][0],
+                            0,
+                            255,
+                        )
+                    ),
+                )
+                self.dmx.set_channel(
+                    chan_r,
+                    int(
+                        constrain(
+                            self.channels[stutter_index][1],
+                            0,
+                            255,
+                        )
+                    ),
+                )
         elif self.mode == Mixer.OutputMode.ZIG:
-            pass
+            interleaved_chans = [
+                val
+                for tup in zip(
+                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
+                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
+                )
+                for val in tup
+            ]
+
+            for i, chan in enumerate(interleaved_chans):
+                stutter_index = int(
+                    constrain(
+                        self.stutter_period * i / 10,
+                        0,
+                        len(self.channels),
+                    )
+                )
+                self.dmx.set_channel(
+                    chan,
+                    int(
+                        constrain(
+                            self.channels[stutter_index][0],
+                            0,
+                            255,
+                        )
+                    ),
+                )
 
     def updateDMX(self) -> None:
-        pass
+        self.dmx.submit()
 
 
 @click.command()
@@ -352,15 +466,6 @@ class Mixer(object):
 @click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--target-port", default=5006, type=int, help="port")
 def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> None:
-    # while True:
-    #     import time, random
-
-    #     time.sleep(0.05)
-    #     osc.send_osc(
-    #         "/fft_viz",
-    #         str([[random.random(), random.random()] for _ in range(20)]),
-    #     )
-
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
@@ -439,26 +544,16 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc=osc,
         dmx=dmx,
         generators=generators,
-        channel_names=[
-            "chan_1",
-            "chan_2",
-            "chan_3",
-            "chan_4",
-            "chan_5",
-            "chan_6",
-            "chan_7",
-            "chan_8",
-            "chan_9",
-            "chan_10",
-            "chan_11",
-        ],
         history_len=2,
     )
 
     osc.serve(threaded=False)
 
     while True:
-        time.sleep(1)
+        mixer.runChannelMix()
+        mixer.runOutputMix()
+        mixer.updateDMX()
+        time.sleep(0.01)
 
     dmx.close()
     fft.terminate()
