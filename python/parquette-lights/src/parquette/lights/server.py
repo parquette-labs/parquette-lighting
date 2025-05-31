@@ -335,7 +335,7 @@ class FFTManager(object):
 class Mixer(object):
     class OutputMode(Enum):
         MONO = auto()
-        HEX = auto()
+        PENTA = auto()
         DECA = auto()
         FWD = auto()
         BACK = auto()
@@ -364,6 +364,8 @@ class Mixer(object):
             "chan_8",
             "chan_9",
             "chan_10",
+            "under_1",
+            "under_2",
             "spot",
         ]
         self.num_channels = len(self.channel_names)
@@ -372,7 +374,8 @@ class Mixer(object):
             "left": [1, 2, 3, 4],
             "right": [5, 6, 7, 8],
             "front": [9, 10],
-            "spot": [11],
+            "under": [11, 12],
+            "spot": [13],
         }
 
         # TODO control the matrix sizing in open sound control with this var?
@@ -413,18 +416,28 @@ class Mixer(object):
             self.channels[0][i] = val * self.master_amp
 
     def runOutputMix(self) -> None:
+        print(self.channels[0])
         self.dmx.set_channel(
             self.dmx_mappings["spot"][0],
             self.channels[0][self.channel_names.index("spot")],
         )
 
+        self.dmx.set_channel(
+            self.dmx_mappings["under"][0],
+            self.channels[0][self.channel_names.index("under_1")],
+        )
+        self.dmx.set_channel(
+            self.dmx_mappings["under"][1],
+            self.channels[0][self.channel_names.index("under_2")],
+        )
+
         if self.mode == Mixer.OutputMode.MONO:
             for group, chans in self.dmx_mappings.items():
-                if group != "spot":
+                if group != "spot" and group != "under":
                     for chan in chans:
                         self.dmx.set_channel(chan, self.channels[0][0])
 
-        elif self.mode == Mixer.OutputMode.HEX:
+        elif self.mode == Mixer.OutputMode.PENTA:
             for i, (chan_l, chan_r) in enumerate(
                 zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
             ):
@@ -605,7 +618,11 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     def osc_param_map(addr, field, objs):
         def obj_param_setter(value, _field, _objs):
             for _obj in _objs:
-                _obj.__dict__[_field] = value
+                try:
+                    _field = getattr(_obj.__class__, field)
+                    _field.__set__(_obj, value)
+                except AttributeError:
+                    _obj.__dict__[_field] = value
 
         osc.dispatcher.map(
             addr,
@@ -620,6 +637,14 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/impulse_period", "period", [impulse])
     osc_param_map("/impulse_duty", "duty", [impulse])
     osc_param_map("/impulse_echo", "echo", [impulse])
+
+    # def test(val):
+    #     impulse.echo = val
+
+    # osc.dispatcher.map(
+    #     "/impulse_echo",
+    #     lambda addr, args: test(args),
+    # )
     osc_param_map("/impulse_decay", "echo_decay", [impulse])
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
