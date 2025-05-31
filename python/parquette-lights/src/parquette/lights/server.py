@@ -4,7 +4,6 @@ from copy import copy
 import math
 import struct
 from threading import Thread
-from enum import Enum, auto
 
 from librosa import stft, Z_weighting, mel_frequencies, db_to_amplitude
 from librosa.feature import melspectrogram
@@ -119,9 +118,7 @@ class DMXManager(object):
     @classmethod
     def list_dmx_ports(cls) -> List[str]:
         return [
-            l.device
-            for l in slp.comports()
-            if l.manufacturer == "FTDI" or l.manufacturer == "ENTTEC"
+            l.device for l in slp.comports() if l.manufacturer in ("FTDI", "ENTTEC")
         ]
 
     def dmx_port_refresh(self) -> None:
@@ -277,11 +274,10 @@ class FFTManager(object):
                 return
             _, fft_data = self.forward()
             fft_data -= self.fft_threshold
-            fft_data = fft_data.clip(0, np.inf)
+            # fft_data = fft_data.clip(0, np.inf)
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
 
-            self.uidb["mel_shape"] = fft_data.shape
             self.uidb["fft_max"] = max(fft_data)
             self.uidb["fft_min"] = min(fft_data)
 
@@ -428,7 +424,7 @@ class Mixer(object):
 
         if self.mode == "MONO":
             for group, chans in self.dmx_mappings.items():
-                if group != "spot" and group != "under":
+                if not group in ("spot", "under"):
                     for chan in chans:
                         self.dmx.set_channel(chan, self.channels[0][0])
 
@@ -616,7 +612,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
                 # TODO I assume this is hacky and can be nicer
                 try:
                     _field = getattr(_obj.__class__, field)
-                    _field.__set__(_obj, value)
+                    _field.set(_obj, value)
+
                 except AttributeError:
                     _obj.__dict__[_field] = value
 
@@ -637,7 +634,16 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
     osc_param_map("/mode_switch", "mode", [mixer])
-    osc_param_map("/fft_threshold", "fft_threshold", [fft])
+
+    def set_fft_thres(val):
+        fft.fft_threshold = val
+
+    osc.dispatcher.map(
+        "/fft_threshold",
+        lambda addr, args: set_fft_thres(args),
+    )
+
+    # osc_param_map("/fft_threshold", "fft_threshold", [fft])  #TODO total mystery why this doesn't work
 
     def chan_offests(addr, value):
         ix = addr.split("/")[2]
