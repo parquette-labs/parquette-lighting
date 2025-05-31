@@ -618,6 +618,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     def osc_param_map(addr, field, objs):
         def obj_param_setter(value, _field, _objs):
             for _obj in _objs:
+                # TODO I assume this is hacky and can be nicer
                 try:
                     _field = getattr(_obj.__class__, field)
                     _field.__set__(_obj, value)
@@ -637,14 +638,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/impulse_period", "period", [impulse])
     osc_param_map("/impulse_duty", "duty", [impulse])
     osc_param_map("/impulse_echo", "echo", [impulse])
-
-    # def test(val):
-    #     impulse.echo = val
-
-    # osc.dispatcher.map(
-    #     "/impulse_echo",
-    #     lambda addr, args: test(args),
-    # )
     osc_param_map("/impulse_decay", "echo_decay", [impulse])
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
