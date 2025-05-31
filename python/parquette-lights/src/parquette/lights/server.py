@@ -118,7 +118,11 @@ class DMXManager(object):
 
     @classmethod
     def list_dmx_ports(cls) -> List[str]:
-        return [l.device for l in slp.comports() if l.manufacturer == "FTDI"]
+        return [
+            l.device
+            for l in slp.comports()
+            if l.manufacturer == "FTDI" or l.manufacturer == "ENTTEC"
+        ]
 
     def dmx_port_refresh(self) -> None:
         ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
@@ -333,14 +337,6 @@ class FFTManager(object):
 
 
 class Mixer(object):
-    class OutputMode(Enum):
-        MONO = auto()
-        PENTA = auto()
-        DECA = auto()
-        FWD = auto()
-        BACK = auto()
-        ZIG = auto()
-
     def __init__(
         self,
         *,
@@ -349,7 +345,7 @@ class Mixer(object):
         generators: List[Generator],
         history_len: float,
     ):
-        self.mode = Mixer.OutputMode.MONO
+        self.mode = "MONO"
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
@@ -371,10 +367,10 @@ class Mixer(object):
         self.num_channels = len(self.channel_names)
 
         self.dmx_mappings = {
-            "left": [1, 2, 3, 4],
+            "left": [4, 3, 2, 1],
             "right": [5, 6, 7, 8],
-            "front": [9, 10],
-            "under": [11, 12],
+            "front": [12, 9],
+            "under": [10, 11],
             "spot": [13],
         }
 
@@ -416,7 +412,6 @@ class Mixer(object):
             self.channels[0][i] = val * self.master_amp
 
     def runOutputMix(self) -> None:
-        print(self.channels[0])
         self.dmx.set_channel(
             self.dmx_mappings["spot"][0],
             self.channels[0][self.channel_names.index("spot")],
@@ -431,13 +426,13 @@ class Mixer(object):
             self.channels[0][self.channel_names.index("under_2")],
         )
 
-        if self.mode == Mixer.OutputMode.MONO:
+        if self.mode == "MONO":
             for group, chans in self.dmx_mappings.items():
                 if group != "spot" and group != "under":
                     for chan in chans:
                         self.dmx.set_channel(chan, self.channels[0][0])
 
-        elif self.mode == Mixer.OutputMode.PENTA:
+        elif self.mode == "PENTA":
             for i, (chan_l, chan_r) in enumerate(
                 zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
             ):
@@ -446,21 +441,21 @@ class Mixer(object):
 
             self.dmx.set_channel(self.dmx_mappings["front"][0], self.channels[0][0])
             self.dmx.set_channel(self.dmx_mappings["front"][1], self.channels[0][0])
-        elif self.mode == Mixer.OutputMode.DECA:
+        elif self.mode == "DECA":
             for i, chan in enumerate(
                 self.dmx_mappings["left"]
                 + self.dmx_mappings["right"]
                 + self.dmx_mappings["front"]
             ):
                 self.dmx.set_channel(chan, self.channels[0][i])
-        elif self.mode in (Mixer.OutputMode.FWD, Mixer.OutputMode.BACK):
+        elif self.mode in ("FWD", "BACK"):
             chan_zip = list(
                 zip(
                     self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
                     self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
                 )
             )
-            if self.mode == Mixer.OutputMode.BACK:
+            if self.mode == "BACK":
                 chan_zip = list(reversed(chan_zip))
             for i, (chan_l, chan_r) in enumerate(chan_zip):
                 stutter_index = int(
@@ -490,7 +485,7 @@ class Mixer(object):
                         )
                     ),
                 )
-        elif self.mode == Mixer.OutputMode.ZIG:
+        elif self.mode == "ZIG":
             interleaved_chans = [
                 val
                 for tup in zip(

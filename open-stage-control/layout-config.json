@@ -1117,7 +1117,7 @@
         "wrap": false,
         "values": {
           "Mono": "MONO",
-          "6 Channel": "HEX",
+          "5 Channel": "PENTA",
           "10 Channel": "DECA",
           "Forward": "FWD",
           "Back": "BACK",
