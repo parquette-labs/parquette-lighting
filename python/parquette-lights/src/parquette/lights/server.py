@@ -167,7 +167,7 @@ class FFTManager(object):
         self.paudio = pyaudio.PyAudio()
         self.fft_per_sec = fft_per_sec
 
-        self.uidb = UIDebugFrame(osc, "fft_debug_frame")
+        self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
 
         self.osc = osc
         self.osc.dispatcher.map(
@@ -233,14 +233,12 @@ class FFTManager(object):
 
         try:
             window = np.blackman(self.chunk)
-            # t1 = time.time()
             data = self.stream.read(self.chunk, exception_on_overflow=False)
             waveData = struct.unpack("%dh" % (self.chunk), data)
             npArrayData = np.array(waveData)
             indata = npArrayData * window
             fftData = np.abs(np.fft.rfft(indata))
             fftTime = np.fft.rfftfreq(self.chunk, 1.0 / self.rate)
-            # print("took {} ms".format((time.time() - t1) * 1000))
         except struct.error:
             print("Malformed struct")
             return (None, None)
@@ -248,14 +246,16 @@ class FFTManager(object):
         return (fftTime, fftData)
 
     def _run_fwd(self):
-        print("run")
+        self.uidb["fft_avg_time"] = 0
+        counter = 0
+
         while self.fft_running:
-            print("while")
+            t1 = time.time()
 
             if self.stream is None:
                 return
             _, fft_data = self.forward()
-            downsampled = 2
+            downsampled = 4
             if not fft_data is None:
                 banded = []
                 for i in range(len(fft_data) // downsampled):
@@ -267,22 +267,28 @@ class FFTManager(object):
                     "/fft_viz",
                     banded,
                 )
-            time.sleep(0.02)
-        print("done")
+            compute_time = time.time() - t1
+            self.uidb["fft_avg_time"] = (
+                self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
+            )
+
+            counter += 1
+            if counter % 100 == 0:
+                self.uidb.update_ui()
+
+            # if (0.02 - compute_time) > 0:
+            # time.sleep(0.02 - compute_time)
+            time.sleep(0.1)
 
     def start_fft(self):
         if not self.fft_thread is None:
-            print("end")
-            self.fft_running = False
-            self.fft_thread.join()
+            self.stop_fft()
 
-        print("start")
         self.fft_running = True
         self.fft_thread = Thread(target=self._run_fwd)
         self.fft_thread.start()
 
     def stop_fft(self):
-        print("stop")
         self.fft_running = False
         self.fft_thread.join()
 
@@ -487,7 +493,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
-    osc.set_debug(True)
+    osc.set_debug(False)
     dmx = DMXManager(osc)
     fft = FFTManager(osc)
 

@@ -6,6 +6,7 @@
 	* Hook up FFT and if possible switch to librosa audio 
 	* Weightings needed?
 	* Add controls for the tungsten spot
+	* fft port error
 * Immediate ideas
 	* General presets with a way to cycle between them
 	* typing in new code and error catching in OSC
