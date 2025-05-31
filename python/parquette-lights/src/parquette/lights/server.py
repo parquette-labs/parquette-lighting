@@ -170,7 +170,7 @@ class FFTManager(object):
     downstream: List[FFTGenerator] = []
     weighting = None
 
-    def __init__(self, osc: OSCManager, chunk: int = 1024):
+    def __init__(self, osc: OSCManager, chunk: int = 512):
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
         self.n_mels = self.chunk // 8
@@ -274,7 +274,8 @@ class FFTManager(object):
                 return
             _, fft_data = self.forward()
             fft_data -= self.fft_threshold
-            # fft_data = fft_data.clip(0, np.inf)
+            fft_data = fft_data.clip(0, np.inf)
+
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
 
@@ -677,6 +678,16 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
+    )
+
+    def handle_fft_bounds(vals, fft_inst):
+        fft_inst.set_bounds(vals[0], vals[2])
+
+    osc.dispatcher.map(
+        "/fft_bounds_1", lambda addr, *args: handle_fft_bounds(args, fft1)
+    )
+    osc.dispatcher.map(
+        "/fft_bounds_2", lambda addr, *args: handle_fft_bounds(args, fft2)
     )
 
     osc.serve(threaded=True)

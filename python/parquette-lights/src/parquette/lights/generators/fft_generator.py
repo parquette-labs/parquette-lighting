@@ -1,11 +1,13 @@
+from copy import copy
 from typing import Optional
 from .generator import Generator
+from ..util.math import constrain
 
 
 class FFTGenerator(Generator):
-    weighting: list[float]
     stamps: list[float]
     memory: list[list[float]]
+    bounds: list[float]
 
     def __init__(
         self,
@@ -20,6 +22,16 @@ class FFTGenerator(Generator):
         self.set_subdivisions_and_memory(subdivisions, memory_length)
 
         self.thres = 0
+        self.set_bounds(0, 1)
+        self.fft_bounds = [0.0, 1.0]
+
+    def set_bounds(self, low, high):
+        low = constrain(low, 0, 1)
+        high = constrain(high, 0, 1)
+
+        if low > high:
+            (low, high) = (high, low)
+        self.fft_bounds = [low, high]
 
     def set_subdivisions_and_memory(
         self, subdivisions: int, memory_length: int
@@ -27,12 +39,8 @@ class FFTGenerator(Generator):
         self.memory_length = memory_length
         self.subdivisions = subdivisions
 
-        self.weighting = [1 for i in range(subdivisions)]
         self.stamps = [0 for i in range(memory_length)]
         self.memory = [[0 for i in range(subdivisions)] for j in range(memory_length)]
-
-    def set_weighting(self, weighting: list[float]) -> None:
-        self.weighting = weighting.copy()
 
     def forward(self, values: list[float], millis: float) -> None:
         self.stamps[1:] = self.stamps[0:-1]
@@ -41,7 +49,7 @@ class FFTGenerator(Generator):
         self.memory[1:] = self.memory[0:-1]
 
         for i in range(self.subdivisions):
-            self.memory[0][i] = values[i] * self.weighting[i]
+            self.memory[0][i] = copy(values[i])
 
             if self.memory[0][i] < self.thres:
                 self.memory[0][i] = 0
@@ -58,7 +66,9 @@ class FFTGenerator(Generator):
                 best_index = i
 
         fft_sum = 0.0
-        for i in range(self.subdivisions):
+        start_ix = int(self.fft_bounds[0] * self.subdivisions)
+        end_ix = max(int(self.fft_bounds[1] * self.subdivisions), start_ix + 1)
+        for i in range(start_ix, end_ix):
             fft_sum += self.memory[best_index][i]
 
-        return fft_sum * self.amp + self.offset
+        return fft_sum * self.amp / (end_ix - start_ix) + self.offset
