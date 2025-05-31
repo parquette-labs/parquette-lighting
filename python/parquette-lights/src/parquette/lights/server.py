@@ -6,6 +6,9 @@ import struct
 from threading import Thread
 from enum import Enum, auto
 
+from librosa import stft, Z_weighting, mel_frequencies, db_to_amplitude
+from librosa.feature import melspectrogram
+
 import click
 import pyaudio
 import numpy as np
@@ -162,10 +165,14 @@ class FFTManager(object):
     chunk: int
     fft_thread: Optional[Thread] = None
     fft_running: bool = False
+    fft_threshold: float = 0
+    downstream: List[FFTGenerator] = []
+    weighting = None
 
-    def __init__(self, osc: OSCManager, fft_per_sec: int = 30):
+    def __init__(self, osc: OSCManager, chunk: int = 1024):
         self.paudio = pyaudio.PyAudio()
-        self.fft_per_sec = fft_per_sec
+        self.chunk = chunk
+        self.n_mels = self.chunk // 8
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
 
@@ -201,9 +208,6 @@ class FFTManager(object):
             port = int(port)
             port_info = self.paudio.get_device_info_by_index(port)
 
-            self.chunk = int(
-                cast(int, port_info["defaultSampleRate"]) / self.fft_per_sec
-            )
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
 
             self.stream = self.paudio.open(
@@ -213,13 +217,19 @@ class FFTManager(object):
                 input=True,
                 frames_per_buffer=self.chunk,
             )
+            self.weighting = db_to_amplitude(
+                Z_weighting(mel_frequencies(self.n_mels, fmin=0, fmax=self.rate / 2))
+            )
 
+            for d in self.downstream:
+                d.set_subdivisions_and_memory(self.n_mels, d.memory_length)
+
+            self.uidb["mels"] = self.n_mels
             self.uidb["fft_channels"] = 1
             self.uidb["fft_rate"] = self.rate
             self.uidb["fft_chunk"] = self.chunk
             self.uidb["fft_resolution"] = self.rate / self.chunk
-            self.uidb["fft_nyquist"] = self.rate
-            self.uidb["fft_per_sec"] = self.fft_per_sec
+            self.uidb["fft_nyquist"] = self.rate / 2
             self.uidb.update_ui()
 
             self.osc.send_osc("/audio_port_name", [port])
@@ -232,18 +242,25 @@ class FFTManager(object):
             return (None, None)
 
         try:
-            window = np.blackman(self.chunk)
             data = self.stream.read(self.chunk, exception_on_overflow=False)
             waveData = struct.unpack("%dh" % (self.chunk), data)
-            npArrayData = np.array(waveData)
-            indata = npArrayData * window
-            fftData = np.abs(np.fft.rfft(indata))
-            fftTime = np.fft.rfftfreq(self.chunk, 1.0 / self.rate)
+            indata = np.array(waveData).astype(float)
+            fftData = stft(y=indata, n_fft=self.chunk, center=False)
+            fftData = np.abs(
+                melspectrogram(
+                    y=indata,
+                    S=fftData,
+                    sr=self.rate,
+                    n_fft=self.chunk,
+                    center=False,
+                    n_mels=self.n_mels,
+                )
+            )
         except struct.error:
             print("Malformed struct")
             return (None, None)
 
-        return (fftTime, fftData)
+        return (None, fftData[:, 0] * self.weighting)
 
     def _run_fwd(self):
         self.uidb["fft_avg_time"] = 0
@@ -255,7 +272,16 @@ class FFTManager(object):
             if self.stream is None:
                 return
             _, fft_data = self.forward()
-            downsampled = 4
+            fft_data -= self.fft_threshold
+            fft_data = fft_data.clip(0, np.inf)
+            for d in self.downstream:
+                d.forward(fft_data, time.time() * 1000)
+
+            self.uidb["mel_shape"] = fft_data.shape
+            self.uidb["fft_max"] = max(fft_data)
+            self.uidb["fft_min"] = min(fft_data)
+
+            downsampled = 1
             if not fft_data is None:
                 banded = []
                 for i in range(len(fft_data) // downsampled):
@@ -278,7 +304,7 @@ class FFTManager(object):
 
             # if (0.02 - compute_time) > 0:
             # time.sleep(0.02 - compute_time)
-            time.sleep(0.1)
+            time.sleep(0.025)
 
     def start_fft(self):
         if not self.fft_thread is None:
@@ -550,10 +576,10 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     )
 
     fft1 = FFTGenerator(
-        name="fft_1", amp=initialAmpFFT1, offset=0, subdivisions=1, memory_length=1
+        name="fft_1", amp=initialAmpFFT1, offset=0, subdivisions=1, memory_length=20
     )
     fft2 = FFTGenerator(
-        name="fft_2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=1
+        name="fft_2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=20
     )
 
     generators = [
@@ -596,6 +622,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
     osc_param_map("/mode_switch", "mode", [mixer])
+    osc_param_map("/fft_threshold", "fft_threshold", [fft])
 
     def chan_offests(addr, value):
         ix = addr.split("/")[2]
@@ -620,9 +647,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
 
         except ValueError:
             print("Couldn't parse signal mapping", mapping)
-
-        for outs in mixer.signal_matrix:
-            print(outs)
 
     osc.dispatcher.map(
         "/signal_patchbay",

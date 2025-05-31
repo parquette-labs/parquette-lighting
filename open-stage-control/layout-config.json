@@ -535,7 +535,7 @@
             "interaction": false,
             "comments": "",
             "width": 220,
-            "height": 120,
+            "height": 160,
             "expand": false,
             "colorText": "auto",
             "colorWidget": "auto",
@@ -599,7 +599,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 1
+              "max": 1000
             },
             "logScale": false,
             "sensitivity": 1,
@@ -628,8 +628,8 @@
             "visible": true,
             "interaction": false,
             "comments": "",
-            "width": 70,
-            "height": 40,
+            "width": 100,
+            "height": 70,
             "expand": false,
             "colorText": "auto",
             "colorWidget": "auto",
@@ -643,7 +643,7 @@
             "padding": "auto",
             "html": "",
             "css": "",
-            "value": "Threshold",
+            "value": "FFT Threshold @{fft_threshold}",
             "default": "",
             "linkId": "",
             "address": "auto",
@@ -743,10 +743,10 @@
                 },
                 "rangeY": {
                   "min": 0,
-                  "max": 80000
+                  "max": 500
                 },
                 "logScaleX": false,
-                "logScaleY": false,
+                "logScaleY": true,
                 "dots": false,
                 "bars": false,
                 "origin": "auto"
@@ -2738,6 +2738,52 @@
         "bypass": false,
         "onCreate": "",
         "onValue": ""
+      },
+      {
+        "type": "switch",
+        "top": 240,
+        "left": 840,
+        "lock": false,
+        "id": "preset_switch",
+        "visible": true,
+        "interaction": true,
+        "comments": "",
+        "width": 120,
+        "height": 310,
+        "expand": false,
+        "colorText": "auto",
+        "colorWidget": "auto",
+        "colorStroke": "auto",
+        "colorFill": "auto",
+        "alphaStroke": "auto",
+        "alphaFillOff": "auto",
+        "alphaFillOn": "auto",
+        "lineWidth": "auto",
+        "borderRadius": "auto",
+        "padding": "auto",
+        "html": "",
+        "css": "",
+        "colorTextOn": "auto",
+        "layout": "vertical",
+        "gridTemplate": "",
+        "wrap": false,
+        "values": {
+          "None": "None",
+          "Impulse": "IMP"
+        },
+        "mode": "tap",
+        "value": "",
+        "default": "",
+        "linkId": "",
+        "address": "auto",
+        "preArgs": "",
+        "typeTags": "",
+        "decimals": 2,
+        "target": "",
+        "ignoreDefaults": false,
+        "bypass": false,
+        "onCreate": "",
+        "onValue": "// set('output_patchbay/chan_1', []);\n// set('output_patchbay/chan_2', []);\n// set('output_patchbay/chan_3', []);\n// set('output_patchbay/chan_4', []);\n// set('output_patchbay/chan_5', []);\n// set('output_patchbay/chan_6', []);\n// set('output_patchbay/chan_7', []);\n// set('output_patchbay/chan_8', []);\n// set('output_patchbay/chan_9', []);\n// set('output_patchbay/chan_10', []);\n// set('output_patchbay/chan_spot', []);\n// switch(get(id)) {\n//   case \"MONO\": {\n//     set('output_patchbay/chan_1', [\n//       \"left_1\",\n//       \"left_2\",\n//       \"left_3\",\n//       \"left_4\",\n//       \"right_1\",\n//       \"right_2\",\n//       \"right_3\",\n//       \"right_4\",\n//       \"front_1\",\n//       \"front_2\",\n//       \"spot\"\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"HEX\": {\n//     set('output_patchbay/chan_1', [\n//       \"front_1\",\n//       \"front_2\",\n//     ])\n//     set('output_patchbay/chan_2', [\n//       \"left_1\",\n//       \"right_1\",\n//     ])\n//     set('output_patchbay/chan_3', [\n//       \"left_2\",\n//       \"right_2\",\n//     ])\n//     set('output_patchbay/chan_4', [\n//       \"left_3\",\n//       \"right_3\",\n//     ])\n//     set('output_patchbay/chan_5', [\n//       \"left_4\",\n//       \"right_4\",\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"DECA\": {\n//     console.log(\"DECA\");\n//     break;\n//   }\n//   case \"FWD\": {\n//     console.log(\"FWD\");\n//     break;\n//   }\n//   case \"BACK\": {\n//     console.log(\"BACK\");\n//     break;\n//   }\n//   case \"ZIG\": {\n//     console.log(\"ZIG\");\n//     break;\n//   }\n// }"
       }
     ],
     "tabs": []
