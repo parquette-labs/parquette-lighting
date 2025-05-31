@@ -387,7 +387,7 @@ class Mixer(object):
             [0.0] * self.num_channels for _ in range(len(self.generators))
         ]
 
-        self.stutter_period = 0.2
+        self.stutter_period = 500
         self.master_amp = 1
 
         # TODO register for offests
@@ -462,7 +462,7 @@ class Mixer(object):
                     constrain(
                         self.stutter_period * i / 10,
                         0,
-                        len(self.channels),
+                        len(self.channels) - 1,
                     )
                 )
                 self.dmx.set_channel(
@@ -500,7 +500,7 @@ class Mixer(object):
                     constrain(
                         self.stutter_period * i / 10,
                         0,
-                        len(self.channels),
+                        len(self.channels) - 1,
                     )
                 )
                 self.dmx.set_channel(
@@ -607,7 +607,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc=osc,
         dmx=dmx,
         generators=generators,
-        history_len=2,
+        history_len=666 * 6,
     )
 
     def osc_param_map(addr, field, objs):
