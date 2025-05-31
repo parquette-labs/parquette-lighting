@@ -3,7 +3,6 @@ from .generator import Generator
 
 
 class FFTGenerator(Generator):
-
     weighting: list[float]
     stamps: list[float]
     memory: list[list[float]]
@@ -28,7 +27,7 @@ class FFTGenerator(Generator):
         self.memory_length = memory_length
         self.subdivisions = subdivisions
 
-        self.weighting = [0 for i in range(subdivisions)]
+        self.weighting = [1 for i in range(subdivisions)]
         self.stamps = [0 for i in range(memory_length)]
         self.memory = [[0 for i in range(subdivisions)] for j in range(memory_length)]
 
@@ -59,7 +58,7 @@ class FFTGenerator(Generator):
                 best_index = i
 
         fft_sum = 0.0
-        for i in range(self.memory_length):
+        for i in range(self.subdivisions):
             fft_sum += self.memory[best_index][i]
 
         return fft_sum * self.amp + self.offset

@@ -593,6 +593,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         fft2,
     ]
 
+    fft.downstream = [fft1, fft2]
+
     mixer = Mixer(
         osc=osc,
         dmx=dmx,
@@ -658,7 +660,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         lambda addr, *args: impulse.punch(),
     )
 
-    osc.serve(threaded=False)
+    osc.serve(threaded=True)
 
     while True:
         mixer.runChannelMix()
