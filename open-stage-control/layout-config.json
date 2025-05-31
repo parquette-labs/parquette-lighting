@@ -2777,7 +2777,7 @@
         "top": 360,
         "left": 10,
         "lock": false,
-        "id": "chan_levels/spot",
+        "id": "chan_levels/chan_spot",
         "visible": true,
         "interaction": true,
         "comments": "",

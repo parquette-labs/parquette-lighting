@@ -204,6 +204,9 @@ class FFTManager(object):
         self.osc.send_osc("/audio_port_name/values", [str(port_opts)])
 
     def setup_audio(self, port: int) -> None:
+        if port == "undefined":
+            return
+
         self.close(deselect=False)
         try:
             port = int(port)
@@ -359,7 +362,7 @@ class Mixer(object):
             "chan_10",
             "under_1",
             "under_2",
-            "spot",
+            "chan_spot",
         ]
         self.num_channels = len(self.channel_names)
 
@@ -411,7 +414,7 @@ class Mixer(object):
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
             self.dmx_mappings["spot"][0],
-            self.channels[0][self.channel_names.index("spot")],
+            self.channels[0][self.channel_names.index("chan_spot")],
         )
 
         self.dmx.set_channel(
