@@ -111,6 +111,10 @@ class DMXManager(object):
             "/dmx_port_refresh", lambda addr, args: self.dmx_port_refresh()
         )
         self.osc.dispatcher.map(
+            "/dmx_port_disconnect", lambda addr, args: self.close(deselect=True)
+        )
+
+        self.osc.dispatcher.map(
             "/dmx_port_name", lambda addr, args: self.setup_dmx(args)
         )
         self.close()
@@ -154,7 +158,11 @@ class DMXManager(object):
 
     def close(self, deselect=True) -> None:
         if not self.controller is None:
-            self.controller.close()
+            try:
+                self.controller.close()
+            except:
+                pass
+            self.controller = None
 
         if deselect:
             self.osc.send_osc("/dmx_port_name", [None])
