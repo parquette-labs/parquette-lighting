@@ -2,22 +2,16 @@
 
 ## Notes/Ideas/TODOs
 * Must do
-	* Finish hooking up all control surfaces
-	* Hook up FFT and if possible switch to librosa audio 
-	* Weightings needed?
-	* Add controls for the tungsten spot
-	* fft port error
+	* Presets
+	* Push back all current settings
 * Immediate ideas
-	* General presets with a way to cycle between them
-	* typing in new code and error catching in OSC
-	* Add new modes for the 2 new lights
-	* End to end test
-	* Reimplement temp button
 	* Add all black
+	* Reimplement temp button
 	* FFT fwd stop
 	* Manually match default values in front end
 * Future ideas
 	* auto load chan and gen names to sync between front and backend
+	* typing in new code and error catching in OSC
 	* Sync values on load
 	* Auto match default values
 	* Check if we can reconfigure on the fly

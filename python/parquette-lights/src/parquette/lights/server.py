@@ -409,7 +409,8 @@ class Mixer(object):
                     self.generators[gen_idx].value(time.time() * 1000) * chan_connected
                 )
         for i, val in enumerate(self.channels[0]):
-            self.channels[0][i] = val * self.master_amp
+            if self.channel_names[i] != "chan_spot":
+                self.channels[0][i] = val * self.master_amp
 
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
@@ -638,6 +639,38 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
     osc_param_map("/mode_switch", "mode", [mixer])
+
+    def send_all_params():
+        osc.send_osc("/amp", noise1.amp)
+        osc.send_osc("/period", noise1.period)
+        osc.send_osc("/fft1_amp", fft1.amp)
+        osc.send_osc("/fft2_amp", fft2.amp)
+        osc.send_osc("/impulse_amp", impulse.amp)
+        osc.send_osc("/impulse_period", impulse.period)
+        osc.send_osc("/impulse_duty", impulse.duty)
+        osc.send_osc("/impulse_echo", impulse.echo)
+        osc.send_osc("/impulse_decay", impulse.echo_decay)
+        osc.send_osc("/stutter_period", mixer.stutter_period)
+        osc.send_osc("/master_fader", mixer.master_amp)
+        osc.send_osc("/mode_switch", mixer.mode)
+        osc.send_osc("/fft_threshold", fft.fft_threshold)
+        osc.send_osc("/master_fader", mixer.master_amp)
+        for i, chan_name in enumerate(mixer.channel_names):
+            osc.send_osc("/chan_levels/{}".format(chan_name), mixer.channel_offsets[i])
+        osc.send_osc("/fft_bounds_1", [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0])
+        osc.send_osc("/fft_bounds_2", [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0])
+
+        for gen_ix in range(len(mixer.signal_matrix)):
+            output_val = [mixer.generators[gen_ix].name]
+            for chan_ix in range(len(mixer.signal_matrix[gen_ix])):
+                if mixer.signal_matrix[gen_ix][chan_ix]:
+                    output_val.append(mixer.channel_names[chan_ix])
+
+            osc.send_osc("/signal_patchbay", output_val)
+
+        # TODO patcher
+
+    osc.dispatcher.map("/reload", lambda addr, args: send_all_params())
 
     def set_fft_thres(val):
         fft.fft_threshold = val
