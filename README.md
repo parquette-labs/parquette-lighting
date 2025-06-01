@@ -3,13 +3,14 @@
 ## Notes/Ideas/TODOs
 * Must do
 	* Presets
-	* Push back all current settings
+	* RPI
 * Immediate ideas
 	* Add all black
 	* Reimplement temp button
 	* FFT fwd stop
 	* Manually match default values in front end
 * Future ideas
+	* trigger params load on load
 	* auto load chan and gen names to sync between front and backend
 	* typing in new code and error catching in OSC
 	* Sync values on load
