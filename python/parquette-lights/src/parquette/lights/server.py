@@ -219,11 +219,14 @@ class FFTManager(object):
         try:
             port = int(port)
             port_info = self.paudio.get_device_info_by_index(port)
+            print(port)
+            print(port_info)
 
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
 
             self.stream = self.paudio.open(
                 format=pyaudio.paInt16,
+                input_device_index=port,
                 channels=1,  # todo stereo ? min(cast(int, port_info["maxInputChannels"]), 2)
                 rate=self.rate,
                 input=True,
