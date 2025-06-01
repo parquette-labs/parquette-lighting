@@ -1873,7 +1873,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 1000
+              "max": 300
             },
             "logScale": false,
             "sensitivity": 1,

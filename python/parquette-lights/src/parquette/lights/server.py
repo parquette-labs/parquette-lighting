@@ -625,7 +625,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
                 # TODO I assume this is hacky and can be nicer
                 try:
                     _field = getattr(_obj.__class__, field)
-                    _field.set(_obj, value)
+                    _field.__set__(_obj, value)
 
                 except AttributeError:
                     _obj.__dict__[_field] = value
