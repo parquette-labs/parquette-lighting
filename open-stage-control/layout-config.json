@@ -366,7 +366,7 @@
                   "min": 0,
                   "max": 2000
                 },
-                "logScale": false,
+                "logScale": true,
                 "sensitivity": 1,
                 "steps": "",
                 "origin": "auto",
@@ -1533,7 +1533,7 @@
               "min": 0,
               "max": 255
             },
-            "logScale": false,
+            "logScale": true,
             "sensitivity": 1,
             "steps": "",
             "origin": "auto",
@@ -1645,9 +1645,9 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 4
+              "max": 1
             },
-            "logScale": false,
+            "logScale": true,
             "sensitivity": 1,
             "steps": "",
             "origin": "auto",
@@ -1702,9 +1702,9 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 4
+              "max": 8
             },
-            "logScale": false,
+            "logScale": true,
             "sensitivity": 1,
             "steps": "",
             "origin": "auto",
@@ -2046,7 +2046,7 @@
               "min": 0,
               "max": 666
             },
-            "logScale": false,
+            "logScale": true,
             "sensitivity": 1,
             "steps": "",
             "origin": "auto",
@@ -2859,7 +2859,7 @@
           "min": 0,
           "max": 1
         },
-        "logScale": false,
+        "logScale": true,
         "sensitivity": 1,
         "steps": "",
         "origin": "auto"

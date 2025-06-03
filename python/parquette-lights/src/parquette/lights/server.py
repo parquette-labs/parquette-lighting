@@ -219,8 +219,6 @@ class FFTManager(object):
         try:
             port = int(port)
             port_info = self.paudio.get_device_info_by_index(port)
-            print(port)
-            print(port_info)
 
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
 
@@ -271,8 +269,11 @@ class FFTManager(object):
                     n_mels=self.n_mels,
                 )
             )
-        except struct.error:
-            print("Malformed struct")
+        except struct.error as e:
+            print("Malformed struct", e)
+            return (None, None)
+        except OSError as e:
+            print("OSError your stream died", e)
             return (None, None)
 
         return (None, fftData[:, 0] * self.weighting)
@@ -287,6 +288,9 @@ class FFTManager(object):
             if self.stream is None:
                 return
             _, fft_data = self.forward()
+            if fft_data is None:
+                time.sleep(0.1)
+                continue
             fft_data -= self.fft_threshold
             fft_data = fft_data.clip(0, np.inf)
 
@@ -335,8 +339,11 @@ class FFTManager(object):
 
     def close(self, deselect=True) -> None:
         if not self.stream is None:
-            self.stream.stop_stream()
-            self.stream.close()
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except:
+                pass
             # p.terminate()
 
         if deselect:
@@ -420,7 +427,7 @@ class Mixer(object):
                     self.generators[gen_idx].value(time.time() * 1000) * chan_connected
                 )
         for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] != "chan_spot":
+            if not self.channel_names[i] in ("chan_spot", "under_1", "under_2"):
                 self.channels[0][i] = val * self.master_amp
 
     def runOutputMix(self) -> None:
