@@ -66,9 +66,25 @@ class FFTGenerator(Generator):
                 best_index = i
 
         fft_sum = 0.0
-        start_ix = int(self.fft_bounds[0] * self.subdivisions)
-        end_ix = max(int(self.fft_bounds[1] * self.subdivisions), start_ix + 1)
+        start_ix = int(
+            constrain(
+                int(self.fft_bounds[0] * self.subdivisions),
+                0,
+                len(self.memory[best_index]) - 1,
+            )
+        )
+        end_ix = int(
+            constrain(
+                max(int(self.fft_bounds[1] * self.subdivisions), start_ix + 1),
+                0,
+                len(self.memory[best_index]) - 1,
+            )
+        )
+
         for i in range(start_ix, end_ix):
             fft_sum += self.memory[best_index][i]
+
+        if start_ix == end_ix:
+            return 0
 
         return fft_sum * self.amp / (end_ix - start_ix) + self.offset
