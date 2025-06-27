@@ -1,6 +1,8 @@
 # Parquette Lighting 🏋️‍♀️🕺🪩🕺🏋️‍♀️
 
 ## Notes/Ideas/TODOs
+* FFT crashing on rpi
+* Auto restart failed stream
 * Setup Raspberry Pi
 * Redundancy, RTFM and manual
 * Presets mechanism

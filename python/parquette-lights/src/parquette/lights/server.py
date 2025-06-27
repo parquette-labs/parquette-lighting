@@ -148,13 +148,19 @@ class DMXManager(object):
         if clamp:
             val = int(constrain(val, 0, 255))
 
-        self.controller.set_channel(chan, val)
+        try:
+            self.controller.set_channel(chan, val)
+        except SerialException:
+            self.close()
 
     def submit(self) -> None:
         if self.controller is None:
             return
 
-        self.controller.submit()
+        try:
+            self.controller.submit()
+        except SerialException:
+            self.close()
 
     def close(self, deselect=True) -> None:
         if not self.controller is None:
@@ -677,6 +683,10 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             osc.send_osc("/chan_levels/{}".format(chan_name), mixer.channel_offsets[i])
         osc.send_osc("/fft_bounds_1", [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0])
         osc.send_osc("/fft_bounds_2", [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0])
+
+        for gen_ix in range(len(mixer.signal_matrix)):
+            output_val = [mixer.generators[gen_ix].name]
+            osc.send_osc("/signal_patchbay", output_val)
 
         for gen_ix in range(len(mixer.signal_matrix)):
             output_val = [mixer.generators[gen_ix].name]
