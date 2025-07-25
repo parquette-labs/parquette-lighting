@@ -1,3 +1,4 @@
+import time
 from copy import copy
 from typing import Optional
 from .generator import Generator
@@ -56,7 +57,10 @@ class FFTGenerator(Generator):
             else:
                 self.memory[0][i] -= self.thres
 
-    def value(self, millis: float) -> float:
+    def value(self, millis: float = -1) -> float:
+        if millis == -1:
+            millis = time.time() * 1000
+
         best_index = 0
         for i, _ in enumerate(self.stamps):
             best = abs(self.stamps[best_index] - millis)

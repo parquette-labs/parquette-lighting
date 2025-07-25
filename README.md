@@ -3,12 +3,11 @@
 ## Notes/Ideas/TODOs
 * FFT crashing on rpi
 * Auto restart failed stream
-* Setup Raspberry Pi
+* - Setup Raspberry Pi
 * Redundancy, RTFM and manual
 * Presets mechanism
 * Add all black button
 * Easy UI for punch and other interactives with no misclick risk
-* FFT bands selectors don't appear to be working properly 
 * Timing / race condition with the threading causing punch issues and latency issues
 * Bug with adjusting the period of osciallators causing jump
 * FWD/BACK memory slice needs the memory slices to be log spaced or similar, e.g. more slices at the short time scale and fewer slices at the long timescale

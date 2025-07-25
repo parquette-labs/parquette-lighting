@@ -5,7 +5,7 @@ import math
 import struct
 from threading import Thread
 
-from librosa import stft, Z_weighting, mel_frequencies, db_to_amplitude
+from librosa import stft, Z_weighting, A_weighting, mel_frequencies, db_to_amplitude
 from librosa.feature import melspectrogram
 
 import click
@@ -180,8 +180,8 @@ class FFTManager(object):
     chunk: int
     fft_thread: Optional[Thread] = None
     fft_running: bool = False
-    fft_threshold: float = 0
     downstream: List[FFTGenerator] = []
+    window: List[np.ndarray] = []
     weighting = None
 
     def __init__(self, osc: OSCManager, chunk: int = 512):
@@ -237,7 +237,7 @@ class FFTManager(object):
                 frames_per_buffer=self.chunk,
             )
             self.weighting = db_to_amplitude(
-                Z_weighting(mel_frequencies(self.n_mels, fmin=0, fmax=self.rate / 2))
+                A_weighting(mel_frequencies(self.n_mels, fmin=0, fmax=self.rate / 2))
             )
 
             for d in self.downstream:
@@ -264,6 +264,8 @@ class FFTManager(object):
             data = self.stream.read(self.chunk, exception_on_overflow=False)
             waveData = struct.unpack("%dh" % (self.chunk), data)
             indata = np.array(waveData).astype(float)
+            # if self.window.length < 100:
+            #     window.appen
             fftData = stft(y=indata, n_fft=self.chunk, center=False)
             fftData = np.abs(
                 melspectrogram(
@@ -297,11 +299,13 @@ class FFTManager(object):
             if fft_data is None:
                 time.sleep(0.1)
                 continue
-            fft_data -= self.fft_threshold
             fft_data = fft_data.clip(0, np.inf)
 
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
+
+            self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
+            self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
 
             self.uidb["fft_max"] = max(fft_data)
             self.uidb["fft_min"] = min(fft_data)
@@ -326,10 +330,6 @@ class FFTManager(object):
             counter += 1
             if counter % 100 == 0:
                 self.uidb.update_ui()
-
-            # if (0.02 - compute_time) > 0:
-            # time.sleep(0.02 - compute_time)
-            time.sleep(0.025)
 
     def start_fft(self):
         if not self.fft_thread is None:
@@ -663,6 +663,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
     osc_param_map("/mode_switch", "mode", [mixer])
+    osc_param_map("/fft_threshold_1", "thres", [fft1])
+    osc_param_map("/fft_threshold_2", "thres", [fft2])
 
     def send_all_params():
         osc.send_osc("/amp", noise1.amp)
@@ -677,7 +679,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.send_osc("/stutter_period", mixer.stutter_period)
         osc.send_osc("/master_fader", mixer.master_amp)
         osc.send_osc("/mode_switch", mixer.mode)
-        osc.send_osc("/fft_threshold", fft.fft_threshold)
+        osc.send_osc("/fft_threshold_1", fft1.thres)
+        osc.send_osc("/fft_threshold_2", fft2.thres)
         osc.send_osc("/master_fader", mixer.master_amp)
         for i, chan_name in enumerate(mixer.channel_names):
             osc.send_osc("/chan_levels/{}".format(chan_name), mixer.channel_offsets[i])
@@ -699,16 +702,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         # TODO patcher
 
     osc.dispatcher.map("/reload", lambda addr, args: send_all_params())
-
-    def set_fft_thres(val):
-        fft.fft_threshold = val
-
-    osc.dispatcher.map(
-        "/fft_threshold",
-        lambda addr, args: set_fft_thres(args),
-    )
-
-    # osc_param_map("/fft_threshold", "fft_threshold", [fft])  #TODO total mystery why this doesn't work
 
     def chan_offests(addr, value):
         ix = addr.split("/")[2]
