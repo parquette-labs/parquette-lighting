@@ -26,10 +26,10 @@ black = "^25.1.0"
 pytest = "^8.3.5"
 pylint = "^3.3.6"
 mypy = "^1.15.0"
-pre-commit = "^4.2.0"
 poethepoet = "^0.34.0"
 types-pyserial = "^3.5.0.20250326"
 types-pyaudio = "^0.2.16.20240516"
+ipdb = "^0.13.13"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
