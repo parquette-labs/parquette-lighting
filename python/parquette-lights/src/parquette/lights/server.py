@@ -1,4 +1,5 @@
 from typing import List, Any, Mapping, cast, Tuple, Optional, Union
+import sys
 import time
 from copy import copy
 import math
@@ -33,6 +34,7 @@ from .util.math import constrain
 
 
 class OSCManager(object):
+    server: osc_server.ThreadingOSCUDPServer
     server_thread: Optional[Thread] = None
 
     def __init__(self) -> None:
@@ -280,6 +282,9 @@ class FFTManager(object):
         except struct.error as e:
             print("Malformed struct", e)
             return (None, None)
+        except IOError as e:
+            print("Overflow error reading the audio stream")
+            return (None, None)
         except OSError as e:
             print("OSError your stream died", e)
             return (None, None)
@@ -341,9 +346,12 @@ class FFTManager(object):
 
     def stop_fft(self):
         self.fft_running = False
-        self.fft_thread.join()
+        if not self.fft_thread is None:
+            self.fft_thread.join()
 
     def close(self, deselect=True) -> None:
+        self.stop_fft()
+
         if not self.stream is None:
             try:
                 self.stream.stop_stream()
@@ -549,12 +557,14 @@ class Mixer(object):
 @click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--target-port", default=5006, type=int, help="port")
 def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> None:
+    print("Setup")
+
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
     osc.set_debug(False)
     dmx = DMXManager(osc)
-    fft = FFTManager(osc)
+    fft_manager = FFTManager(osc)
 
     initialAmp: float = 100
     initialPeriod: int = 300
@@ -626,7 +636,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         fft2,
     ]
 
-    fft.downstream = [fft1, fft2]
+    fft_manager.downstream = [fft1, fft2]
 
     mixer = Mixer(
         osc=osc,
@@ -747,13 +757,24 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         "/fft_bounds_2", lambda addr, *args: handle_fft_bounds(args, fft2)
     )
 
+    print("Start OSC server")
     osc.serve(threaded=True)
 
-    while True:
-        mixer.runChannelMix()
-        mixer.runOutputMix()
-        mixer.updateDMX()
-        time.sleep(0.01)
+    print("Sync front end")
+    send_all_params()
 
-    dmx.close()
-    fft.terminate()
+    print("Start compute loop")
+    try:
+        while True:
+            mixer.runChannelMix()
+            mixer.runOutputMix()
+            mixer.updateDMX()
+            time.sleep(0.01)
+    finally:
+        print("\nShutdown FFT")
+        fft_manager.terminate()
+        print("Close OSC server")
+        osc.close()
+        print("Close DMX port")
+        dmx.close()
+        sys.exit(0)
