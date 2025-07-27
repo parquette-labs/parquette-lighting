@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, cast, Tuple, Optional, Union
+from typing import List, Any, Mapping, cast, Optional, Union
 import sys
 import time
 from copy import copy
@@ -6,9 +6,15 @@ import math
 import struct
 from threading import Thread
 
-from librosa import stft, Z_weighting, A_weighting, mel_frequencies, db_to_amplitude
-from librosa.feature import melspectrogram
-
+from librosa import (
+    stft,  # pylint: disable=no-name-in-module
+    A_weighting,  # pylint: disable=no-name-in-module
+    mel_frequencies,  # pylint: disable=no-name-in-module
+    db_to_amplitude,  # pylint: disable=no-name-in-module
+)  # pylint: disable=no-name-in-module
+from librosa.feature import melspectrogram  # pylint: disable=no-name-in-module
+from librosa.beat import beat_track
+from librosa.onset import onset_strength_multi
 import click
 import pyaudio
 import numpy as np
@@ -27,6 +33,7 @@ from .generators import (
     WaveGenerator,
     ImpulseGenerator,
     NoiseGenerator,
+    BPMGenerator,
     Generator,
 )
 
@@ -176,22 +183,21 @@ class DMXManager(object):
             self.osc.send_osc("/dmx_port_name", [None])
 
 
-class FFTManager(object):
+class AudioCapture(object):
     stream: Optional[pyaudio.Stream] = None
     rate: int
     chunk: int
-    fft_thread: Optional[Thread] = None
-    fft_running: bool = False
-    downstream: List[FFTGenerator] = []
+    audio_thread: Optional[Thread] = None
+    audio_running: bool = False
     window: List[np.ndarray] = []
-    weighting = None
+    window_ts: List[float] = []
 
-    def __init__(self, osc: OSCManager, chunk: int = 512):
+    def __init__(self, osc: OSCManager, chunk: int = 512, window_len: int = 250):
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
-        self.n_mels = self.chunk // 8
+        self.window_len = window_len
 
-        self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
+        self.uidb = UIDebugFrame(osc, "/audio_debug_frame")
 
         self.osc = osc
         self.osc.dispatcher.map(
@@ -200,8 +206,8 @@ class FFTManager(object):
         self.osc.dispatcher.map(
             "/audio_port_name", lambda addr, args: self.setup_audio(args)
         )
-        self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
-        self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
+        self.osc.dispatcher.map("/start_audio", lambda addr, args: self.start_audio())
+        self.osc.dispatcher.map("/stop_audio", lambda addr, args: self.stop_audio())
         self.close()
 
     def list_audio_ports(self) -> list[Mapping[str, str | int | float]]:
@@ -238,19 +244,12 @@ class FFTManager(object):
                 input=True,
                 frames_per_buffer=self.chunk,
             )
-            self.weighting = db_to_amplitude(
-                A_weighting(mel_frequencies(self.n_mels, fmin=0, fmax=self.rate / 2))
-            )
 
-            for d in self.downstream:
-                d.set_subdivisions_and_memory(self.n_mels, d.memory_length)
-
-            self.uidb["mels"] = self.n_mels
-            self.uidb["fft_channels"] = 1
-            self.uidb["fft_rate"] = self.rate
-            self.uidb["fft_chunk"] = self.chunk
-            self.uidb["fft_resolution"] = self.rate / self.chunk
-            self.uidb["fft_nyquist"] = self.rate / 2
+            self.uidb["audio_channels"] = 1
+            self.uidb["audio_rate"] = self.rate
+            self.uidb["audio_chunk"] = self.chunk
+            self.uidb["audio_resolution"] = self.rate / self.chunk
+            self.uidb["audio_nyquist"] = self.rate / 2
             self.uidb.update_ui()
 
             self.osc.send_osc("/audio_port_name", [port])
@@ -258,38 +257,153 @@ class FFTManager(object):
             print(e)
             self.close()
 
-    def forward(self) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
-        if self.stream is None:
-            return (None, None)
+    def _run_capture(self):
+        while self.audio_running:
+            try:
+                if self.stream == None:
+                    self.audio_running = False
+                    return
 
+                data = self.stream.read(self.chunk, exception_on_overflow=False)
+                waveData = struct.unpack("%dh" % (self.chunk), data)
+                indata = np.array(waveData).astype(float)
+
+                if len(self.window) < self.window_len:
+                    self.window.append(indata)
+                    self.window_ts.append(time.time())
+                else:
+                    self.window[0:-1] = self.window[1:]
+                    self.window[-1] = indata
+
+                    self.window_ts[0:-1] = self.window_ts[1:]
+                    self.window_ts[-1] = time.time()
+
+            except struct.error as e:
+                print("Malformed struct", e)
+            except OSError as e:
+                print("OSError your stream died", e)
+
+    def start_audio(self):
+        if not self.audio_thread is None:
+            self.stop_audio()
+
+        self.audio_running = True
+        self.audio_thread = Thread(target=self._run_capture)
+        self.audio_thread.start()
+
+    def stop_audio(self):
+        self.audio_running = False
+        if not self.audio_thread is None:
+            self.audio_thread.join()
+
+    def close(self, deselect=True) -> None:
+        self.stop_audio()
+
+        if not self.stream is None:
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except:
+                pass
+
+        if deselect:
+            self.osc.send_osc("/audio_port_name", [None])
+
+    def terminate(self):
+        self.close()
+        self.paudio.terminate()
+
+
+class FFTManager(object):
+    bpm: BPMGenerator
+    fft_thread: Optional[Thread] = None
+    fft_running: bool = False
+    downstream: List[FFTGenerator] = []
+    weighting = None
+
+    def __init__(self, osc: OSCManager, audio_cap: AudioCapture):
+        self.osc = osc
+        self.audio_cap = audio_cap
+        self.n_mels = self.audio_cap.chunk // 8
+
+        self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
+
+        self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
+        self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
+
+    def setup_fft(self) -> None:
+        if self.audio_cap is None or self.audio_cap.stream is None:
+            return
+
+        self.stop_fft()
         try:
-            data = self.stream.read(self.chunk, exception_on_overflow=False)
-            waveData = struct.unpack("%dh" % (self.chunk), data)
-            indata = np.array(waveData).astype(float)
-            # if self.window.length < 100:
-            #     window.appen
-            fftData = stft(y=indata, n_fft=self.chunk, center=False)
-            fftData = np.abs(
-                melspectrogram(
-                    y=indata,
-                    S=fftData,
-                    sr=self.rate,
-                    n_fft=self.chunk,
-                    center=False,
-                    n_mels=self.n_mels,
+            self.weighting = db_to_amplitude(
+                A_weighting(
+                    mel_frequencies(self.n_mels, fmin=0, fmax=self.audio_cap.rate / 2)
                 )
             )
-        except struct.error as e:
-            print("Malformed struct", e)
-            return (None, None)
-        except IOError as e:
-            print("Overflow error reading the audio stream")
-            return (None, None)
-        except OSError as e:
-            print("OSError your stream died", e)
-            return (None, None)
 
-        return (None, fftData[:, 0] * self.weighting)
+            for d in self.downstream:
+                d.set_subdivisions_and_memory(self.n_mels, d.memory_length)
+
+            self.uidb["mels"] = self.n_mels
+            self.uidb.update_ui()
+        except SerialException as e:
+            print(e)
+            self.stop_fft()
+
+    def audio_ready(self) -> bool:
+        return not (
+            self.audio_cap is None
+            or self.audio_cap.stream is None
+            or len(self.audio_cap.window) == 0
+        )
+
+    def beat_calc(self):
+        if not self.audio_ready():
+            return None
+
+        end_ts = self.audio_cap.window_ts[-1]
+        window_len = (
+            self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
+        )
+        start_ts = end_ts - window_len
+
+        full_data = np.concatenate(self.audio_cap.window)
+
+        reported_tempo, beats = beat_track(
+            y=full_data,
+            sr=self.audio_cap.rate,
+            units="time",
+            start_bpm=130,
+            tightness=800,
+        )
+        self.uidb["reported_tempo"] = reported_tempo
+
+        self.bpm.bpm = reported_tempo
+
+        if len(beats) > 0:
+            self.bpm.set_offset_time((start_ts + beats[0]) * 1000)
+
+    def forward(self) -> Optional[np.ndarray]:
+        if not self.audio_ready():
+            return None
+
+        fftData = stft(
+            y=self.audio_cap.window[-1], n_fft=self.audio_cap.chunk, center=False
+        )
+        fftData = np.abs(
+            melspectrogram(
+                y=self.audio_cap.window[-1],
+                S=fftData,
+                sr=self.audio_cap.rate,
+                n_fft=self.audio_cap.chunk,
+                center=False,
+                n_mels=self.n_mels,
+            )
+        )
+
+        return fftData[:, 0] * self.weighting
 
     def _run_fwd(self):
         self.uidb["fft_avg_time"] = 0
@@ -298,12 +412,19 @@ class FFTManager(object):
         while self.fft_running:
             t1 = time.time()
 
-            if self.stream is None:
-                return
-            _, fft_data = self.forward()
+            if not self.audio_ready():
+                time.sleep(0.1)
+                continue
+
+            fft_data = self.forward()
+
+            if counter % 200 == 0:
+                self.beat_calc()
+
             if fft_data is None:
                 time.sleep(0.1)
                 continue
+
             fft_data = fft_data.clip(0, np.inf)
 
             for d in self.downstream:
@@ -328,6 +449,7 @@ class FFTManager(object):
                     banded,
                 )
             compute_time = time.time() - t1
+
             self.uidb["fft_avg_time"] = (
                 self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
             )
@@ -336,9 +458,14 @@ class FFTManager(object):
             if counter % 100 == 0:
                 self.uidb.update_ui()
 
+            if 0.01 - compute_time > 0:
+                time.sleep(0.01 - compute_time)
+
     def start_fft(self):
         if not self.fft_thread is None:
             self.stop_fft()
+
+        self.setup_fft()
 
         self.fft_running = True
         self.fft_thread = Thread(target=self._run_fwd)
@@ -348,24 +475,6 @@ class FFTManager(object):
         self.fft_running = False
         if not self.fft_thread is None:
             self.fft_thread.join()
-
-    def close(self, deselect=True) -> None:
-        self.stop_fft()
-
-        if not self.stream is None:
-            try:
-                self.stream.stop_stream()
-                self.stream.close()
-            except:
-                pass
-            # p.terminate()
-
-        if deselect:
-            self.osc.send_osc("/audio_port_name", [None])
-
-    def terminate(self):
-        self.close()
-        self.paudio.terminate()
 
 
 class Mixer(object):
@@ -395,6 +504,10 @@ class Mixer(object):
             "under_1",
             "under_2",
             "chan_spot",
+            "sodium",
+            "ceil_1",
+            "ceil_2",
+            "ceil_3",
         ]
         self.num_channels = len(self.channel_names)
 
@@ -404,6 +517,8 @@ class Mixer(object):
             "front": [12, 9],
             "under": [10, 11],
             "spot": [13],
+            "sodium": [20],
+            "ceil": [18, 19, 17],
         }
 
         # TODO control the matrix sizing in open sound control with this var?
@@ -435,14 +550,27 @@ class Mixer(object):
         # setup current times
         self.channels[0] = copy(self.channel_offsets)
 
+        ts = time.time() * 1000
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
             for chan_idx, chan_connected in enumerate(gen_connected_chans):
                 self.channels[0][chan_idx] += (
-                    self.generators[gen_idx].value(time.time() * 1000) * chan_connected
+                    self.generators[gen_idx].value(ts) * chan_connected
                 )
+
         for i, val in enumerate(self.channels[0]):
-            if not self.channel_names[i] in ("chan_spot", "under_1", "under_2"):
+            if not self.channel_names[i] in (
+                "chan_spot",
+                "under_1",
+                "under_2",
+                "sodium",
+                "ceil_1",
+                "ceil_2",
+                "ceil_3",
+            ):
                 self.channels[0][i] = val * self.master_amp
+        # for g in self.generators:
+        #     if g.name == "bpm":
+        #         print(g.value(ts))
 
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
@@ -459,9 +587,27 @@ class Mixer(object):
             self.channels[0][self.channel_names.index("under_2")],
         )
 
+        self.dmx.set_channel(
+            self.dmx_mappings["sodium"][0],
+            self.channels[0][self.channel_names.index("sodium")],
+        )
+        self.dmx.set_channel(
+            self.dmx_mappings["ceil"][0],
+            self.channels[0][self.channel_names.index("ceil_1")],
+        )
+
+        self.dmx.set_channel(
+            self.dmx_mappings["ceil"][1],
+            self.channels[0][self.channel_names.index("ceil_2")],
+        )
+        self.dmx.set_channel(
+            self.dmx_mappings["ceil"][2],
+            self.channels[0][self.channel_names.index("ceil_3")],
+        )
+
         if self.mode == "MONO":
             for group, chans in self.dmx_mappings.items():
-                if not group in ("spot", "under"):
+                if not group in ("spot", "under", "ceil", "sodium"):
                     for chan in chans:
                         self.dmx.set_channel(chan, self.channels[0][0])
 
@@ -564,7 +710,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc.set_local(local_ip, local_port)
     osc.set_debug(False)
     dmx = DMXManager(osc)
-    fft_manager = FFTManager(osc)
+    audio_capture = AudioCapture(osc)
+    fft_manager = FFTManager(osc, audio_capture)
 
     initialAmp: float = 100
     initialPeriod: int = 300
@@ -625,18 +772,12 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         name="fft_2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=20
     )
 
-    generators = [
-        noise1,
-        noise2,
-        wave1,
-        wave2,
-        wave3,
-        impulse,
-        fft1,
-        fft2,
-    ]
+    bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
+
+    generators = [noise1, noise2, wave1, wave2, wave3, impulse, fft1, fft2, bpm]
 
     fft_manager.downstream = [fft1, fft2]
+    fft_manager.bpm = bpm
 
     mixer = Mixer(
         osc=osc,
@@ -651,6 +792,8 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
                 # TODO I assume this is hacky and can be nicer
                 try:
                     _field = getattr(_obj.__class__, field)
+                    # this is some trash surely the pylint is a warning I'm doing garbage, but fix later
+                    # pylint: disable-next=unnecessary-dunder-call
                     _field.__set__(_obj, value)
 
                 except AttributeError:
@@ -675,6 +818,9 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/mode_switch", "mode", [mixer])
     osc_param_map("/fft_threshold_1", "thres", [fft1])
     osc_param_map("/fft_threshold_2", "thres", [fft2])
+    osc_param_map("/manual_bpm_offset", "manual_offset", [bpm])
+    osc_param_map("/bpm_mult", "bpm_mult", [bpm])
+    osc_param_map("/bpm_duty", "duty", [bpm])
 
     def send_all_params():
         osc.send_osc("/amp", noise1.amp)
@@ -697,10 +843,15 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.send_osc("/fft_bounds_1", [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0])
         osc.send_osc("/fft_bounds_2", [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0])
 
+        osc.send_osc("/manual_bpm_offset", [bpm.manual_offset])
+        osc.send_osc("/bpm_mult", [bpm.bpm_mult])
+        osc.send_osc("/bpm_duty", [bpm.duty])
+
         for gen_ix in range(len(mixer.signal_matrix)):
             output_val = [mixer.generators[gen_ix].name]
             osc.send_osc("/signal_patchbay", output_val)
 
+        # pylint: disable-next=consider-using-enumerate
         for gen_ix in range(len(mixer.signal_matrix)):
             output_val = [mixer.generators[gen_ix].name]
             for chan_ix in range(len(mixer.signal_matrix[gen_ix])):
@@ -770,9 +921,11 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             mixer.runOutputMix()
             mixer.updateDMX()
             time.sleep(0.01)
-    finally:
+    except KeyboardInterrupt:
         print("\nShutdown FFT")
-        fft_manager.terminate()
+        fft_manager.stop_fft()
+        print("Shutdown audio capture and pyaudio")
+        audio_capture.terminate()
         print("Close OSC server")
         osc.close()
         print("Close DMX port")
