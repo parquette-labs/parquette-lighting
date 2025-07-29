@@ -536,6 +536,7 @@ class Mixer(object):
 
         self.stutter_period = 500
         self.master_amp = 1
+        self.wash_master = 1
 
         # TODO register for offests
         # TODO register for mixing mode
@@ -568,6 +569,16 @@ class Mixer(object):
                 "ceil_3",
             ):
                 self.channels[0][i] = val * self.master_amp
+
+        for i, val in enumerate(self.channels[0]):
+            if self.channel_names[i] in (
+                "under_1",
+                "under_2",
+                "ceil_1",
+                "ceil_2",
+                "ceil_3",
+            ):
+                self.channels[0][i] = val * self.wash_master
         # for g in self.generators:
         #     if g.name == "bpm":
         #         print(g.value(ts))
@@ -815,12 +826,14 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc_param_map("/impulse_decay", "echo_decay", [impulse])
     osc_param_map("/stutter_period", "stutter_period", [mixer])
     osc_param_map("/master_fader", "master_amp", [mixer])
+    osc_param_map("/wash_master", "wash_master", [mixer])
     osc_param_map("/mode_switch", "mode", [mixer])
     osc_param_map("/fft_threshold_1", "thres", [fft1])
     osc_param_map("/fft_threshold_2", "thres", [fft2])
     osc_param_map("/manual_bpm_offset", "manual_offset", [bpm])
     osc_param_map("/bpm_mult", "bpm_mult", [bpm])
     osc_param_map("/bpm_duty", "duty", [bpm])
+    osc_param_map("/bpm_amp", "amp", [bpm])
 
     def send_all_params():
         osc.send_osc("/amp", noise1.amp)
@@ -834,10 +847,10 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.send_osc("/impulse_decay", impulse.echo_decay)
         osc.send_osc("/stutter_period", mixer.stutter_period)
         osc.send_osc("/master_fader", mixer.master_amp)
+        osc.send_osc("/wash_master", mixer.wash_master)
         osc.send_osc("/mode_switch", mixer.mode)
         osc.send_osc("/fft_threshold_1", fft1.thres)
         osc.send_osc("/fft_threshold_2", fft2.thres)
-        osc.send_osc("/master_fader", mixer.master_amp)
         for i, chan_name in enumerate(mixer.channel_names):
             osc.send_osc("/chan_levels/{}".format(chan_name), mixer.channel_offsets[i])
         osc.send_osc("/fft_bounds_1", [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0])
@@ -846,6 +859,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.send_osc("/manual_bpm_offset", [bpm.manual_offset])
         osc.send_osc("/bpm_mult", [bpm.bpm_mult])
         osc.send_osc("/bpm_duty", [bpm.duty])
+        osc.send_osc("/bpm_amp", [bpm.amp])
 
         for gen_ix in range(len(mixer.signal_matrix)):
             output_val = [mixer.generators[gen_ix].name]
