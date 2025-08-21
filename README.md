@@ -1,7 +1,6 @@
 # Parquette Lighting 🏋️‍♀️🕺🪩🕺🏋️‍♀️
 
 ## Notes/Ideas/TODOs
-* Setup system on mac mini
 * Redundancy, RTFM and manual
 * UX
 	* Special UI (or object) for punch and other common actions
@@ -35,6 +34,7 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 	* Annotate FFT with key freqs
 * New ideas
+	* Separate Punch for blinders - perma linked
 	* Spinning mode
 	* Switch to dual spectrograms for harmonic and percussive
 	* Wave generators should be able to switch shapes without rewiring in the patchbay?
