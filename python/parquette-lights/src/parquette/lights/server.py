@@ -748,27 +748,6 @@ class OSCParam(object):
         self.osc.send_osc(self.addr, self.value_lambda())
 
 
-class MixerChanParam(OSCParam):
-    def __init__(
-        self,
-        osc: OSCManager,
-        addr: str,
-        mixer: Mixer,
-    ) -> None:
-        super().__init__(osc, addr, lambda: 1, self.dispatch_chans)
-        self.mixer = mixer
-
-    def dispatch_chans(self, addr: str, value):
-        ix = addr.split("/")[2]
-        self.mixer.channel_offsets[self.mixer.channel_names.index(ix)] = value
-
-    def sync(self) -> None:
-        for i, chan_name in enumerate(self.mixer.channel_names):
-            self.osc.send_osc(
-                "/chan_levels/{}".format(chan_name), self.mixer.channel_offsets[i]
-            )
-
-
 class SignalPatchParam(OSCParam):
     def __init__(
         self,
@@ -1006,7 +985,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             lambda: bpm.amp,
             lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
         ),
-        # MixerChanParam(osc, "/chan_levels/*", mixer),
         SignalPatchParam(osc, "/signal_patchbay", mixer),
         OSCParam(
             osc,
