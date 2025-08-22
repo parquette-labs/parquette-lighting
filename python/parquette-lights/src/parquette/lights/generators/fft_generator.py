@@ -1,6 +1,5 @@
 import time
 from copy import copy
-from typing import Optional
 import numpy as np
 from .generator import Generator
 from ..util.math import constrain
@@ -14,7 +13,7 @@ class FFTGenerator(Generator):
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
+        name: str,
         amp: float = 1,
         offset: float = 0.5,
         subdivisions: int = 0,

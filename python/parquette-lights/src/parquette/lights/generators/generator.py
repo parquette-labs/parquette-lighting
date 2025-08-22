@@ -1,13 +1,11 @@
-from typing import Optional
 from abc import ABC, abstractmethod
 
 
 class Generator(ABC):
-
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
+        name: str,
         amp: float = 0.5,
         offset: float = 0.5,
         period: float = 1000,

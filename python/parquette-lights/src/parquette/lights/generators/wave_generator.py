@@ -1,4 +1,3 @@
-from typing import Optional
 import math
 from enum import Enum, auto
 
@@ -15,7 +14,7 @@ class WaveGenerator(Generator):
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
+        name: str,
         amp: float = 0.5,
         period: float = 1000,
         phase: float = 0,

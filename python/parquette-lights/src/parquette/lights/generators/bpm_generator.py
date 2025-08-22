@@ -1,4 +1,3 @@
-from typing import Optional
 from .generator import Generator
 
 
@@ -12,7 +11,7 @@ class BPMGenerator(Generator):
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
+        name: str,
         amp: float = 1,
         offset: float = 0,
         duty: int = 100,

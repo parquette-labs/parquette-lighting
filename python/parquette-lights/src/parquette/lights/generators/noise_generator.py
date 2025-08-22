@@ -1,4 +1,3 @@
-from typing import Optional
 import random
 from .generator import Generator
 
@@ -10,7 +9,7 @@ class NoiseGenerator(Generator):
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
+        name: str,
         amp: float = 1,
         offset: float = 0,
         period: float = 500,
