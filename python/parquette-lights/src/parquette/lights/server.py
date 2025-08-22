@@ -8,6 +8,7 @@ import math
 import struct
 from threading import Thread
 import pickle
+import pprint
 
 from librosa import (
     stft,  # pylint: disable=no-name-in-module
@@ -787,7 +788,7 @@ class PresetManager(object):
         self.current_preset = "default"
 
         osc.dispatcher.map("/save_preset", lambda addr, args: self.save())
-        osc.dispatcher.map("/preset_selector", lambda _, args: self.select(args[0]))
+        osc.dispatcher.map("/preset_selector", lambda _, args: self.select(args))
 
     def load(self):
         try:
@@ -803,7 +804,7 @@ class PresetManager(object):
             self.stored_presets[self.current_preset].append(
                 (param.addr, param.value_lambda())
             )
-        print(self.stored_presets)
+        pprint.pp(self.stored_presets)
 
         with open("./params.pickle", "wb") as f:  # type: ignore
             pickle.dump(self.stored_presets, f)
