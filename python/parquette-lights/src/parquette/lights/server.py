@@ -240,7 +240,7 @@ class AudioCapture(object):
             self.stream = self.paudio.open(
                 format=pyaudio.paInt16,
                 input_device_index=port,
-                channels=1,  # todo stereo ? min(cast(int, port_info["maxInputChannels"]), 2)
+                channels=1,
                 rate=self.rate,
                 input=True,
                 frames_per_buffer=self.chunk,
@@ -539,11 +539,11 @@ class Mixer(object):
         self.master_amp = 1
         self.wash_master = 1
 
-        # TODO register for offests
-        # TODO register for mixing mode
-        # TODO register for master
-        # TODO register for connecting matrix
-        # TODO register mode
+    def setChannelLevel(self, chan_name: str, level: float):
+        self.channel_offsets[self.channel_names.index(chan_name)] = level
+
+    def getChannelLevel(self, chan_name: str) -> float:
+        return self.channel_offsets[self.channel_names.index(chan_name)]
 
     def runChannelMix(self) -> None:
         # slide the channel history back one timestep
@@ -755,7 +755,7 @@ class MixerChanParam(OSCParam):
         addr: str,
         mixer: Mixer,
     ) -> None:
-        super().__init__(osc, addr, None, self.dispatch_chans)
+        super().__init__(osc, addr, lambda: 1, self.dispatch_chans)
         self.mixer = mixer
 
     def dispatch_chans(self, addr: str, value):
@@ -776,7 +776,7 @@ class SignalPatchParam(OSCParam):
         addr: str,
         mixer: Mixer,
     ) -> None:
-        super().__init__(osc, addr, None, self.dispatch_patch)
+        super().__init__(osc, addr, lambda: 1, self.dispatch_patch)
         self.mixer = mixer
 
     def dispatch_patch(self, _: str, *args):
@@ -822,15 +822,13 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
-    osc.set_debug(True)
+    osc.set_debug(False)
     dmx = DMXManager(osc)
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
 
     initialAmp: float = 200
     initialPeriod: int = 3500
-
-    # TODO wrapper for controlling the variables via OSC
 
     noise1 = NoiseGenerator(
         name="noise_1", amp=initialAmp, offset=0, period=initialPeriod
@@ -1008,7 +1006,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             lambda: bpm.amp,
             lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
         ),
-        MixerChanParam(osc, "/chan_levels/*", mixer),
+        # MixerChanParam(osc, "/chan_levels/*", mixer),
         SignalPatchParam(osc, "/signal_patchbay", mixer),
         OSCParam(
             osc,
@@ -1023,6 +1021,20 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             lambda addr, *args: fft2.set_bounds(args[0], args[2]),
         ),
     ]
+
+    for chan_name in mixer.channel_names:
+        exposed_params.append(
+            OSCParam(
+                osc,
+                "/chan_levels/{}".format(chan_name),
+                lambda chan=chan_name: mixer.getChannelLevel(chan),
+                lambda addr, args: mixer.setChannelLevel(addr.split("/")[2], args),
+            )
+        )
+
+    # TEMP
+    for ppt in exposed_params:
+        print(ppt.addr, ppt.value_lambda())
 
     def send_all_params():
         for p in exposed_params:
