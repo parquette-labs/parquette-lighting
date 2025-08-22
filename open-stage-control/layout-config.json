@@ -60,7 +60,7 @@
     "target": "",
     "ignoreDefaults": false,
     "bypass": true,
-    "onCreate": "",
+    "onCreate": "set(\"reload\", 1);",
     "onValue": "",
     "onTouch": "",
     "onPreload": "",
