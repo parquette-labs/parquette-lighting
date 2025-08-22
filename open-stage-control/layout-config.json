@@ -4164,7 +4164,7 @@
           },
           {
             "type": "patchbay",
-            "top": 1040,
+            "top": 360,
             "left": 10,
             "lock": false,
             "id": "signal_patchbay",
