@@ -43,4 +43,4 @@ pylint = "pylint --rcfile=./pylintrc -f colorized ./src/"
 mypy = "mypy ."
 black = "black ./"
 pytest = "pytest"
-lintntest = ["black", "pylint", "pytest"]
+check = ["black", "pylint", "mypy"]
