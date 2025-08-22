@@ -1,6 +1,7 @@
 import time
 from copy import copy
 from typing import Optional
+import numpy as np
 from .generator import Generator
 from ..util.math import constrain
 
@@ -43,7 +44,7 @@ class FFTGenerator(Generator):
         self.stamps = [0 for i in range(memory_length)]
         self.memory = [[0 for i in range(subdivisions)] for j in range(memory_length)]
 
-    def forward(self, values: list[float], millis: float) -> None:
+    def forward(self, values: list[float] | np.ndarray, millis: float) -> None:
         self.stamps[1:] = self.stamps[0:-1]
         self.stamps[0] = millis
 

@@ -1,6 +1,4 @@
 from typing import Optional
-import time
-import math
 from .generator import Generator
 
 
@@ -36,7 +34,7 @@ class BPMGenerator(Generator):
             mod_new_offset = self.offset_time % new_offset
             self.offset_time = 1 / 3 * mod_new_offset + 2 / 3 * mod_old_offset
         except ZeroDivisionError:
-            return
+            pass
 
     def value(self, millis: float) -> float:
         try:

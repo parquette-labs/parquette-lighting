@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, cast, Optional, Union
+from typing import List, Any, Mapping, cast, Optional, Union, Callable
 import sys
 import time
 from copy import copy
@@ -14,7 +14,6 @@ from librosa import (
 )  # pylint: disable=no-name-in-module
 from librosa.feature import melspectrogram  # pylint: disable=no-name-in-module
 from librosa.beat import beat_track
-from librosa.onset import onset_strength_multi
 import click
 import pyaudio
 import numpy as np
@@ -65,13 +64,13 @@ class OSCManager(object):
             (local_ip, local_port), self.dispatcher
         )
 
-    def set_target(self, target_ip: str, target_port: int):
+    def set_target(self, target_ip: str, target_port: int) -> None:
         self.client = SimpleUDPClient(target_ip, target_port)
 
     def print_osc(self, label: str, address: str, *osc_arguments: List[Any]) -> None:
         print(label, address, osc_arguments)
 
-    def send_osc(self, address: str, args: List[Any]) -> None:
+    def send_osc(self, address: str, args: Any) -> None:
         if self.debug:
             if self.client is None:
                 print("No UDP target, not sending")
@@ -81,7 +80,7 @@ class OSCManager(object):
         if not self.client is None:
             self.client.send_message(address, args)
 
-    def serve(self, threaded=False) -> None:
+    def serve(self, threaded: bool = False) -> None:
         if self.server is None:
             return
 
@@ -91,7 +90,7 @@ class OSCManager(object):
         else:
             self.server.serve_forever()
 
-    def close(self):
+    def close(self) -> None:
         if not self.server is None:
             self.server.shutdown()
 
@@ -192,7 +191,9 @@ class AudioCapture(object):
     window: List[np.ndarray] = []
     window_ts: List[float] = []
 
-    def __init__(self, osc: OSCManager, chunk: int = 512, window_len: int = 250):
+    def __init__(
+        self, osc: OSCManager, chunk: int = 512, window_len: int = 250
+    ) -> None:
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
         self.window_len = window_len
@@ -257,10 +258,10 @@ class AudioCapture(object):
             print(e)
             self.close()
 
-    def _run_capture(self):
+    def _run_capture(self) -> None:
         while self.audio_running:
             try:
-                if self.stream == None:
+                if self.stream is None:
                     self.audio_running = False
                     return
 
@@ -283,7 +284,7 @@ class AudioCapture(object):
             except OSError as e:
                 print("OSError your stream died", e)
 
-    def start_audio(self):
+    def start_audio(self) -> None:
         if not self.audio_thread is None:
             self.stop_audio()
 
@@ -291,7 +292,7 @@ class AudioCapture(object):
         self.audio_thread = Thread(target=self._run_capture)
         self.audio_thread.start()
 
-    def stop_audio(self):
+    def stop_audio(self) -> None:
         self.audio_running = False
         if not self.audio_thread is None:
             self.audio_thread.join()
@@ -309,7 +310,7 @@ class AudioCapture(object):
         if deselect:
             self.osc.send_osc("/audio_port_name", [None])
 
-    def terminate(self):
+    def terminate(self) -> None:
         self.close()
         self.paudio.terminate()
 
@@ -321,7 +322,7 @@ class FFTManager(object):
     downstream: List[FFTGenerator] = []
     weighting = None
 
-    def __init__(self, osc: OSCManager, audio_cap: AudioCapture):
+    def __init__(self, osc: OSCManager, audio_cap: AudioCapture) -> None:
         self.osc = osc
         self.audio_cap = audio_cap
         self.n_mels = self.audio_cap.chunk // 8
@@ -361,7 +362,7 @@ class FFTManager(object):
 
     def beat_calc(self):
         if not self.audio_ready():
-            return None
+            return
 
         end_ts = self.audio_cap.window_ts[-1]
         window_len = (
@@ -405,7 +406,7 @@ class FFTManager(object):
 
         return fftData[:, 0] * self.weighting
 
-    def _run_fwd(self):
+    def _run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
         counter = 0
 
@@ -461,7 +462,7 @@ class FFTManager(object):
             if 0.01 - compute_time > 0:
                 time.sleep(0.01 - compute_time)
 
-    def start_fft(self):
+    def start_fft(self) -> None:
         if not self.fft_thread is None:
             self.stop_fft()
 
@@ -471,7 +472,7 @@ class FFTManager(object):
         self.fft_thread = Thread(target=self._run_fwd)
         self.fft_thread.start()
 
-    def stop_fft(self):
+    def stop_fft(self) -> None:
         self.fft_running = False
         if not self.fft_thread is None:
             self.fft_thread.join()
@@ -485,7 +486,7 @@ class Mixer(object):
         dmx: DMXManager,
         generators: List[Generator],
         history_len: float,
-    ):
+    ) -> None:
         self.mode = "MONO"
         self.osc = osc
         self.dmx = dmx
@@ -708,6 +709,41 @@ class Mixer(object):
         self.dmx.submit()
 
 
+class OSCParam(object):
+    # pylint: disable-next=too-many-positional-arguments
+    def __init__(
+        self,
+        osc: OSCManager,
+        addr: str,
+        default_val: Any,
+        value_lambda: Callable,
+        dispatch_lambda: Callable,
+    ) -> None:
+        self.osc = osc
+        self.addr = addr
+        self.default_val = default_val
+        self.value_lambda = value_lambda
+        self.dispatch_lambda = dispatch_lambda
+
+        osc.dispatcher.map(addr, dispatch_lambda)
+
+    @classmethod
+    def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:
+        for obj in objs:
+            # TODO I assume this is hacky and can be nicer
+            try:
+                _field = getattr(obj.__class__, field)
+                # this is some trash surely the pylint is a warning I'm doing garbage, but fix later
+                # pylint: disable-next=unnecessary-dunder-call
+                _field.__set__(obj, value)
+
+            except AttributeError:
+                obj.__dict__[field] = value
+
+    def sync(self) -> None:
+        self.osc.send_osc(self.addr, self.value_lambda())
+
+
 @click.command()
 @click.option("--local-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--local-port", default=5005, type=int, help="port")
@@ -815,6 +851,15 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             lambda _, args: obj_param_setter(args, field, objs),
         )
 
+    op = OSCParam(
+        osc,
+        "/amp",
+        initialAmp,
+        lambda: noise1.amp,
+        lambda _, args: OSCParam.obj_param_setter(
+            args, "amp", [noise1, noise2, wave1, wave2, wave3]
+        ),
+    )
     osc_param_map("/amp", "amp", [noise1, noise2, wave1, wave2, wave3])
     osc_param_map("/period", "period", [noise1, noise2, wave1, wave2, wave3])
     osc_param_map("/fft1_amp", "amp", [fft1])
@@ -861,6 +906,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.send_osc("/bpm_duty", [bpm.duty])
         osc.send_osc("/bpm_amp", [bpm.amp])
 
+        # reset patchbay
         for gen_ix in range(len(mixer.signal_matrix)):
             output_val = [mixer.generators[gen_ix].name]
             osc.send_osc("/signal_patchbay", output_val)
@@ -887,7 +933,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         lambda addr, args: chan_offests(addr, args),
     )
 
-    def signal_patch(*mapping):
+    def signal_patch(mapping):
         try:
             gen_ix = list(map(lambda gen: gen.name, mixer.generators)).index(mapping[0])
             destinations = [
@@ -904,7 +950,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
 
     osc.dispatcher.map(
         "/signal_patchbay",
-        lambda addr, *args: signal_patch(*args),
+        lambda addr, *args: signal_patch(args),
     )
 
     osc.dispatcher.map(
