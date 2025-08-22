@@ -4633,13 +4633,14 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": "// set('output_patchbay/chan_1', []);\n// set('output_patchbay/chan_2', []);\n// set('output_patchbay/chan_3', []);\n// set('output_patchbay/chan_4', []);\n// set('output_patchbay/chan_5', []);\n// set('output_patchbay/chan_6', []);\n// set('output_patchbay/chan_7', []);\n// set('output_patchbay/chan_8', []);\n// set('output_patchbay/chan_9', []);\n// set('output_patchbay/chan_10', []);\n// set('output_patchbay/chan_spot', []);\n// switch(get(id)) {\n//   case \"MONO\": {\n//     set('output_patchbay/chan_1', [\n//       \"left_1\",\n//       \"left_2\",\n//       \"left_3\",\n//       \"left_4\",\n//       \"right_1\",\n//       \"right_2\",\n//       \"right_3\",\n//       \"right_4\",\n//       \"front_1\",\n//       \"front_2\",\n//       \"spot\"\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"HEX\": {\n//     set('output_patchbay/chan_1', [\n//       \"front_1\",\n//       \"front_2\",\n//     ])\n//     set('output_patchbay/chan_2', [\n//       \"left_1\",\n//       \"right_1\",\n//     ])\n//     set('output_patchbay/chan_3', [\n//       \"left_2\",\n//       \"right_2\",\n//     ])\n//     set('output_patchbay/chan_4', [\n//       \"left_3\",\n//       \"right_3\",\n//     ])\n//     set('output_patchbay/chan_5', [\n//       \"left_4\",\n//       \"right_4\",\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"DECA\": {\n//     console.log(\"DECA\");\n//     break;\n//   }\n//   case \"FWD\": {\n//     console.log(\"FWD\");\n//     break;\n//   }\n//   case \"BACK\": {\n//     console.log(\"BACK\");\n//     break;\n//   }\n//   case \"ZIG\": {\n//     console.log(\"ZIG\");\n//     break;\n//   }\n// }",
+            "onValue": "",
             "html": "",
             "colorTextOn": "auto",
             "wrap": false,
             "mode": "tap",
             "values": {
               "4 on floor": "4F",
+              "4 on floor soft": "4Fs",
               "Waves": "Waves",
               "House Lights": "House",
               "Disco": "Disco"
