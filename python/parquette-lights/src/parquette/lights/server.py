@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 
-from typing import List, Any, Mapping, cast, Optional, Union, Callable, Tuple
+from typing import List, Dict, Any, Mapping, cast, Optional, Union, Callable, Tuple
 import sys
 import time
 from copy import copy
@@ -776,6 +776,50 @@ class OSCParam(object):
                 obj.__dict__[field] = value
 
 
+class PresetManager(object):
+    def __init__(
+        self, osc: OSCManager, exposed_params: List[OSCParam], filename: str
+    ) -> None:
+        self.osc = osc
+        self.exposed_params = exposed_params
+        self.filename = filename
+        self.stored_presets: Dict[str, List[Tuple[str, Any]]] = {}
+        self.current_preset = "default"
+
+        osc.dispatcher.map("/save_preset", lambda addr, args: self.save())
+        osc.dispatcher.map("/preset_selector", lambda _, args: self.select(args[0]))
+
+    def load(self):
+        try:
+            with open(self.filename, "rb") as f:
+                self.stored_presets = pickle.load(f)
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            print("Pickle load failed, bad or missing pickle", e)
+
+    def save(self) -> None:
+        self.stored_presets[self.current_preset] = []
+        for param in self.exposed_params:
+            self.stored_presets[self.current_preset].append(
+                (param.addr, param.value_lambda())
+            )
+        print(self.stored_presets)
+
+        with open("./params.pickle", "wb") as f:  # type: ignore
+            pickle.dump(self.stored_presets, f)
+
+    def select(self, preset_name: str) -> None:
+        self.current_preset = preset_name
+        if self.current_preset not in self.stored_presets.keys():
+            return
+
+        for param_preset in self.stored_presets[self.current_preset]:
+            addr, value = param_preset[0], param_preset[1]
+            for param in self.exposed_params:
+                if param.addr == addr:
+                    param.load(addr, value)
+
+
 class SignalPatchParam(OSCParam):
     def __init__(
         self,
@@ -902,6 +946,12 @@ def run(
         history_len=666 * 6,
     )
 
+    def fft_dispatch_wedge(fft, args):
+        if len(args) == 1:
+            fft.set_bounds(args[0][0], args[0][2])
+        else:
+            fft.set_bounds(args[0], args[2])
+
     exposed_params = [
         OSCParam(
             osc,
@@ -1025,14 +1075,14 @@ def run(
         OSCParam(
             osc,
             "/fft_bounds_1",
-            lambda: [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0],
-            lambda addr, *args: fft1.set_bounds(args[0], args[2]),
+            lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
+            lambda addr, *args: fft_dispatch_wedge(fft1, args),
         ),
         OSCParam(
             osc,
             "/fft_bounds_2",
-            lambda: [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0],
-            lambda addr, *args: fft2.set_bounds(args[0], args[2]),
+            lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
+            lambda addr, *args: fft_dispatch_wedge(fft2, args),
         ),
     ]
 
@@ -1056,19 +1106,9 @@ def run(
         lambda addr, *args: impulse.punch(),
     )
 
-    pickle_obj_input: List[Tuple[str, Any]] = []
-    try:
-        with open("./params.pickle", "rb") as f:
-            pickle_obj_input = pickle.load(f)
-
-            for param_input in pickle_obj_input:
-                addr, value = param_input[0], param_input[1]
-                for param in exposed_params:
-                    if param.addr == addr:
-                        param.load(addr, value)
-    # pylint: disable=broad-exception-caught
-    except Exception as e:
-        print("Pickle load failed, bad or missing pickle", e)
+    presets = PresetManager(osc, exposed_params, "params.pickle")
+    presets.load()
+    presets.select("default")
 
     print("Start OSC server")
     osc.serve(threaded=True)
@@ -1093,13 +1133,5 @@ def run(
         osc.close()
         print("Close DMX port")
         dmx.close()
-
-        pickle_obj_output: List[Tuple[str, Any]] = []
-
-        for param in exposed_params:
-            pickle_obj_output.append((param.addr, param.value_lambda()))
-
-        with open("./params.pickle", "wb") as f:  # type: ignore
-            pickle.dump(pickle_obj_output, f)
 
         sys.exit(0)

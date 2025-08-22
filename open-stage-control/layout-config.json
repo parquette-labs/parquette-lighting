@@ -4635,9 +4635,10 @@
             "wrap": false,
             "mode": "tap",
             "values": {
-              "BPM": "BPM",
-              "Slide": "Slide",
-              "FFT": "FFT"
+              "4 on floor": "4F",
+              "Waves": "Waves",
+              "House Lights": "House",
+              "Disco": "Disco"
             }
           }
         ],
