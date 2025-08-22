@@ -1,10 +1,13 @@
-from typing import List, Any, Mapping, cast, Optional, Union, Callable
+# pylint: disable=too-many-lines
+
+from typing import List, Any, Mapping, cast, Optional, Union, Callable, Tuple
 import sys
 import time
 from copy import copy
 import math
 import struct
 from threading import Thread
+import pickle
 
 from librosa import (
     stft,  # pylint: disable=no-name-in-module
@@ -491,7 +494,7 @@ class Mixer(object):
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
-        self.channel_names = [
+        self.channel_names: List[str] = [
             "chan_1",
             "chan_2",
             "chan_3",
@@ -544,6 +547,33 @@ class Mixer(object):
 
     def getChannelLevel(self, chan_name: str) -> float:
         return self.channel_offsets[self.channel_names.index(chan_name)]
+
+    def clearSignalMatrix(self) -> None:
+        # pylint: disable-next=consider-using-enumerate
+        for gen_ix in range(len(self.signal_matrix)):
+            for chan_ix in range(len(self.signal_matrix[gen_ix])):
+                self.signal_matrix[gen_ix][chan_ix] = 0
+
+    def configureSignalMatrix(
+        self, target_gen: str, target_chans: Tuple[str] | List[str]
+    ) -> None:
+        try:
+            gen_ix = list(map(lambda gen: gen.name, self.generators)).index(target_gen)
+            destinations = [
+                self.channel_names.index(chan_name) for chan_name in target_chans
+            ]
+            for i in range(len(self.signal_matrix[gen_ix])):
+                if i in destinations:
+                    self.signal_matrix[gen_ix][i] = 1
+                else:
+                    self.signal_matrix[gen_ix][i] = 0
+
+        except ValueError:
+            print(
+                "Couldn't parse signal mapping, gen {}, chans {}".format(
+                    target_gen, target_chans
+                )
+            )
 
     def runChannelMix(self) -> None:
         # slide the channel history back one timestep
@@ -715,7 +745,7 @@ class OSCParam(object):
         self,
         osc: OSCManager,
         addr: str,
-        value_lambda: Optional[Callable],
+        value_lambda: Callable,
         dispatch_lambda: Callable,
     ) -> None:
         self.osc = osc
@@ -724,6 +754,13 @@ class OSCParam(object):
         self.dispatch_lambda = dispatch_lambda
 
         osc.dispatcher.map(addr, dispatch_lambda)
+
+    def load(self, addr: str, args: Any) -> None:
+        self.dispatch_lambda(addr, args)
+        self.sync()
+
+    def sync(self) -> None:
+        self.osc.send_osc(self.addr, self.value_lambda())
 
     @classmethod
     def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:
@@ -738,15 +775,6 @@ class OSCParam(object):
             except AttributeError:
                 obj.__dict__[field] = value
 
-    def load(self, addr: str, value):
-        self.dispatch_lambda(addr, value)
-        self.sync()
-
-    def sync(self) -> None:
-        if self.value_lambda is None:
-            return
-        self.osc.send_osc(self.addr, self.value_lambda())
-
 
 class SignalPatchParam(OSCParam):
     def __init__(
@@ -755,25 +783,30 @@ class SignalPatchParam(OSCParam):
         addr: str,
         mixer: Mixer,
     ) -> None:
-        super().__init__(osc, addr, lambda: 1, self.dispatch_patch)
+        super().__init__(osc, addr, self.value_builder, self.dispatch_patch)
         self.mixer = mixer
 
-    def dispatch_patch(self, _: str, *args):
-        try:
-            gen_ix = list(map(lambda gen: gen.name, self.mixer.generators)).index(
-                args[0]
-            )
-            destinations = [
-                self.mixer.channel_names.index(chan_name) for chan_name in args[1:]
-            ]
-            for i in range(len(self.mixer.signal_matrix[gen_ix])):
-                if i in destinations:
-                    self.mixer.signal_matrix[gen_ix][i] = 1
-                else:
-                    self.mixer.signal_matrix[gen_ix][i] = 0
+    def value_builder(self) -> List[List[str]]:
+        mappings: List[List[str]] = []
+        # pylint: disable-next=consider-using-enumerate
+        for gen_ix in range(len(self.mixer.signal_matrix)):
+            gen_mapping = [self.mixer.generators[gen_ix].name]
+            for chan_ix in range(len(self.mixer.signal_matrix[gen_ix])):
+                if self.mixer.signal_matrix[gen_ix][chan_ix]:
+                    gen_mapping.append(self.mixer.channel_names[chan_ix])
+            mappings.append(gen_mapping)
+        return mappings
 
-        except ValueError:
-            print("Couldn't parse signal mapping", args)
+    def load(self, addr: str, args: List[List[str]]) -> None:
+        self.mixer.clearSignalMatrix()
+
+        for conf in args:
+            self.mixer.configureSignalMatrix(conf[0], cast(List[str], conf[1:]))
+
+        self.sync()
+
+    def dispatch_patch(self, _: str, *args):
+        self.mixer.configureSignalMatrix(args[0], args[1:])
 
     def sync(self) -> None:
         for gen_ix in range(len(self.mixer.signal_matrix)):
@@ -795,13 +828,16 @@ class SignalPatchParam(OSCParam):
 @click.option("--local-port", default=5005, type=int, help="port")
 @click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--target-port", default=5006, type=int, help="port")
-def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> None:
+@click.option("--debug", is_flag=True, default=False)
+def run(
+    local_ip: str, local_port: int, target_ip: str, target_port: int, debug: bool
+) -> None:
     print("Setup")
 
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
-    osc.set_debug(False)
+    osc.set_debug(debug)
     dmx = DMXManager(osc)
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
@@ -1010,10 +1046,6 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             )
         )
 
-    # TEMP
-    for ppt in exposed_params:
-        print(ppt.addr, ppt.value_lambda())
-
     def send_all_params():
         for p in exposed_params:
             p.sync()
@@ -1023,6 +1055,21 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
+
+    pickle_obj_input: List[Tuple[str, Any]] = []
+    try:
+        with open("./params.pickle", "rb") as f:
+            pickle_obj_input = pickle.load(f)
+
+            for param_input in pickle_obj_input:
+                addr, value = param_input[0], param_input[1]
+                for param in exposed_params:
+                    if param.addr == addr:
+                        param.load(addr, value)
+    # pylint: disable=broad-exception-caught
+    except Exception as e:
+        print("Pickle load failed, bad or missing pickle", e)
+
     print("Start OSC server")
     osc.serve(threaded=True)
 
@@ -1046,4 +1093,13 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         osc.close()
         print("Close DMX port")
         dmx.close()
+
+        pickle_obj_output: List[Tuple[str, Any]] = []
+
+        for param in exposed_params:
+            pickle_obj_output.append((param.addr, param.value_lambda()))
+
+        with open("./params.pickle", "wb") as f:  # type: ignore
+            pickle.dump(pickle_obj_output, f)
+
         sys.exit(0)
