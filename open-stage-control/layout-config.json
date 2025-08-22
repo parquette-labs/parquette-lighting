@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.8",
+  "version": "1.29.5",
   "type": "session",
   "content": {
     "type": "root",
@@ -531,9 +531,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               },
               {
                 "type": "multixy",
@@ -596,9 +594,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               }
             ],
             "tabs": []
@@ -4645,6 +4641,52 @@
               "House Lights": "House",
               "Disco": "Disco"
             }
+          },
+          {
+            "type": "button",
+            "top": 720,
+            "left": 670,
+            "lock": false,
+            "id": "clear_preset",
+            "visible": true,
+            "interaction": true,
+            "comments": "",
+            "width": 120,
+            "height": "auto",
+            "expand": false,
+            "colorText": "auto",
+            "colorWidget": "auto",
+            "colorStroke": "auto",
+            "colorFill": "auto",
+            "alphaStroke": "auto",
+            "alphaFillOff": "auto",
+            "alphaFillOn": "auto",
+            "lineWidth": "auto",
+            "borderRadius": "auto",
+            "padding": "auto",
+            "html": "",
+            "css": "",
+            "colorTextOn": "auto",
+            "label": "auto",
+            "vertical": false,
+            "wrap": false,
+            "on": 1,
+            "off": 0,
+            "mode": "push",
+            "doubleTap": false,
+            "decoupled": false,
+            "value": "",
+            "default": "",
+            "linkId": "",
+            "address": "auto",
+            "preArgs": "",
+            "typeTags": "",
+            "decimals": 2,
+            "target": "",
+            "ignoreDefaults": false,
+            "bypass": false,
+            "onCreate": "",
+            "onValue": ""
           }
         ],
         "tabs": []

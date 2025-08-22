@@ -788,6 +788,7 @@ class PresetManager(object):
         self.current_preset = "default"
 
         osc.dispatcher.map("/save_preset", lambda addr, args: self.save())
+        osc.dispatcher.map("/clear_preset", lambda addr, args: self.clear())
         osc.dispatcher.map("/preset_selector", lambda _, args: self.select(args))
 
     def load(self):
@@ -797,6 +798,12 @@ class PresetManager(object):
         # pylint: disable=broad-exception-caught
         except Exception as e:
             print("Pickle load failed, bad or missing pickle", e)
+
+    def clear(self) -> None:
+        del self.stored_presets[self.current_preset]
+
+        with open("./params.pickle", "wb") as f:  # type: ignore
+            pickle.dump(self.stored_presets, f)
 
     def save(self) -> None:
         self.stored_presets[self.current_preset] = []
