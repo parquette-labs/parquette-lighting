@@ -715,13 +715,11 @@ class OSCParam(object):
         self,
         osc: OSCManager,
         addr: str,
-        default_val: Any,
-        value_lambda: Callable,
+        value_lambda: Optional[Callable],
         dispatch_lambda: Callable,
     ) -> None:
         self.osc = osc
         self.addr = addr
-        self.default_val = default_val
         self.value_lambda = value_lambda
         self.dispatch_lambda = dispatch_lambda
 
@@ -740,8 +738,77 @@ class OSCParam(object):
             except AttributeError:
                 obj.__dict__[field] = value
 
+    def load(self, addr: str, value):
+        self.dispatch_lambda(addr, value)
+        self.sync()
+
     def sync(self) -> None:
+        if self.value_lambda is None:
+            return
         self.osc.send_osc(self.addr, self.value_lambda())
+
+
+class MixerChanParam(OSCParam):
+    def __init__(
+        self,
+        osc: OSCManager,
+        addr: str,
+        mixer: Mixer,
+    ) -> None:
+        super().__init__(osc, addr, None, self.dispatch_chans)
+        self.mixer = mixer
+
+    def dispatch_chans(self, addr: str, value):
+        ix = addr.split("/")[2]
+        self.mixer.channel_offsets[self.mixer.channel_names.index(ix)] = value
+
+    def sync(self) -> None:
+        for i, chan_name in enumerate(self.mixer.channel_names):
+            self.osc.send_osc(
+                "/chan_levels/{}".format(chan_name), self.mixer.channel_offsets[i]
+            )
+
+
+class SignalPatchParam(OSCParam):
+    def __init__(
+        self,
+        osc: OSCManager,
+        addr: str,
+        mixer: Mixer,
+    ) -> None:
+        super().__init__(osc, addr, None, self.dispatch_patch)
+        self.mixer = mixer
+
+    def dispatch_patch(self, _: str, *args):
+        try:
+            gen_ix = list(map(lambda gen: gen.name, self.mixer.generators)).index(
+                args[0]
+            )
+            destinations = [
+                self.mixer.channel_names.index(chan_name) for chan_name in args[1:]
+            ]
+            for i in range(len(self.mixer.signal_matrix[gen_ix])):
+                if i in destinations:
+                    self.mixer.signal_matrix[gen_ix][i] = 1
+                else:
+                    self.mixer.signal_matrix[gen_ix][i] = 0
+
+        except ValueError:
+            print("Couldn't parse signal mapping", args)
+
+    def sync(self) -> None:
+        for gen_ix in range(len(self.mixer.signal_matrix)):
+            output_val = [self.mixer.generators[gen_ix].name]
+            self.osc.send_osc("/signal_patchbay", output_val)
+
+        # pylint: disable-next=consider-using-enumerate
+        for gen_ix in range(len(self.mixer.signal_matrix)):
+            output_val = [self.mixer.generators[gen_ix].name]
+            for chan_ix in range(len(self.mixer.signal_matrix[gen_ix])):
+                if self.mixer.signal_matrix[gen_ix][chan_ix]:
+                    output_val.append(self.mixer.channel_names[chan_ix])
+
+            self.osc.send_osc("/signal_patchbay", output_val)
 
 
 @click.command()
@@ -755,20 +822,13 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
-    osc.set_debug(False)
+    osc.set_debug(True)
     dmx = DMXManager(osc)
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
 
-    initialAmp: float = 100
-    initialPeriod: int = 300
-    initialAmpFFT1: float = 3
-    initialAmpFFT2: float = 3
-    initialAmpImp: float = 255
-    initialImpPeriod: int = 200
-    initialImpDuty: int = 100
-    initialImpEcho: int = 6
-    initialImpDecay: float = 0.66
+    initialAmp: float = 200
+    initialPeriod: int = 3500
 
     # TODO wrapper for controlling the variables via OSC
 
@@ -804,20 +864,16 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
     )
     impulse = ImpulseGenerator(
         name="impulse",
-        amp=initialAmpImp,
+        amp=255,
         offset=0,
-        period=initialImpPeriod,
-        echo=initialImpEcho,
-        echo_decay=initialImpDecay,
-        duty=initialImpDuty,
+        period=150,
+        echo=1,
+        echo_decay=1,
+        duty=100,
     )
 
-    fft1 = FFTGenerator(
-        name="fft_1", amp=initialAmpFFT1, offset=0, subdivisions=1, memory_length=20
-    )
-    fft2 = FFTGenerator(
-        name="fft_2", amp=initialAmpFFT2, offset=0, subdivisions=1, memory_length=20
-    )
+    fft1 = FFTGenerator(name="fft_1", amp=1, offset=0, subdivisions=1, memory_length=20)
+    fft2 = FFTGenerator(name="fft_2", amp=1, offset=0, subdivisions=1, memory_length=20)
 
     bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
 
@@ -833,141 +889,150 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
         history_len=666 * 6,
     )
 
-    def osc_param_map(addr, field, objs):
-        def obj_param_setter(value, _field, _objs):
-            for _obj in _objs:
-                # TODO I assume this is hacky and can be nicer
-                try:
-                    _field = getattr(_obj.__class__, field)
-                    # this is some trash surely the pylint is a warning I'm doing garbage, but fix later
-                    # pylint: disable-next=unnecessary-dunder-call
-                    _field.__set__(_obj, value)
-
-                except AttributeError:
-                    _obj.__dict__[_field] = value
-
-        osc.dispatcher.map(
-            addr,
-            lambda _, args: obj_param_setter(args, field, objs),
-        )
-
-    op = OSCParam(
-        osc,
-        "/amp",
-        initialAmp,
-        lambda: noise1.amp,
-        lambda _, args: OSCParam.obj_param_setter(
-            args, "amp", [noise1, noise2, wave1, wave2, wave3]
+    exposed_params = [
+        OSCParam(
+            osc,
+            "/amp",
+            lambda: noise1.amp,
+            lambda _, args: OSCParam.obj_param_setter(
+                args, "amp", [noise1, noise2, wave1, wave2, wave3]
+            ),
         ),
-    )
-    osc_param_map("/amp", "amp", [noise1, noise2, wave1, wave2, wave3])
-    osc_param_map("/period", "period", [noise1, noise2, wave1, wave2, wave3])
-    osc_param_map("/fft1_amp", "amp", [fft1])
-    osc_param_map("/fft2_amp", "amp", [fft2])
-    osc_param_map("/impulse_amp", "amp", [impulse])
-    osc_param_map("/impulse_period", "period", [impulse])
-    osc_param_map("/impulse_duty", "duty", [impulse])
-    osc_param_map("/impulse_echo", "echo", [impulse])
-    osc_param_map("/impulse_decay", "echo_decay", [impulse])
-    osc_param_map("/stutter_period", "stutter_period", [mixer])
-    osc_param_map("/master_fader", "master_amp", [mixer])
-    osc_param_map("/wash_master", "wash_master", [mixer])
-    osc_param_map("/mode_switch", "mode", [mixer])
-    osc_param_map("/fft_threshold_1", "thres", [fft1])
-    osc_param_map("/fft_threshold_2", "thres", [fft2])
-    osc_param_map("/manual_bpm_offset", "manual_offset", [bpm])
-    osc_param_map("/bpm_mult", "bpm_mult", [bpm])
-    osc_param_map("/bpm_duty", "duty", [bpm])
-    osc_param_map("/bpm_amp", "amp", [bpm])
+        OSCParam(
+            osc,
+            "/period",
+            lambda: noise1.period,
+            lambda _, args: OSCParam.obj_param_setter(
+                args, "period", [noise1, noise2, wave1, wave2, wave3]
+            ),
+        ),
+        OSCParam(
+            osc,
+            "/fft1_amp",
+            lambda: fft1.amp,
+            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
+        ),
+        OSCParam(
+            osc,
+            "/fft2_amp",
+            lambda: fft2.amp,
+            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
+        ),
+        OSCParam(
+            osc,
+            "/impulse_amp",
+            lambda: impulse.amp,
+            lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
+        ),
+        OSCParam(
+            osc,
+            "/impulse_period",
+            lambda: impulse.period,
+            lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
+        ),
+        OSCParam(
+            osc,
+            "/impulse_duty",
+            lambda: impulse.duty,
+            lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
+        ),
+        OSCParam(
+            osc,
+            "/impulse_echo",
+            lambda: impulse.echo,
+            lambda _, args: OSCParam.obj_param_setter(args, "echo", [impulse]),
+        ),
+        OSCParam(
+            osc,
+            "/impulse_decay",
+            lambda: impulse.echo_decay,
+            lambda _, args: OSCParam.obj_param_setter(args, "echo_decay", [impulse]),
+        ),
+        OSCParam(
+            osc,
+            "/stutter_period",
+            lambda: mixer.stutter_period,
+            lambda _, args: OSCParam.obj_param_setter(args, "stutter_period", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/master_fader",
+            lambda: mixer.master_amp,
+            lambda _, args: OSCParam.obj_param_setter(args, "master_amp", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/wash_master",
+            lambda: mixer.wash_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "wash_master", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/mode_switch",
+            lambda: mixer.mode,
+            lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/fft_threshold_1",
+            lambda: fft1.thres,
+            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
+        ),
+        OSCParam(
+            osc,
+            "/fft_threshold_2",
+            lambda: fft2.thres,
+            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
+        ),
+        OSCParam(
+            osc,
+            "/manual_bpm_offset",
+            lambda: bpm.manual_offset,
+            lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
+        ),
+        OSCParam(
+            osc,
+            "/bpm_mult",
+            lambda: bpm.bpm_mult,
+            lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
+        ),
+        OSCParam(
+            osc,
+            "/bpm_duty",
+            lambda: bpm.duty,
+            lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
+        ),
+        OSCParam(
+            osc,
+            "/bpm_amp",
+            lambda: bpm.amp,
+            lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
+        ),
+        MixerChanParam(osc, "/chan_levels/*", mixer),
+        SignalPatchParam(osc, "/signal_patchbay", mixer),
+        OSCParam(
+            osc,
+            "/fft_bounds_1",
+            lambda: [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0],
+            lambda addr, *args: fft1.set_bounds(args[0], args[2]),
+        ),
+        OSCParam(
+            osc,
+            "/fft_bounds_2",
+            lambda: [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0],
+            lambda addr, *args: fft2.set_bounds(args[0], args[2]),
+        ),
+    ]
 
     def send_all_params():
-        osc.send_osc("/amp", noise1.amp)
-        osc.send_osc("/period", noise1.period)
-        osc.send_osc("/fft1_amp", fft1.amp)
-        osc.send_osc("/fft2_amp", fft2.amp)
-        osc.send_osc("/impulse_amp", impulse.amp)
-        osc.send_osc("/impulse_period", impulse.period)
-        osc.send_osc("/impulse_duty", impulse.duty)
-        osc.send_osc("/impulse_echo", impulse.echo)
-        osc.send_osc("/impulse_decay", impulse.echo_decay)
-        osc.send_osc("/stutter_period", mixer.stutter_period)
-        osc.send_osc("/master_fader", mixer.master_amp)
-        osc.send_osc("/wash_master", mixer.wash_master)
-        osc.send_osc("/mode_switch", mixer.mode)
-        osc.send_osc("/fft_threshold_1", fft1.thres)
-        osc.send_osc("/fft_threshold_2", fft2.thres)
-        for i, chan_name in enumerate(mixer.channel_names):
-            osc.send_osc("/chan_levels/{}".format(chan_name), mixer.channel_offsets[i])
-        osc.send_osc("/fft_bounds_1", [fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0])
-        osc.send_osc("/fft_bounds_2", [fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0])
-
-        osc.send_osc("/manual_bpm_offset", [bpm.manual_offset])
-        osc.send_osc("/bpm_mult", [bpm.bpm_mult])
-        osc.send_osc("/bpm_duty", [bpm.duty])
-        osc.send_osc("/bpm_amp", [bpm.amp])
-
-        # reset patchbay
-        for gen_ix in range(len(mixer.signal_matrix)):
-            output_val = [mixer.generators[gen_ix].name]
-            osc.send_osc("/signal_patchbay", output_val)
-
-        # pylint: disable-next=consider-using-enumerate
-        for gen_ix in range(len(mixer.signal_matrix)):
-            output_val = [mixer.generators[gen_ix].name]
-            for chan_ix in range(len(mixer.signal_matrix[gen_ix])):
-                if mixer.signal_matrix[gen_ix][chan_ix]:
-                    output_val.append(mixer.channel_names[chan_ix])
-
-            osc.send_osc("/signal_patchbay", output_val)
-
-        # TODO patcher
+        for p in exposed_params:
+            p.sync()
 
     osc.dispatcher.map("/reload", lambda addr, args: send_all_params())
-
-    def chan_offests(addr, value):
-        ix = addr.split("/")[2]
-        mixer.channel_offsets[mixer.channel_names.index(ix)] = value
-
-    osc.dispatcher.map(
-        "/chan_levels/*",
-        lambda addr, args: chan_offests(addr, args),
-    )
-
-    def signal_patch(mapping):
-        try:
-            gen_ix = list(map(lambda gen: gen.name, mixer.generators)).index(mapping[0])
-            destinations = [
-                mixer.channel_names.index(chan_name) for chan_name in mapping[1:]
-            ]
-            for i in range(len(mixer.signal_matrix[gen_ix])):
-                if i in destinations:
-                    mixer.signal_matrix[gen_ix][i] = 1
-                else:
-                    mixer.signal_matrix[gen_ix][i] = 0
-
-        except ValueError:
-            print("Couldn't parse signal mapping", mapping)
-
-    osc.dispatcher.map(
-        "/signal_patchbay",
-        lambda addr, *args: signal_patch(args),
-    )
-
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
-
-    def handle_fft_bounds(vals, fft_inst):
-        fft_inst.set_bounds(vals[0], vals[2])
-
-    osc.dispatcher.map(
-        "/fft_bounds_1", lambda addr, *args: handle_fft_bounds(args, fft1)
-    )
-    osc.dispatcher.map(
-        "/fft_bounds_2", lambda addr, *args: handle_fft_bounds(args, fft2)
-    )
-
     print("Start OSC server")
     osc.serve(threaded=True)
 
@@ -981,6 +1046,7 @@ def run(local_ip: str, local_port: int, target_ip: str, target_port: int) -> Non
             mixer.runOutputMix()
             mixer.updateDMX()
             time.sleep(0.01)
+
     except KeyboardInterrupt:
         print("\nShutdown FFT")
         fft_manager.stop_fft()
