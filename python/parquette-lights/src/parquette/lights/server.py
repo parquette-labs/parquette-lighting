@@ -71,7 +71,7 @@ class OSCManager(object):
     def set_target(self, target_ip: str, target_port: int) -> None:
         self.client = SimpleUDPClient(target_ip, target_port)
 
-    def print_osc(self, label: str, address: str, *osc_arguments: List[Any]) -> None:
+    def print_osc(self, label: str, address: str, osc_arguments: List[Any]) -> None:
         print(label, address, osc_arguments)
 
     def send_osc(self, address: str, args: Any) -> None:
