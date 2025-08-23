@@ -779,13 +779,18 @@ class OSCParam(object):
 
 class PresetManager(object):
     def __init__(
-        self, osc: OSCManager, exposed_params: List[OSCParam], filename: str
+        self,
+        osc: OSCManager,
+        exposed_params: List[OSCParam],
+        filename: str,
+        debug: bool = False,
     ) -> None:
         self.osc = osc
         self.exposed_params = exposed_params
         self.filename = filename
         self.stored_presets: Dict[str, List[Tuple[str, Any]]] = {}
         self.current_preset = "default"
+        self.debug = debug
 
         osc.dispatcher.map("/save_preset", lambda addr, args: self.save())
         osc.dispatcher.map("/clear_preset", lambda addr, args: self.clear())
@@ -811,7 +816,8 @@ class PresetManager(object):
             self.stored_presets[self.current_preset].append(
                 (param.addr, param.value_lambda())
             )
-        pprint.pp(self.stored_presets)
+        if self.debug:
+            pprint.pp(self.stored_presets)
 
         with open("./params.pickle", "wb") as f:  # type: ignore
             pickle.dump(self.stored_presets, f)
@@ -1104,7 +1110,7 @@ def run(
             )
         )
 
-    presets = PresetManager(osc, exposed_params, "params.pickle")
+    presets = PresetManager(osc, exposed_params, "params.pickle", debug)
     presets.load()
     presets.select("default")
 
