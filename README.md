@@ -24,7 +24,7 @@
 	* Connect via screen share
 		* Go to Finder on a mac
 		* Press Cmd+K
-		* enter vnc://pq@parquette-house-mm.local
+		* enter vnc://pq@parquette-house-mm.local (note only accessible on the internal WiFi?)
 		* Use password for wifi
 		* Login with same password
 	* Open "Open Stage Control" and hit the play button
@@ -32,7 +32,7 @@
 		* cd ~/parquette/parquette-lighting/python/parquette-lights
 		* poetry run server
 * Config
-	* Go to 192.168.1.245:8080 in your browser
+	* Go to 192.168.1.245:8080 in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"
 	* DMX
 		* Press "Refresh DMX ports"
