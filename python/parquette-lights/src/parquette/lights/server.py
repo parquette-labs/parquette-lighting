@@ -1104,19 +1104,20 @@ def run(
             )
         )
 
+    presets = PresetManager(osc, exposed_params, "params.pickle")
+    presets.load()
+    presets.select("default")
+
     def send_all_params():
         for p in exposed_params:
             p.sync()
+        osc.send_osc("/preset_selector", presets.current_preset)
 
     osc.dispatcher.map("/reload", lambda addr, args: send_all_params())
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
-
-    presets = PresetManager(osc, exposed_params, "params.pickle")
-    presets.load()
-    presets.select("default")
 
     print("Start OSC server")
     osc.serve(threaded=True)
