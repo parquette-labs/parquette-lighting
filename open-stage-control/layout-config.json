@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.5",
+  "version": "1.29.8",
   "type": "session",
   "content": {
     "type": "root",
@@ -531,7 +531,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               },
               {
                 "type": "multixy",
@@ -594,7 +596,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -4718,7 +4722,7 @@
             "wrap": false,
             "on": "House",
             "off": 0,
-            "mode": "push",
+            "mode": "tap",
             "doubleTap": false,
             "decoupled": false,
             "value": "",
@@ -4764,7 +4768,7 @@
             "wrap": false,
             "on": "Black",
             "off": 0,
-            "mode": "push",
+            "mode": "tap",
             "doubleTap": false,
             "decoupled": false,
             "value": "",
