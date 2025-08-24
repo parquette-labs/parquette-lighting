@@ -925,6 +925,37 @@ def run(
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
     )
+
+    sq1 = WaveGenerator(
+        name="sq_1",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SQUARE,
+        duty=0.05,
+    )
+
+    sq2 = WaveGenerator(
+        name="sq_2",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=476,
+        offset=0,
+        shape=WaveGenerator.Shape.SQUARE,
+        duty=0.05,
+    )
+
+    sq3 = WaveGenerator(
+        name="sq_3",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=335,
+        offset=0,
+        shape=WaveGenerator.Shape.SQUARE,
+        duty=0.05,
+    )
+
     wave3 = WaveGenerator(
         name="triangle",
         amp=initialAmp,
@@ -948,7 +979,20 @@ def run(
 
     bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
 
-    generators = [noise1, noise2, wave1, wave2, wave3, impulse, fft1, fft2, bpm]
+    generators = [
+        noise1,
+        noise2,
+        wave1,
+        wave2,
+        wave3,
+        sq1,
+        sq2,
+        sq3,
+        impulse,
+        fft1,
+        fft2,
+        bpm,
+    ]
 
     fft_manager.downstream = [fft1, fft2]
     fft_manager.bpm = bpm
@@ -972,7 +1016,7 @@ def run(
             "/amp",
             lambda: noise1.amp,
             lambda _, args: OSCParam.obj_param_setter(
-                args, "amp", [noise1, noise2, wave1, wave2, wave3]
+                args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
             ),
         ),
         OSCParam(
@@ -980,7 +1024,7 @@ def run(
             "/period",
             lambda: noise1.period,
             lambda _, args: OSCParam.obj_param_setter(
-                args, "period", [noise1, noise2, wave1, wave2, wave3]
+                args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
             ),
         ),
         OSCParam(
