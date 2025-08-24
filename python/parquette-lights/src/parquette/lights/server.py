@@ -933,7 +933,7 @@ def run(
         phase=0,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=0.1,
+        duty=150,
     )
 
     sq2 = WaveGenerator(
@@ -943,7 +943,7 @@ def run(
         phase=476,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=0.1,
+        duty=150,
     )
 
     sq3 = WaveGenerator(
@@ -953,7 +953,7 @@ def run(
         phase=335,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=0.1,
+        duty=150,
     )
 
     wave3 = WaveGenerator(
