@@ -4556,8 +4556,8 @@
         "widgets": [
           {
             "type": "button",
-            "top": 710,
-            "left": 280,
+            "top": 740,
+            "left": 1020,
             "lock": false,
             "id": "save_preset",
             "visible": true,
@@ -4646,13 +4646,14 @@
               "4 on floor soft": "4Fs",
               "Waves": "Waves",
               "FFT Only": "FFT",
-              "Disco": "Disco"
+              "Disco": "Disco",
+              "Hard Disco": "HardDisco"
             }
           },
           {
             "type": "button",
-            "top": 710,
-            "left": 400,
+            "top": 740,
+            "left": 1140,
             "lock": false,
             "id": "clear_preset",
             "visible": true,
@@ -4697,8 +4698,8 @@
           },
           {
             "type": "button",
-            "top": 710,
-            "left": 570,
+            "top": 370,
+            "left": 390,
             "lock": false,
             "id": "preset_selector_house",
             "visible": true,
@@ -4743,8 +4744,8 @@
           },
           {
             "type": "button",
-            "top": 710,
-            "left": 690,
+            "top": 370,
+            "left": 510,
             "lock": false,
             "id": "preset_selector_all_black",
             "visible": true,
