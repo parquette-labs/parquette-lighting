@@ -53,9 +53,9 @@
 	* Special UI (or object) for punch and other common actions
 	* Sync values on load
 * Presets and automations
-	* Presets mechanism
-	* Add all black button
-	* House lights button
+	* Preset split for washes and reds
+	* Interpolate between presets
+	* Split off the masters from the presets
 	* Parameter LFO / preset or mode LFO
 	* Auto detection for low/high intensity of music that can trigger mode changes or similar
 * Math problems
@@ -83,6 +83,7 @@
 	* Annotate FFT with key freqs
 * New ideas
 	* Run open stage control on CLI
+	* Blue/green deploy mechanism
 	* Auto start process
 	* Separate Punch for blinders - perma linked
 	* Spinning mode
