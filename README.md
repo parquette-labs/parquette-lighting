@@ -82,6 +82,8 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 	* Annotate FFT with key freqs
 * New ideas
+	* Run open stage control on CLI
+	* Auto start process
 	* Separate Punch for blinders - perma linked
 	* Spinning mode
 	* Switch to dual spectrograms for harmonic and percussive
