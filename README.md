@@ -1,4 +1,4 @@
-# Parquette Lighting 🏋️‍♀️🕺🪩🕺🏋️‍♀️
+# Parquette Lighting 🪩🪴🕺🪩🕺🪴🪩
 
 # Basic Setup on Mac
 
