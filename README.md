@@ -2,16 +2,15 @@
 
 # Basic Setup on Mac
 
-* Install brew
-* brew install pyenv, then setup pyenv shims
-* brew install portaudio
-* Install python 3.9.9 + (mac mini running 3.13.3)
-* Create a pyenv or set global
-* Pip install poetry in pyenv
+* Install [brew](https://brew.sh/)
+* `brew install pyenv` then [setup pyenv shims](https://github.com/pyenv/pyenv?tab=readme-ov-file#macos)
+* `brew install portaudio`
+* Install python 3.9.9 + (mac mini running 3.13.3), e.g. `pyenv install 3.13.3`
+* Create a pyenv or set global, e.g. `pyenv virtualenv parquette 3.13.3` and `pyenv local parquette` in the repo
+* `pip install poetry` in the pyenv
 * in python/parquette-lights/
-	* Set to use pyenv with poetry
-	* poetry sync
-	* poetry run server
+	* `poetry sync`
+	* `poetry run server`
 
 # Running the system
 
@@ -20,23 +19,24 @@
 	* Connect USB audio interface (or any audio input your computer detects), connect to line out from the DJ booth. There is currently a small amazon USB audio dongle that takes headphone jack input and an XLR to headphone adapter attached
 	* Connect DMX Entec Pro via DMX cable (need a 5 to 3 pin adapter) to the dimmer pack above the washroom
 * Software
-	* Boot computer
+	* Boot computer, current mac mini is set to auto boot when it has power
 	* Connect via screen share
 		* Go to Finder on a mac
 		* Press Cmd+K
-		* enter vnc://pq@parquette-house-mm.local (note only accessible on the internal WiFi?)
-		* Use password for wifi
-		* Login with same password
-	* Open "Open Stage Control" and hit the play button
+		* enter `vnc://pq@parquette-house-mm.local` (note only accessible on the internal WiFi?)
+		* Use password for wifi for the screen share
+		* Login to the machine with same password
+	* Open "Open Stage Control" from Applications and hit the play button
 	* Open terminal
-		* cd ~/parquette/parquette-lighting/python/parquette-lights
-		* poetry run server
+		* `cd ~/parquette/parquette-lighting/python/parquette-lights`
+		* `poetry run server`
 * Config
-	* Go to 192.168.1.245:8080 in your browser (note only accessible on the internal WiFi)
+	* Go to [http://192.168.1.245:8080](http://192.168.1.245:8080) in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"
 	* DMX
 		* Press "Refresh DMX ports"
 		* Select DMX port from drop down (if none you have a wiring problem with your Entec probably?)
+		* Selecting an item from the menu connects to it
 		* You should be able to control lights, they will snap to the current settings
 	* Audio
 		* Press "Refresh Audio ports"
@@ -48,28 +48,22 @@
 		* You should see audio signal coming in to the FFT visualizer
 
 ## Notes/Ideas/TODOs
-* Redundancy, RTFM and manual
-* UX
-	* Special UI (or object) for punch and other common actions
-	* Sync values on load
 * Presets and automations
-	* Preset split for washes and reds
-	* Interpolate between presets
-	* Split off the masters from the presets
-	* Parameter LFO / preset or mode LFO
-	* Auto detection for low/high intensity of music that can trigger mode changes or similar
+	* Split up presets between for washes (ambient) and reds (active) lighting
+	* Interpolate between presets when you switch over
+	* Split off the master levels from the presets
 * Math problems
-	* Add floor / ceil / scaling instead of just offest and mult for chans
-	* No negative values?
 	* Adjust how master level works
-	* Per chanel multiplier levels
+	* Add floor / ceil / scaling instead of just offest and mult for chans
+	* Prevent negative values
+	* Per chanel master multipler sliders
 	* FWD/BACK memory slice needs the memory slices to be log spaced or similar, e.g. more slices at the short time scale and fewer slices at the long timescale
 	* Bug with adjusting the period of osciallators causing jump
 * Bugs
+	* Preset synth patch load is broken
 	* Improve threading issues, can we run faster
 	* Timing / race condition with the threading causing punch issues and latency issues
 	* Validate if we can reconfigure audio and dmx on the fly
-	* Preset synth patch load is broken
 * Light perception
 	* Overall and per light brightness perception map
 * BPM detection
@@ -83,12 +77,14 @@
 	* Annotate FFT with key freqs
 * New ideas
 	* Run open stage control on CLI
+	* Auto detection for low/high intensity of music that can trigger mode changes or similar
 	* Blue/green deploy mechanism
 	* Auto start process
-	* Separate Punch for blinders - perma linked
+	* Optimize compute by idyling FFT and BPM when there is no audio and/or no interaction for multiple days
+	* Separate / perma linked punch for blinders
 	* Spinning mode
 	* Switch to dual spectrograms for harmonic and percussive
-	* Wave generators should be able to switch shapes without rewiring in the patchbay?
+	* Wave generators should be able to switch shapes without rewiring in the patchbay? Or general rethink of the patchbay
 	* Can I move the mapping definitions for output mix into the front end fully?
 	* Auto load channel and generator names from the front end or scrupting to sync between front and backend
 	* Align stutter automatically to beat quantization
