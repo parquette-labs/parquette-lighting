@@ -47,6 +47,12 @@
 		* Press "Start FFT"
 		* You should see audio signal coming in to the FFT visualizer
 
+# Repo information
+
+* `/open-stage-control` contains the configuration for the open stage control front end, the `layout-config.json` contains the front end design, the other files are the server and UI initial state
+* `/python/parquette-lights` contains the python server
+	* `/python/parquette-lights/params.pickle` contains the presets, it is auto updated when you adjust the presets in the front end (by clicking save or clear preset). You of course have to save and commit those changes for them to persist
+
 ## Notes/Ideas/TODOs
 * Presets and automations
 	* Split up presets between for washes (ambient) and reds (active) lighting
