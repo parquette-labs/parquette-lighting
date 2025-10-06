@@ -893,8 +893,19 @@ class SignalPatchParam(OSCParam):
 @click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--target-port", default=5006, type=int, help="port")
 @click.option("--debug", is_flag=True, default=False)
+@click.option(
+    "--presets-file",
+    default="params.pickle",
+    type=str,
+    help="file to store and load presets from",
+)
 def run(
-    local_ip: str, local_port: int, target_ip: str, target_port: int, debug: bool
+    local_ip: str,
+    local_port: int,
+    target_ip: str,
+    target_port: int,
+    debug: bool,
+    presets_file: str,
 ) -> None:
     print("Setup", flush=True)
 
@@ -1160,7 +1171,7 @@ def run(
             )
         )
 
-    presets = PresetManager(osc, exposed_params, "params.pickle", debug)
+    presets = PresetManager(osc, exposed_params, presets_file, debug)
     presets.load()
     presets.select("default")
 
