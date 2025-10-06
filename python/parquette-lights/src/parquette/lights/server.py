@@ -570,10 +570,11 @@ class Mixer(object):
                     self.signal_matrix[gen_ix][i] = 0
 
         except ValueError:
-            print, flush = True(
+            print(
                 "Couldn't parse signal mapping, gen {}, chans {}".format(
                     target_gen, target_chans
-                )
+                ),
+                flush=True,
             )
 
     def runChannelMix(self) -> None:
@@ -821,6 +822,11 @@ class PresetManager(object):
 
         with open("./params.pickle", "wb") as f:  # type: ignore
             pickle.dump(self.stored_presets, f)
+
+    def sync(self):
+        for param in self.exposed_params:
+            param.sync()
+        self.osc.send_osc("/preset_selector", self.current_preset)
 
     def select(self, preset_name: str) -> None:
         self.current_preset = preset_name
@@ -1158,12 +1164,7 @@ def run(
     presets.load()
     presets.select("default")
 
-    def send_all_params():
-        for p in exposed_params:
-            p.sync()
-        osc.send_osc("/preset_selector", presets.current_preset)
-
-    osc.dispatcher.map("/reload", lambda addr, args: send_all_params())
+    osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
@@ -1173,7 +1174,7 @@ def run(
     osc.serve(threaded=True)
 
     print("Sync front end", flush=True)
-    send_all_params()
+    presets.sync()
 
     print("Start compute loop", flush=True)
     try:
