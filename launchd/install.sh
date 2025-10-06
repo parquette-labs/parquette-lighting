@@ -1,8 +1,10 @@
 #!/bin/bash
+
 script_path=$(dirname $(realpath "$0"))
 project_path=$(dirname "$script_path")
-cd $script_path
 
+cd $script_path
+../open-stage-control/build-config.sh
 ./uninstall.sh
 
 declare -a services=("ca.parquette.lighting.openstagecontrol" "ca.parquette.lighting.server")

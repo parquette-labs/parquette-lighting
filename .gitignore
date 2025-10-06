@@ -3,3 +3,4 @@
 .DS_Store
 dist
 .python-version
+open-stage-control/server.config
