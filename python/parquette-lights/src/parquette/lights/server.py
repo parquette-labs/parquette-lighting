@@ -72,12 +72,12 @@ class OSCManager(object):
         self.client = SimpleUDPClient(target_ip, target_port)
 
     def print_osc(self, label: str, address: str, osc_arguments: List[Any]) -> None:
-        print(label, address, osc_arguments)
+        print(label, address, osc_arguments, flush=True)
 
     def send_osc(self, address: str, args: Any) -> None:
         if self.debug:
             if self.client is None:
-                print("No UDP target, not sending")
+                print("No UDP target, not sending", flush=True)
             else:
                 self.print_osc("out", address, args)
 
@@ -148,7 +148,7 @@ class DMXManager(object):
             self.controller = Controller(port, auto_submit=False, dmx_size=256)
             self.osc.send_osc("/dmx_port_name", [port])
         except SerialException as e:
-            print(e)
+            print(e, flush=True)
             self.close()
 
     def set_channel(
@@ -259,7 +259,7 @@ class AudioCapture(object):
 
             self.osc.send_osc("/audio_port_name", [port])
         except SerialException as e:
-            print(e)
+            print(e, flush=True)
             self.close()
 
     def _run_capture(self) -> None:
@@ -284,9 +284,9 @@ class AudioCapture(object):
                     self.window_ts[-1] = time.time()
 
             except struct.error as e:
-                print("Malformed struct", e)
+                print("Malformed struct", e, flush=True)
             except OSError as e:
-                print("OSError your stream died", e)
+                print("OSError your stream died", e, flush=True)
 
     def start_audio(self) -> None:
         if not self.audio_thread is None:
@@ -354,7 +354,7 @@ class FFTManager(object):
             self.uidb["mels"] = self.n_mels
             self.uidb.update_ui()
         except SerialException as e:
-            print(e)
+            print(e, flush=True)
             self.stop_fft()
 
     def audio_ready(self) -> bool:
@@ -570,7 +570,7 @@ class Mixer(object):
                     self.signal_matrix[gen_ix][i] = 0
 
         except ValueError:
-            print(
+            print, flush = True(
                 "Couldn't parse signal mapping, gen {}, chans {}".format(
                     target_gen, target_chans
                 )
@@ -613,7 +613,7 @@ class Mixer(object):
                 self.channels[0][i] = val * self.wash_master
         # for g in self.generators:
         #     if g.name == "bpm":
-        #         print(g.value(ts))
+        #         print(g.value(ts), flush=True)
 
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
@@ -802,7 +802,7 @@ class PresetManager(object):
                 self.stored_presets = pickle.load(f)
         # pylint: disable=broad-exception-caught
         except Exception as e:
-            print("Pickle load failed, bad or missing pickle", e)
+            print("Pickle load failed, bad or missing pickle", e, flush=True)
 
     def clear(self) -> None:
         del self.stored_presets[self.current_preset]
@@ -890,7 +890,7 @@ class SignalPatchParam(OSCParam):
 def run(
     local_ip: str, local_port: int, target_ip: str, target_port: int, debug: bool
 ) -> None:
-    print("Setup")
+    print("Setup", flush=True)
 
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
@@ -1169,13 +1169,13 @@ def run(
         lambda addr, *args: impulse.punch(),
     )
 
-    print("Start OSC server")
+    print("Start OSC server", flush=True)
     osc.serve(threaded=True)
 
-    print("Sync front end")
+    print("Sync front end", flush=True)
     send_all_params()
 
-    print("Start compute loop")
+    print("Start compute loop", flush=True)
     try:
         while True:
             mixer.runChannelMix()
@@ -1184,13 +1184,13 @@ def run(
             time.sleep(0.01)
 
     except KeyboardInterrupt:
-        print("\nShutdown FFT")
+        print("\nShutdown FFT", flush=True)
         fft_manager.stop_fft()
-        print("Shutdown audio capture and pyaudio")
+        print("Shutdown audio capture and pyaudio", flush=True)
         audio_capture.terminate()
-        print("Close OSC server")
+        print("Close OSC server", flush=True)
         osc.close()
-        print("Close DMX port")
+        print("Close DMX port", flush=True)
         dmx.close()
 
         sys.exit(0)
