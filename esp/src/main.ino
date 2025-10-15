@@ -13,10 +13,20 @@ seesaw_NeoPixel enc1_pixel = seesaw_NeoPixel(1, ENC_NEOPIX, NEO_GRB + NEO_KHZ800
 
 int32_t enc1_position;
 
+#define QWIIC_ADDR_REDBTN 0x6F
+
 QwiicButton red_button;
-uint8_t brightness = 250;   //The maximum brightness of the pulsing LED. Can be between 0 (min) and 255 (max)
-uint16_t cycleTime = 1000;   //The total time for the pulse to take. Set to a bigger number for a slower pulse, or a smaller number for a faster pulse
-uint16_t offTime = 200;     //The total time to stay off between pulses. Set to 0 to be pulsing continuously.
+
+#define ROT_WHEEL_SWITCH_SELECT 1
+#define ROT_WHEEL_SWITCH_UP     2
+#define ROT_WHEEL_SWITCH_LEFT   3
+#define ROT_WHEEL_SWITCH_DOWN   4
+#define ROT_WHEEL_SWITCH_RIGHT  5
+
+#define SEESAW_ADDR_ROT_WHEEL 0x49
+
+Adafruit_seesaw rot_wheel;
+int32_t rot_wheel_position;
 
 void setup() {
 	Serial.begin(115200);
@@ -26,7 +36,7 @@ void setup() {
 	Wire.begin(); //Join I2C bus
 
 	//check if red_button will acknowledge over I2C
-	if (red_button.begin(0x6F) == false) {
+	if (red_button.begin(QWIIC_ADDR_REDBTN) == false) {
 		Serial.println("Device did not acknowledge! Freezing.");
 		while(1) delay(10);
 	}
@@ -35,7 +45,7 @@ void setup() {
 
 	Serial.println("Looking for seesaw!");
 
-	if (!enc1.begin(SEESAW_ADDR_ENC1) || !enc1_pixel.begin(SEESAW_ADDR_ENC1)) {
+	if (!enc1.begin(SEESAW_ADDR_ENC1) || !enc1_pixel.begin(SEESAW_ADDR_ENC1) || !rot_wheel.begin(SEESAW_ADDR_ROT_WHEEL)) {
 	Serial.println("Couldn't find seesaw on default address");
 		while(1) delay(10);
 	}
@@ -48,6 +58,27 @@ void setup() {
 		while(1) delay(10);
 	}
 	Serial.println("Found Product 4991");
+
+	version = ((rot_wheel.getVersion() >> 16) & 0xFFFF);
+	if (version  != 5740){
+	  Serial.print("Wrong firmware loaded? ");
+	  Serial.println(version);
+	  while(1) delay(10);
+	}
+	Serial.println("Found Product 5740");
+
+	rot_wheel.pinMode(ROT_WHEEL_SWITCH_UP, INPUT_PULLUP);
+	rot_wheel.pinMode(ROT_WHEEL_SWITCH_DOWN, INPUT_PULLUP);
+	rot_wheel.pinMode(ROT_WHEEL_SWITCH_LEFT, INPUT_PULLUP);
+	rot_wheel.pinMode(ROT_WHEEL_SWITCH_RIGHT, INPUT_PULLUP);
+	rot_wheel.pinMode(ROT_WHEEL_SWITCH_SELECT, INPUT_PULLUP);
+
+	// get starting position
+	rot_wheel_position = rot_wheel.getEncoderPosition();
+
+	Serial.println("Turning on interrupts");
+	rot_wheel.enableEncoderInterrupt();
+	rot_wheel.setGPIOInterrupts((uint32_t)1 << ROT_WHEEL_SWITCH_UP, 1);
 
 	delay(10);
 
@@ -70,7 +101,7 @@ void loop() {
 	//check if red_button is pressed, and tell us if it is!
 	if (red_button.isPressed() == true) {
 		Serial.println("The red_button is pressed!");
-		red_button.LEDconfig(brightness, cycleTime, offTime);
+		red_button.LEDconfig(250, 1000, 100);
 		while (red_button.isPressed() == true)
 			delay(10);  //wait for user to stop pressing
 		Serial.println("The red_button is not pressed.");
@@ -90,6 +121,29 @@ void loop() {
 		enc1_pixel.setPixelColor(0, Wheel((new_position*4) & 0xFF));
 		enc1_pixel.show();
 		enc1_position = new_position;      // and save for next round
+	}
+
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_UP)) {
+	  Serial.println("UP pressed!");
+	}
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_DOWN)) {
+	  Serial.println("DOWN pressed!");
+	}
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_SELECT)) {
+	  Serial.println("SELECT pressed!");
+	}
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_LEFT)) {
+	  Serial.println("LEFT pressed!");
+	}
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_RIGHT)) {
+	  Serial.println("RIGHT pressed!");
+	}
+
+	new_position = rot_wheel.getEncoderPosition();
+	// did we move around?
+	if (rot_wheel_position != new_position) {
+	  Serial.println(new_position);         // display new position
+	  rot_wheel_position = new_position;      // and save for next round
 	}
 
 	// don't overwhelm serial port
