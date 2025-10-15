@@ -40,7 +40,7 @@ void setup() {
 	Wire.begin(); //Join I2C bus
 
 	//check if red_button will acknowledge over I2C
-	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin()) {
+	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin(Wire, QWIIC_ADDR_JOYSTICK)) {
 		Serial.println("Device did not acknowledge! Freezing.");
 		while(1) delay(10);
 	}
@@ -154,22 +154,28 @@ void loop() {
 	uint16_t y = joystick.getVertical();
 	uint16_t b = joystick.getButton();
 
-	if (x != 521) {
+	bool joystick_active = false;
+
+
+	if (!(x > 510 && x < 530)) {
+		joystick_active = true;
 		Serial.print("X: ");
 		Serial.print(x);
 	}
 
-	if (y != 512) {
-		Serial.print(" Y: ");
+	if (!(y > 510 && y < 530)) {
+		joystick_active = true;
+		Serial.print("Y: ");
 		Serial.print(y);
 	}
 
 	if (b != 1) {
-		Serial.print(" Button: ");
+		joystick_active = true;
+		Serial.print("Button: ");
 		Serial.print(b);
 	}
 
-	if (x != 521 || y != 512 || b != 1) {
+	if (joystick_active) {
 		Serial.println("");
 	}
 
