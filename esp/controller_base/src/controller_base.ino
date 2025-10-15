@@ -1,7 +1,10 @@
+#include <WiFi.h>
+#include <WiFiUdp.h>
 #include <Wire.h>
 #include <SparkFun_Qwiic_Keypad_Arduino_Library.h>
 #include <SparkFun_Qwiic_Button.h>
 #include <SparkFun_Qwiic_Joystick_Arduino_Library.h>
+#include <MicroOscUdp.h>
 
 #include <Adafruit_seesaw.h>
 #include <seesaw_neopixel.h>
@@ -37,6 +40,12 @@ JOYSTICK joystick;
 #define QWIIC_ADDR_KEYPAD 0x4B
 KEYPAD keypad;
 
+unsigned long previousMillis = millis();
+
+const IPAddress outIp(192, 168, 88, 88);
+WiFiUDP udp;
+MicroOscUdp<1024> oscEndpoint(&udp, outIp, 1337);
+
 uint32_t Wheel(byte WheelPos) {
 	WheelPos = 255 - WheelPos;
 	if (WheelPos < 85) {
@@ -55,6 +64,18 @@ void setup() {
 	while (!Serial) delay(10);
 
 	Serial.println("Startup");
+
+	WiFi.mode(WIFI_STA);
+	WiFi.begin("purple24", "red-black-white-green");
+	Serial.print("Connecting to WiFi ..");
+	while (WiFi.status() != WL_CONNECTED) {
+		Serial.print('.');
+		delay(1000);
+	}
+	Serial.println(WiFi.localIP());
+
+	udp.begin(1337);
+
 
 	Wire.begin(); //Join I2C bus
 
@@ -151,6 +172,20 @@ void loop() {
 	}
 	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_DOWN)) {
 		Serial.println("DOWN pressed!");
+	}
+	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_SELECT)) {
+		Serial.println("SELECT pressed!");
+
+		// OSCMessage msg("/test");
+
+		// myOsc.sendInt("/test", 123);
+
+		// udp.beginPacket(outIp, 1337);
+		// udp.write('a');
+		// udp.endPacket();
+		oscEndpoint.sendMessage("/stuff", "i", (int32_t) 12);
+
+
 		rgbLedWrite(RGB_BUILTIN, RGB_BRIGHTNESS, 0, 0);  // Red
 		delay(250);
 		rgbLedWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0);  // Green
@@ -158,9 +193,7 @@ void loop() {
 		rgbLedWrite(RGB_BUILTIN, 0, 0, RGB_BRIGHTNESS);  // Blue
 		delay(250);
 		rgbLedWrite(RGB_BUILTIN, 0, 0, 0);  // Off / black
-	}
-	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_SELECT)) {
-		Serial.println("SELECT pressed!");
+
 	}
 	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_LEFT)) {
 		Serial.println("LEFT pressed!");
@@ -210,6 +243,16 @@ void loop() {
 
 	if (keypad_button != 0) {
 		Serial.println(keypad_button);
+	}
+
+	unsigned long currentMillis = millis();
+	// if WiFi is down, try reconnecting
+	if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= 4000)) {
+		Serial.print(millis());
+		Serial.println("Reconnecting to WiFi...");
+		WiFi.disconnect();
+		WiFi.reconnect();
+		previousMillis = currentMillis;
 	}
 
 	// don't overwhelm serial port
