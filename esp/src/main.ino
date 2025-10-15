@@ -1,3 +1,5 @@
+#include <Wire.h>
+#include <SparkFun_Qwiic_Keypad_Arduino_Library.h>
 #include <SparkFun_Qwiic_Button.h>
 #include <SparkFun_Qwiic_Joystick_Arduino_Library.h>
 
@@ -29,18 +31,35 @@ QwiicButton red_button;
 Adafruit_seesaw rot_wheel;
 int32_t rot_wheel_position;
 
-#define QWIIC_ADDR_JOYSTICK 0x20
-JOYSTICK joystick; //Create instance of this object
+#define QWIIC_ADDR_JOYSTICK 0x21
+JOYSTICK joystick;
+
+#define QWIIC_ADDR_KEYPAD 0x20
+KEYPAD keypad;
+
+uint32_t Wheel(byte WheelPos) {
+	WheelPos = 255 - WheelPos;
+	if (WheelPos < 85) {
+		return enc1_pixel.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+	}
+	if (WheelPos < 170) {
+		WheelPos -= 85;
+		return enc1_pixel.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+	}
+	WheelPos -= 170;
+	return enc1_pixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
 
 void setup() {
 	Serial.begin(115200);
 	while (!Serial) delay(10);
 
-	Serial.println("Qwiic red_button examples");
+	Serial.println("Startup");
+
 	Wire.begin(); //Join I2C bus
 
 	//check if red_button will acknowledge over I2C
-	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin(Wire, QWIIC_ADDR_JOYSTICK)) {
+	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin(Wire, QWIIC_ADDR_JOYSTICK) || !keypad.begin(Wire, QWIIC_ADDR_KEYPAD)) {
 		Serial.println("Device did not acknowledge! Freezing.");
 		while(1) delay(10);
 	}
@@ -179,23 +198,15 @@ void loop() {
 		Serial.println("");
 	}
 
+	keypad.updateFIFO();
+	char keypad_button = keypad.getButton();
+
+	if (keypad_button != 0) {
+		Serial.println(keypad_button);
+	}
 
 	// don't overwhelm serial port
 	delay(10);
-}
-
-
-uint32_t Wheel(byte WheelPos) {
-	WheelPos = 255 - WheelPos;
-	if (WheelPos < 85) {
-		return enc1_pixel.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-	}
-	if (WheelPos < 170) {
-		WheelPos -= 85;
-		return enc1_pixel.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-	}
-	WheelPos -= 170;
-	return enc1_pixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
 
 // ---- //
