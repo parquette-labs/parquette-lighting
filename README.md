@@ -54,6 +54,7 @@
 	* `/python/parquette-lights/params.pickle` contains the presets, it is auto updated when you adjust the presets in the front end (by clicking save or clear preset). You of course have to save and commit those changes for them to persist
 
 ## Notes/Ideas/TODOs
+* Some kind of visualizer to test in realtime without lights
 * Presets and automations
 	* Split up presets between for washes (ambient) and reds (active) lighting
 	* Interpolate between presets when you switch over
