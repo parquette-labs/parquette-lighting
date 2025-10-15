@@ -1,6 +1,7 @@
 #include <SparkFun_Qwiic_Button.h>
+#include <SparkFun_Qwiic_Joystick_Arduino_Library.h>
 
-#include "Adafruit_seesaw.h"
+#include <Adafruit_seesaw.h>
 #include <seesaw_neopixel.h>
 
 #define ENC_SWITCH 24
@@ -28,6 +29,9 @@ QwiicButton red_button;
 Adafruit_seesaw rot_wheel;
 int32_t rot_wheel_position;
 
+#define QWIIC_ADDR_JOYSTICK 0x20
+JOYSTICK joystick; //Create instance of this object
+
 void setup() {
 	Serial.begin(115200);
 	while (!Serial) delay(10);
@@ -36,7 +40,7 @@ void setup() {
 	Wire.begin(); //Join I2C bus
 
 	//check if red_button will acknowledge over I2C
-	if (red_button.begin(QWIIC_ADDR_REDBTN) == false) {
+	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin()) {
 		Serial.println("Device did not acknowledge! Freezing.");
 		while(1) delay(10);
 	}
@@ -145,6 +149,30 @@ void loop() {
 	  Serial.println(new_position);         // display new position
 	  rot_wheel_position = new_position;      // and save for next round
 	}
+
+	uint16_t x = joystick.getHorizontal();
+	uint16_t y = joystick.getVertical();
+	uint16_t b = joystick.getButton();
+
+	if (x != 521) {
+		Serial.print("X: ");
+		Serial.print(x);
+	}
+
+	if (y != 512) {
+		Serial.print(" Y: ");
+		Serial.print(y);
+	}
+
+	if (b != 1) {
+		Serial.print(" Button: ");
+		Serial.print(b);
+	}
+
+	if (x != 521 || y != 512 || b != 1) {
+		Serial.println("");
+	}
+
 
 	// don't overwhelm serial port
 	delay(10);
