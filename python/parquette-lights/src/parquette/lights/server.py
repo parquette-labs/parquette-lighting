@@ -215,7 +215,29 @@ class DMXManager(object):
 
 
 class SpotLight(object):
-    class Color(Enum):
+    class SpotChannels(Enum):
+        COLOR_WHEEL = 0
+        STROBE = 1
+        DIMMING = 2
+        GLOBO = 3
+        PRISIM = 4
+        ATOMIZE = 5
+        FOCUSING = 6
+        X_AXIS = 7
+        X_AXIS_FINE = 8
+        Y_AXIS = 9
+        Y_AXIS_FINE = 10
+        XY_SPEED = 12
+        SELF_PROPELLED = 12
+        RESET = 13
+        RING_LIGHT_STROBE = 14
+        RING_LIGHT_RED = 15
+        RING_LIGHT_GREEN = 16
+        RING_LIGHT_BLUE = 17
+        RING_LIGHT_SCENE = 18
+        RING_LIGHT_SCENE_SPEED = 19
+
+    class SpotColor(Enum):
         WHITE = 0
         WHITE_COLOR_1 = 5
         COLOR_1 = 10
@@ -247,7 +269,7 @@ class SpotLight(object):
         REVERSE_FLOW = 140
         FORWARD_FLOW = 201
 
-    class Strobe(Enum):
+    class SpotStrobe(Enum):
         CLOSED = 0
         STROBE = 4
         SHUTTER_OPEN_A = 104
@@ -256,74 +278,184 @@ class SpotLight(object):
         RANDOM = 213
         SHUTTER_OPEN_C = 252
 
-    class Globo(Enum):
-        SOLID_1_WHITE = 5
-        SOLID_2 = 10
-        SOLID_3 = 15
-        SOLID_4 = 20
-        SOLID_5 = 25
-        SOLID_6 = 30
-        SOLID_7 = 35
-        SOLID_8 = 40
-        SOLID_9 = 45
-        SOLID_10 = 50
-        SOLID_11 = 55
-        SOLID_12 = 60
-        SOLID_13 = 65
-        SOLID_14 = 70
-        SOLID_15 = 75
-        SOLID_16 = 80
-        SOLID_17 = 85
-        SOLID_18 = 90
-        FIXED_JITTER_1 = 95
-        FIXED_JITTER_2 = 100
-        FIXED_JITTER_3 = 105
-        FIXED_JITTER_4 = 110
-        FIXED_JITTER_5 = 115
-        FIXED_JITTER_6 = 120
-        FIXED_JITTER_7 = 125
-        FIXED_JITTER_8 = 130
-        FIXED_JITTER_9 = 135
-        FIXED_JITTER_10 = 140
-        FIXED_JITTER_11 = 145
-        FIXED_JITTER_12 = 150
-        FIXED_JITTER_13 = 155
-        FIXED_JITTER_14 = 160
-        FIXED_JITTER_15 = 165
-        FIXED_JITTER_16 = 170
-        FIXED_JITTER_17 = 175
-        FIXED_JITTER_18 = 180
-        FORWARD_FLOW = 218
+    class SpotGlobo(Enum):
+        SOLID_1_WHITE = 0
+        SOLID_2 = 5
+        SOLID_3 = 10
+        SOLID_4 = 15
+        SOLID_5 = 20
+        SOLID_6 = 25
+        SOLID_7 = 30
+        SOLID_8 = 35
+        SOLID_9 = 40
+        SOLID_10 = 45
+        SOLID_11 = 50
+        SOLID_12 = 55
+        SOLID_13 = 60
+        SOLID_14 = 65
+        SOLID_15 = 70
+        SOLID_16 = 75
+        SOLID_17 = 80
+        SOLID_18 = 85
+        FIXED_JITTER_1 = 90
+        FIXED_JITTER_2 = 95
+        FIXED_JITTER_3 = 100
+        FIXED_JITTER_4 = 105
+        FIXED_JITTER_5 = 110
+        FIXED_JITTER_6 = 115
+        FIXED_JITTER_7 = 120
+        FIXED_JITTER_8 = 125
+        FIXED_JITTER_9 = 130
+        FIXED_JITTER_10 = 135
+        FIXED_JITTER_11 = 140
+        FIXED_JITTER_12 = 145
+        FIXED_JITTER_13 = 150
+        FIXED_JITTER_14 = 155
+        FIXED_JITTER_15 = 160
+        FIXED_JITTER_16 = 165
+        FIXED_JITTER_17 = 170
+        FIXED_JITTER_18 = 175
+        FORWARD_FLOW = 180
+        REVERSE_FLOW = 218
+
+    class SpotPrisim(Enum):
+        NONE = 0
+        PRISIM = 15
+        PRISIM_ROTATION = 128
+
+    class SpotAtomize(Enum):
+        NONE = 0
+        ATOMIZED_SHEET_CUT_IN = 128
+        COLORFUL_CUT = 192
+
+    class SpotSelfPropelled(Enum):
+        NONE = 0
+        SELF_PROPELLED = 64
+        RANDOM_WALK = 128
+        VOICE_ACTIVATED = 192
+
+    class SpotReset(Enum):
+        NONE = 0
+        SMALL_MOTOR = 26
+        XY_MOTOR = 61
+        ALL_MOTOR = 251
+
+    class SpotLightRingStrobe(Enum):
+        OFF = 0
+        LED = 64
+        STROBE = 128
+
+    class SpotLightRingScene(Enum):
+        NO_EFFECT = 0
+        COLOR_JUMP = 16
+        COLOR_GRADIENT = 24
+        SCENE_1 = 32
+        SCENE_2 = 64
+        SCENE_3 = 96
+        SCENE_4 = 112
+        SCENE_5 = 128
+        SCENE_6 = 152
+        SCENE_7 = 176
+        SCENE_8 = 200
+        SCENE_9 = 224
+        SCENE_10 = 248
+        RANDOM = 252
 
     def __init__(self, dmx, addr):
         self.dmx = dmx
         self.addr = addr
 
-    def color_wheel(self, color, rate=-1):
+    def color_wheel(self, color, rate=0):
         if color == Color.REVERSE_FLOW:
             rate = constrain(rate, 0, 200 - 140)  # TODO from enum
-            self.dmx.set_channel(self.addr, Color.REVERSE_FLOW.value + rate)
         elif color == Color.FORWARD_FLOW:
             rate = constrain(rate, 0, 255 - 201)
-            self.dmx.set_channel(self.addr, Color.FORWARD_FLOW.value + rate)
-        else:
-            self.dmx.set_channel(self.addr, color.value)
 
-    def cut_strobe(self, strobe, rate=-1):
+        self.dmx.set_channel(
+            SpotChannel.COLOR_WHEEL.value + self.addr, color.value + rate
+        )
+
+    def cut_strobe(self, strobe, rate=0):
         if strobe == Strobe.STROBE:
             rate = constrain(rate, 0, 103 - 4)
-            self.dmx.set_channel(self.addr + 1, Strobe.STROBE.value + rate)
         elif strobe == Strobe.PULSE:
             rate = constrain(rate, 0, 207 - 108)
-            self.dmx.set_channel(self.addr + 1, Strobe.PULSE.value + rate)
         elif strobe == Strobe.RANDOM:
             rate = constrain(rate, 0, 251 - 213)
-            self.dmx.set_channel(self.addr + 1, Strobe.RANDOM.value + rate)
-        else:
-            self.dmx.set_channel(self.addr + 1, strobe.value)
+
+        self.dmx.set_channel(
+            SpotChannel.STROBE.value + self.addr + 1, strobe.value + rate
+        )
 
     def dimming(self, value):
-        self.dmx.set_channel(self.addr + 2, value)
+        self.dmx.set_channel(SpotChannel.DIMMING.value + self.addr + 2, value)
+
+    def globo(self, globo, rate=-1):
+        if globo == FORWARD_FLOW:
+            rate = constrain(rate, 0, 217 - 180)
+        if globo == REVERSE_FLOW:
+            rate = constrain(rate, 0, 255 - 218)
+
+        self.dmx.set_channel(SpotChannel.GLOBO.value + self.addr, globo.value + rate)
+
+    def prisim(self, prisim, rotation=0):
+        # TODO bounce non enum
+        if prisim == SpotPrisim.PRISIM_ROTATION:
+            rotation = constrain(rotation, 0, 255 - 192)
+
+        self.dmx.set_channel(SpotChannel.PRISIM.value, prisim.value + rotation)
+
+    def atomize(self, atomize):
+        self.dmx.set_channel(SpotChannel.ATOMIZE.value, atomize.value)
+
+    def focusing(self, value):
+        self.dmx.set_channel(SpotChannel.FOCUSING.value, value)
+
+    def x(self, x):
+        self.dmx.set_channel(SpotChannel.X_AXIS.value, x)
+
+    def x_fine(self, x_fine):
+        self.dmx.set_channel(SpotChannel.X_AXIS_FINE.value, x_fine)
+
+    def y(self, y):
+        self.dmx.set_channel(SpotChannel.Y_AXIS.value, y)
+
+    def y_fine(self, y_fine):
+        self.dmx.set_channel(SpotChannel.Y_AXIS_FINE.value, y_fine)
+
+    def xy_speed(self, xy_speed):
+        self.dmx.set_channel(SpotChannel.XY_SPEED.value, xy_speed)
+
+    def self_propelled(self, self_propelled):
+        self.dmx.set_channel(SpotChannel.SELF_PROPELLED.value, self_propelled.value)
+
+    def reset(self, reset):
+        self.dmx.set_channel(SpotChannel.RESET.value, reset.value)
+
+    def ring_light_strobe(self, ring_light_strobe, rate=0):
+        if ring_light_strobe == SpotLightRingStrobe.STROBE:
+            rate = constrain(rate, 0, 255 - 128)
+
+        self.dmx.set_channel(
+            SpotChannel.RING_LIGHT_STROBE.value, ring_light_strobe.value + rate
+        )
+
+    def ring_light_red(self, ring_light_red):
+        self.dmx.set_channel(SpotChannel.RING_LIGHT_RED.value, ring_light_red)
+
+    def ring_light_green(self, ring_light_green):
+        self.dmx.set_channel(SpotChannel.RING_LIGHT_GREEN.value, ring_light_green)
+
+    def ring_light_blue(self, ring_light_blue):
+        self.dmx.set_channel(SpotChannel.RING_LIGHT_BLUE.value, ring_light_blue)
+
+    def ring_light_scene(self, ring_light_scene):
+        self.dmx.set_channel(SpotChannel.RING_LIGHT_SCENE.value, ring_light_scene.value)
+
+    def ring_light_scene_speed(self, ring_light_scene_speed):
+        self.dmx.set_channel(
+            SpotChannel.RING_LIGHT_SCENE_SPEED.value, ring_light_scene_speed
+        )
 
 
 class PinSpot(object):
@@ -1087,7 +1219,7 @@ def run(
     osc.set_debug(debug)
     dmx = DMXManager(osc, art_net_ip)
     dmx.use_art_net = boot_art_net
-    print(SpotLight.Color.WHITE.value)
+    print(SpotLight.SpotColor.WHITE.value)
 
     # pin = PinSpot(dmx, 1)
     # pin.set(255, 0, 0, 0)
