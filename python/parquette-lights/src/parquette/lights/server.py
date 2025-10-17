@@ -9,6 +9,7 @@ import struct
 from threading import Thread
 import pickle
 import pprint
+from enum import Enum
 
 from librosa import (
     stft,  # pylint: disable=no-name-in-module
@@ -211,6 +212,118 @@ class DMXManager(object):
 
         if deselect:
             self.osc.send_osc("/dmx_port_name", [None])
+
+
+class SpotLight(object):
+    class Color(Enum):
+        WHITE = 0
+        WHITE_COLOR_1 = 5
+        COLOR_1 = 10
+        COLOR_1_COLOR_2 = 15
+        COLOR_2 = 20
+        COLOR_2_COLOR_3 = 25
+        COLOR_3 = 30
+        COLOR_3_COLOR_4 = 35
+        COLOR_4 = 40
+        COLOR_4_COLOR_5 = 45
+        COLOR_5 = 50
+        COLOR_5_COLOR_6 = 55
+        COLOR_6 = 60
+        COLOR_6_COLOR_7 = 65
+        COLOR_7 = 70
+        COLOR_7_COLOR_8 = 75
+        COLOR_8 = 80
+        COLOR_8_COLOR_9 = 85
+        COLOR_9 = 90
+        COLOR_9_COLOR_10 = 95
+        COLOR_10 = 100
+        COLOR_10_COLOR_11 = 105
+        COLOR_11 = 110
+        COLOR_11_COLOR_12 = 115
+        COLOR_12 = 120
+        COLOR_12_COLOR_13 = 125
+        COLOR_13 = 130
+        COLOR_13_WHITE = 135
+        REVERSE_FLOW = 140
+        FORWARD_FLOW = 201
+
+    class Strobe(Enum):
+        CLOSED = 0
+        STROBE = 4
+        SHUTTER_OPEN_A = 104
+        PULSE = 108
+        SHUTTER_OPEN_B = 208
+        RANDOM = 213
+        SHUTTER_OPEN_C = 252
+
+    class Globo(Enum):
+        SOLID_1_WHITE = 5
+        SOLID_2 = 10
+        SOLID_3 = 15
+        SOLID_4 = 20
+        SOLID_5 = 25
+        SOLID_6 = 30
+        SOLID_7 = 35
+        SOLID_8 = 40
+        SOLID_9 = 45
+        SOLID_10 = 50
+        SOLID_11 = 55
+        SOLID_12 = 60
+        SOLID_13 = 65
+        SOLID_14 = 70
+        SOLID_15 = 75
+        SOLID_16 = 80
+        SOLID_17 = 85
+        SOLID_18 = 90
+        FIXED_JITTER_1 = 95
+        FIXED_JITTER_2 = 100
+        FIXED_JITTER_3 = 105
+        FIXED_JITTER_4 = 110
+        FIXED_JITTER_5 = 115
+        FIXED_JITTER_6 = 120
+        FIXED_JITTER_7 = 125
+        FIXED_JITTER_8 = 130
+        FIXED_JITTER_9 = 135
+        FIXED_JITTER_10 = 140
+        FIXED_JITTER_11 = 145
+        FIXED_JITTER_12 = 150
+        FIXED_JITTER_13 = 155
+        FIXED_JITTER_14 = 160
+        FIXED_JITTER_15 = 165
+        FIXED_JITTER_16 = 170
+        FIXED_JITTER_17 = 175
+        FIXED_JITTER_18 = 180
+        FORWARD_FLOW = 218
+
+    def __init__(self, dmx, addr):
+        self.dmx = dmx
+        self.addr = addr
+
+    def color_wheel(self, color, rate=-1):
+        if color == Color.REVERSE_FLOW:
+            rate = constrain(rate, 0, 200 - 140)  # TODO from enum
+            self.dmx.set_channel(self.addr, Color.REVERSE_FLOW.value + rate)
+        elif color == Color.FORWARD_FLOW:
+            rate = constrain(rate, 0, 255 - 201)
+            self.dmx.set_channel(self.addr, Color.FORWARD_FLOW.value + rate)
+        else:
+            self.dmx.set_channel(self.addr, color.value)
+
+    def cut_strobe(self, strobe, rate=-1):
+        if strobe == Strobe.STROBE:
+            rate = constrain(rate, 0, 103 - 4)
+            self.dmx.set_channel(self.addr + 1, Strobe.STROBE.value + rate)
+        elif strobe == Strobe.PULSE:
+            rate = constrain(rate, 0, 207 - 108)
+            self.dmx.set_channel(self.addr + 1, Strobe.PULSE.value + rate)
+        elif strobe == Strobe.RANDOM:
+            rate = constrain(rate, 0, 251 - 213)
+            self.dmx.set_channel(self.addr + 1, Strobe.RANDOM.value + rate)
+        else:
+            self.dmx.set_channel(self.addr + 1, strobe.value)
+
+    def dimming(self, value):
+        self.dmx.set_channel(self.addr + 2, value)
 
 
 class PinSpot(object):
@@ -974,6 +1087,7 @@ def run(
     osc.set_debug(debug)
     dmx = DMXManager(osc, art_net_ip)
     dmx.use_art_net = boot_art_net
+    print(SpotLight.Color.WHITE.value)
 
     # pin = PinSpot(dmx, 1)
     # pin.set(255, 0, 0, 0)
