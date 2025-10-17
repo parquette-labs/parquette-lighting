@@ -26,7 +26,8 @@ from pythonosc.dispatcher import Dispatcher, Handler
 from pythonosc import osc_server
 from pythonosc.udp_client import SimpleUDPClient
 
-from DMXEnttecPro import Controller  # type: ignore[import-untyped]
+from DMXEnttecPro import Controller as EnttecProController  # type: ignore[import-untyped]
+from stupidArtnet import StupidArtnet
 
 import serial.tools.list_ports as slp
 from serial import SerialException
@@ -115,10 +116,20 @@ class UIDebugFrame(dict):
 
 
 class DMXManager(object):
-    controller: Controller = None
+    enttec_pro_controller: EnttecProController = None
+    art_net_controller: StupidArtnet = None
+    use_art_net: bool = False
 
-    def __init__(self, osc: OSCManager) -> None:
+    def __init__(self, osc: OSCManager, art_net_ip: str) -> None:
         self.osc = osc
+
+        self.art_net_ip = art_net_ip
+        self.art_net_controller = StupidArtnet(self.art_net_ip)
+        self.art_net_controller.set_simplified(False)
+        self.art_net_controller.set_universe(0)
+        self.art_net_controller.set_subnet(0)
+        self.art_net_controller.set_net(0)
+
         self.osc.dispatcher.map(
             "/dmx_port_refresh", lambda addr, args: self.dmx_port_refresh()
         )
@@ -133,9 +144,11 @@ class DMXManager(object):
 
     @classmethod
     def list_dmx_ports(cls) -> List[str]:
-        return [
+        device = [
             l.device for l in slp.comports() if l.manufacturer in ("FTDI", "ENTTEC")
         ]
+        device.append("art-net-node-1")
+        return device
 
     def dmx_port_refresh(self) -> None:
         ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
@@ -144,46 +157,86 @@ class DMXManager(object):
     def setup_dmx(self, port: str) -> None:
         self.close(deselect=False)
 
-        try:
-            self.controller = Controller(port, auto_submit=False, dmx_size=256)
-            self.osc.send_osc("/dmx_port_name", [port])
-        except SerialException as e:
-            print(e, flush=True)
-            self.close()
+        self.use_art_net = port == "art-net-node-1"
+
+        if not self.use_art_net:
+            try:
+                self.enttec_pro_controller = EnttecProController(
+                    port, auto_submit=False, dmx_size=256
+                )
+                self.osc.send_osc("/dmx_port_name", [port])
+            except SerialException as e:
+                print(e, flush=True)
+                self.close()
 
     def set_channel(
         self, chan: int, val: Union[int, float], clamp: bool = True
     ) -> None:
-        if self.controller is None:
-            return
-
         if clamp:
             val = int(constrain(val, 0, 255))
 
+        if self.use_art_net:
+            self.art_net_controller.set_single_value(chan, val)
+            return
+
+        if self.enttec_pro_controller is None:
+            return
         try:
-            self.controller.set_channel(chan, val)
+            self.enttec_pro_controller.set_channel(chan, val)
         except SerialException:
             self.close()
 
     def submit(self) -> None:
-        if self.controller is None:
+        if self.use_art_net:
+            self.art_net_controller.show()
+            return
+
+        if self.enttec_pro_controller is None:
             return
 
         try:
-            self.controller.submit()
+            self.enttec_pro_controller.submit()
         except SerialException:
             self.close()
 
     def close(self, deselect=True) -> None:
-        if not self.controller is None:
+        self.use_art_net = False
+
+        if not self.enttec_pro_controller is None:
             try:
-                self.controller.close()
+                self.enttec_pro_controller.close()
             except:
                 pass
-            self.controller = None
+            self.enttec_pro_controller = None
 
         if deselect:
             self.osc.send_osc("/dmx_port_name", [None])
+
+
+class PinSpot(object):
+    def __init__(self, dmx, addr):
+        self.dmx = dmx
+        self.addr = addr
+
+    def back(self):
+        self.off()
+
+    def off(self):
+        self.set(0, 0, 0, 0)
+
+    def white(self):
+        self.set(0, 0, 0, 255)
+
+    def on(self):
+        self.set(255, 255, 255, 255)
+
+    def set(self, r, g, b, w):
+        self.dmx.set_channel(0 + self.addr, 255)
+        self.dmx.set_channel(1 + self.addr, r)
+        self.dmx.set_channel(2 + self.addr, g)
+        self.dmx.set_channel(3 + self.addr, b)
+        self.dmx.set_channel(4 + self.addr, w)
+        self.dmx.set_channel(5 + self.addr, 0)
 
 
 class AudioCapture(object):
@@ -892,7 +945,11 @@ class SignalPatchParam(OSCParam):
 @click.option("--local-port", default=5005, type=int, help="port")
 @click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
 @click.option("--target-port", default=5006, type=int, help="port")
+@click.option(
+    "--art-net-ip", default="192.168.88.111", type=str, help="port for artnet node"
+)
 @click.option("--debug", is_flag=True, default=False)
+@click.option("--boot-art-net", is_flag=True, default=False)
 @click.option(
     "--presets-file",
     default="params.pickle",
@@ -904,7 +961,9 @@ def run(
     local_port: int,
     target_ip: str,
     target_port: int,
+    art_net_ip: str,
     debug: bool,
+    boot_art_net: bool,
     presets_file: str,
 ) -> None:
     print("Setup", flush=True)
@@ -913,7 +972,16 @@ def run(
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug)
-    dmx = DMXManager(osc)
+    dmx = DMXManager(osc, art_net_ip)
+    dmx.use_art_net = boot_art_net
+
+    # pin = PinSpot(dmx, 1)
+    # pin.set(255, 0, 0, 0)
+    # dmx.submit()
+    # time.sleep(4)
+    # pin.off()
+    # dmx.submit()
+
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
 

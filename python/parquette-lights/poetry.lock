@@ -472,8 +472,8 @@ files = [
 ]
 
 [package.dependencies]
-decorator = {version = "*", markers = "python_version > \"3.6\""}
-ipython = {version = ">=7.31.1", markers = "python_version > \"3.6\""}
+decorator = {version = "*", markers = "python_version > \"3.6\" and python_version < \"3.11\""}
+ipython = {version = ">=7.31.1", markers = "python_version > \"3.6\" and python_version < \"3.11\""}
 tomli = {version = "*", markers = "python_version > \"3.6\" and python_version < \"3.11\""}
 
 [[package]]
@@ -1616,6 +1616,18 @@ files = [
 audioop-lts = {version = "*", markers = "python_version >= \"3.13\""}
 
 [[package]]
+name = "stupidartnet"
+version = "1.6.0"
+description = "(Very) Simple implementation of the Art-Net protocol"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "stupidartnet-1.6.0-py3-none-any.whl", hash = "sha256:b9b96fe23e759966b8692d99f0b6111f2b0a1b90b18e10a7bdc8a459ca3fe7c0"},
+    {file = "stupidartnet-1.6.0.tar.gz", hash = "sha256:0e4c0cd0b662c2663ce0397d6f990dbae91576ad7c10230863e96d8d78c21845"},
+]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.6.0"
 description = "threadpoolctl"
@@ -1767,4 +1779,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "67fdfbcb0873cdf14a8746689e085e8bb7bc572730430b4c651cc235f7d0dd0b"
+content-hash = "f7d4a7e94027726e6b2a270f8d216adb1943bd75de98f4ef243543f1f4599ca1"
