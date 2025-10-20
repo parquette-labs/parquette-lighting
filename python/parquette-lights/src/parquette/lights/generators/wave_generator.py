@@ -2,7 +2,7 @@ import math
 from enum import Enum, auto
 
 from .generator import Generator
-from ..util.math import value_map, constrain
+from ..util.math import value_map
 
 
 class WaveGenerator(Generator):
