@@ -215,7 +215,7 @@ class DMXManager(object):
 
 
 class SpotLight(object):
-    class SpotChannels(Enum):
+    class SpotChannel(Enum):
         COLOR_WHEEL = 0
         STROBE = 1
         DIMMING = 2
@@ -366,95 +366,108 @@ class SpotLight(object):
         self.addr = addr
 
     def color_wheel(self, color, rate=0):
-        if color == Color.REVERSE_FLOW:
+        if color == SpotLight.SpotColor.REVERSE_FLOW:
             rate = constrain(rate, 0, 200 - 140)  # TODO from enum
-        elif color == Color.FORWARD_FLOW:
+        elif color == SpotLight.SpotColor.FORWARD_FLOW:
             rate = constrain(rate, 0, 255 - 201)
 
         self.dmx.set_channel(
-            SpotChannel.COLOR_WHEEL.value + self.addr, color.value + rate
+            SpotLight.SpotChannel.COLOR_WHEEL.value + self.addr, color.value + rate
         )
 
     def cut_strobe(self, strobe, rate=0):
-        if strobe == Strobe.STROBE:
+        if strobe == SpotLight.SpotStrobe.STROBE:
             rate = constrain(rate, 0, 103 - 4)
-        elif strobe == Strobe.PULSE:
+        elif strobe == SpotLight.SpotStrobe.PULSE:
             rate = constrain(rate, 0, 207 - 108)
-        elif strobe == Strobe.RANDOM:
+        elif strobe == SpotLight.SpotStrobe.RANDOM:
             rate = constrain(rate, 0, 251 - 213)
 
         self.dmx.set_channel(
-            SpotChannel.STROBE.value + self.addr + 1, strobe.value + rate
+            SpotLight.SpotChannel.STROBE.value + self.addr + 1, strobe.value + rate
         )
 
     def dimming(self, value):
-        self.dmx.set_channel(SpotChannel.DIMMING.value + self.addr + 2, value)
+        self.dmx.set_channel(SpotLight.SpotChannel.DIMMING.value + self.addr + 2, value)
 
     def globo(self, globo, rate=-1):
-        if globo == FORWARD_FLOW:
+        if globo == SpotLight.SpotGlobo.FORWARD_FLOW:
             rate = constrain(rate, 0, 217 - 180)
-        if globo == REVERSE_FLOW:
+        if globo == SpotLight.SpotGlobo.REVERSE_FLOW:
             rate = constrain(rate, 0, 255 - 218)
 
-        self.dmx.set_channel(SpotChannel.GLOBO.value + self.addr, globo.value + rate)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.GLOBO.value + self.addr, globo.value + rate
+        )
 
     def prisim(self, prisim, rotation=0):
         # TODO bounce non enum
-        if prisim == SpotPrisim.PRISIM_ROTATION:
+        if prisim == SpotLight.SpotPrisim.PRISIM_ROTATION:
             rotation = constrain(rotation, 0, 255 - 192)
 
-        self.dmx.set_channel(SpotChannel.PRISIM.value, prisim.value + rotation)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.PRISIM.value, prisim.value + rotation
+        )
 
     def atomize(self, atomize):
-        self.dmx.set_channel(SpotChannel.ATOMIZE.value, atomize.value)
+        self.dmx.set_channel(SpotLight.SpotChannel.ATOMIZE.value, atomize.value)
 
     def focusing(self, value):
-        self.dmx.set_channel(SpotChannel.FOCUSING.value, value)
+        self.dmx.set_channel(SpotLight.SpotChannel.FOCUSING.value, value)
 
     def x(self, x):
-        self.dmx.set_channel(SpotChannel.X_AXIS.value, x)
+        self.dmx.set_channel(SpotLight.SpotChannel.X_AXIS.value, x)
 
     def x_fine(self, x_fine):
-        self.dmx.set_channel(SpotChannel.X_AXIS_FINE.value, x_fine)
+        self.dmx.set_channel(SpotLight.SpotChannel.X_AXIS_FINE.value, x_fine)
 
     def y(self, y):
-        self.dmx.set_channel(SpotChannel.Y_AXIS.value, y)
+        self.dmx.set_channel(SpotLight.SpotChannel.Y_AXIS.value, y)
 
     def y_fine(self, y_fine):
-        self.dmx.set_channel(SpotChannel.Y_AXIS_FINE.value, y_fine)
+        self.dmx.set_channel(SpotLight.SpotChannel.Y_AXIS_FINE.value, y_fine)
 
     def xy_speed(self, xy_speed):
-        self.dmx.set_channel(SpotChannel.XY_SPEED.value, xy_speed)
+        self.dmx.set_channel(SpotLight.SpotChannel.XY_SPEED.value, xy_speed)
 
     def self_propelled(self, self_propelled):
-        self.dmx.set_channel(SpotChannel.SELF_PROPELLED.value, self_propelled.value)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.SELF_PROPELLED.value, self_propelled.value
+        )
 
     def reset(self, reset):
-        self.dmx.set_channel(SpotChannel.RESET.value, reset.value)
+        self.dmx.set_channel(SpotLight.SpotChannel.RESET.value, reset.value)
 
     def ring_light_strobe(self, ring_light_strobe, rate=0):
-        if ring_light_strobe == SpotLightRingStrobe.STROBE:
+        if ring_light_strobe == SpotLight.SpotLightRingStrobe.STROBE:
             rate = constrain(rate, 0, 255 - 128)
 
         self.dmx.set_channel(
-            SpotChannel.RING_LIGHT_STROBE.value, ring_light_strobe.value + rate
+            SpotLight.SpotChannel.RING_LIGHT_STROBE.value,
+            ring_light_strobe.value + rate,
         )
 
     def ring_light_red(self, ring_light_red):
-        self.dmx.set_channel(SpotChannel.RING_LIGHT_RED.value, ring_light_red)
+        self.dmx.set_channel(SpotLight.SpotChannel.RING_LIGHT_RED.value, ring_light_red)
 
     def ring_light_green(self, ring_light_green):
-        self.dmx.set_channel(SpotChannel.RING_LIGHT_GREEN.value, ring_light_green)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.RING_LIGHT_GREEN.value, ring_light_green
+        )
 
     def ring_light_blue(self, ring_light_blue):
-        self.dmx.set_channel(SpotChannel.RING_LIGHT_BLUE.value, ring_light_blue)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.RING_LIGHT_BLUE.value, ring_light_blue
+        )
 
     def ring_light_scene(self, ring_light_scene):
-        self.dmx.set_channel(SpotChannel.RING_LIGHT_SCENE.value, ring_light_scene.value)
+        self.dmx.set_channel(
+            SpotLight.SpotChannel.RING_LIGHT_SCENE.value, ring_light_scene.value
+        )
 
     def ring_light_scene_speed(self, ring_light_scene_speed):
         self.dmx.set_channel(
-            SpotChannel.RING_LIGHT_SCENE_SPEED.value, ring_light_scene_speed
+            SpotLight.SpotChannel.RING_LIGHT_SCENE_SPEED.value, ring_light_scene_speed
         )
 
 
@@ -1201,6 +1214,7 @@ class SignalPatchParam(OSCParam):
     type=str,
     help="file to store and load presets from",
 )
+# pylint: disable-next=too-many-positional-arguments
 def run(
     local_ip: str,
     local_port: int,
