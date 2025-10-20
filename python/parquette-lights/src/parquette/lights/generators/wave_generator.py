@@ -20,7 +20,7 @@ class WaveGenerator(Generator):
         phase: float = 0,
         offset: float = 0.5,
         shape: Shape = Shape.SIN,
-        duty: float = None,
+        duty: float = 0.5,
     ):
         super().__init__(name=name, amp=amp, offset=offset, period=period, phase=phase)
 
