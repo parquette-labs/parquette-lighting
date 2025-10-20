@@ -214,260 +214,230 @@ class DMXManager(object):
             self.osc.send_osc("/dmx_port_name", [None])
 
 
-class SpotLight(object):
-    class SpotChannel(Enum):
-        COLOR_WHEEL = 0
-        STROBE = 1
-        DIMMING = 2
-        GLOBO = 3
-        PRISIM = 4
-        ATOMIZE = 5
-        FOCUSING = 6
-        X_AXIS = 7
-        X_AXIS_FINE = 8
-        Y_AXIS = 9
-        Y_AXIS_FINE = 10
-        XY_SPEED = 12
-        SELF_PROPELLED = 12
-        RESET = 13
-        RING_LIGHT_STROBE = 14
-        RING_LIGHT_RED = 15
-        RING_LIGHT_GREEN = 16
-        RING_LIGHT_BLUE = 17
-        RING_LIGHT_SCENE = 18
-        RING_LIGHT_SCENE_SPEED = 19
+class YRXY200SpotLight(object):
+    # https://yuerlighting.com/product/280w-rgbw-led-moving-head-light-200w-white-21x-smd-5050-rgb-540-pan-200-tilt-for-dj-shows-weddings-church-services-events/
 
-    class SpotColor(Enum):
+    class YRXY200SpotChannel(Enum):
+        X_AXIS = 0
+        X_AXIS_FINE = 1
+        Y_AXIS = 2
+        Y_AXIS_FINE = 3
+        XY_SPEED = 4
+        DIMMING = 5
+        STROBE = 6
+        COLOR = 7
+        PATTERN = 8
+        PRISIM = 9
+        COLORFUL = 10
+        SELF_PROPELLED = 11
+        RESET = 12
+        LIGHT_STRIP_SCENE = 13
+        SCENE_SPEED = 14
+
+    class YRXY200SpotStrobe(Enum):
+        CLOSE = 0
+        STROBE = 10
+        OPEN = 250
+
+    class YRXY200SpotColor(Enum):
         WHITE = 0
-        WHITE_COLOR_1 = 5
         COLOR_1 = 10
-        COLOR_1_COLOR_2 = 15
         COLOR_2 = 20
-        COLOR_2_COLOR_3 = 25
         COLOR_3 = 30
-        COLOR_3_COLOR_4 = 35
         COLOR_4 = 40
-        COLOR_4_COLOR_5 = 45
         COLOR_5 = 50
-        COLOR_5_COLOR_6 = 55
         COLOR_6 = 60
-        COLOR_6_COLOR_7 = 65
         COLOR_7 = 70
-        COLOR_7_COLOR_8 = 75
-        COLOR_8 = 80
-        COLOR_8_COLOR_9 = 85
-        COLOR_9 = 90
-        COLOR_9_COLOR_10 = 95
-        COLOR_10 = 100
-        COLOR_10_COLOR_11 = 105
-        COLOR_11 = 110
-        COLOR_11_COLOR_12 = 115
-        COLOR_12 = 120
-        COLOR_12_COLOR_13 = 125
-        COLOR_13 = 130
-        COLOR_13_WHITE = 135
+        HALF_COLOR_1 = 80
+        HALF_COLOR_2 = 90
+        HALF_COLOR_3 = 100
+        HALF_COLOR_4 = 110
+        HALF_COLOR_5 = 120
+        HALF_COLOR_6 = 130
         REVERSE_FLOW = 140
-        FORWARD_FLOW = 201
+        FORWARD_FLOW = 198
 
-    class SpotStrobe(Enum):
-        CLOSED = 0
-        STROBE = 4
-        SHUTTER_OPEN_A = 104
-        PULSE = 108
-        SHUTTER_OPEN_B = 208
-        RANDOM = 213
-        SHUTTER_OPEN_C = 252
+    class YRXY200SpotPattern(Enum):
+        CIRCULAR_WHITE = 0
+        PATTERN = 6
+        PATTERN_DITHER = 72
+        FORWARD_FLOW = 144
+        REVERSE_FLOW = 200
 
-    class SpotGlobo(Enum):
-        SOLID_1_WHITE = 0
-        SOLID_2 = 5
-        SOLID_3 = 10
-        SOLID_4 = 15
-        SOLID_5 = 20
-        SOLID_6 = 25
-        SOLID_7 = 30
-        SOLID_8 = 35
-        SOLID_9 = 40
-        SOLID_10 = 45
-        SOLID_11 = 50
-        SOLID_12 = 55
-        SOLID_13 = 60
-        SOLID_14 = 65
-        SOLID_15 = 70
-        SOLID_16 = 75
-        SOLID_17 = 80
-        SOLID_18 = 85
-        FIXED_JITTER_1 = 90
-        FIXED_JITTER_2 = 95
-        FIXED_JITTER_3 = 100
-        FIXED_JITTER_4 = 105
-        FIXED_JITTER_5 = 110
-        FIXED_JITTER_6 = 115
-        FIXED_JITTER_7 = 120
-        FIXED_JITTER_8 = 125
-        FIXED_JITTER_9 = 130
-        FIXED_JITTER_10 = 135
-        FIXED_JITTER_11 = 140
-        FIXED_JITTER_12 = 145
-        FIXED_JITTER_13 = 150
-        FIXED_JITTER_14 = 155
-        FIXED_JITTER_15 = 160
-        FIXED_JITTER_16 = 165
-        FIXED_JITTER_17 = 170
-        FIXED_JITTER_18 = 175
-        FORWARD_FLOW = 180
-        REVERSE_FLOW = 218
-
-    class SpotPrisim(Enum):
+    class YRXY200SpotPrisim(Enum):
         NONE = 0
-        PRISIM = 15
+        PRISIM = 100
         PRISIM_ROTATION = 128
 
-    class SpotAtomize(Enum):
-        NONE = 0
-        ATOMIZED_SHEET_CUT_IN = 128
-        COLORFUL_CUT = 192
+    class YRXY200SpotColorful(Enum):
+        COLORFUL_OPEN = 0
+        COLORFUL_CLOSE = 127
 
-    class SpotSelfPropelled(Enum):
+    class YRXY200SpotSelfPropelled(Enum):
         NONE = 0
-        SELF_PROPELLED = 64
-        RANDOM_WALK = 128
-        VOICE_ACTIVATED = 192
+        SELF_PROPELLED = 30
+        VOICE_ACTIVATED = 150
 
-    class SpotReset(Enum):
+    class YRXY200SpotReset(Enum):
         NONE = 0
-        SMALL_MOTOR = 26
-        XY_MOTOR = 61
-        ALL_MOTOR = 251
+        X_AXIS = 21
+        Y_AXIS = 101
+        XY_AXIS = 201
+        LAMPS = 250
 
-    class SpotLightRingStrobe(Enum):
+    class YRXY200SpotLightRingScene(Enum):
         OFF = 0
-        LED = 64
-        STROBE = 128
+        COLOR_SELECTION = 16
+        EFFECT_SELECTION = 24
+        RANDOM_SELECTION = 32
 
-    class SpotLightRingScene(Enum):
-        NO_EFFECT = 0
-        COLOR_JUMP = 16
-        COLOR_GRADIENT = 24
-        SCENE_1 = 32
-        SCENE_2 = 64
-        SCENE_3 = 96
-        SCENE_4 = 112
-        SCENE_5 = 128
-        SCENE_6 = 152
-        SCENE_7 = 176
-        SCENE_8 = 200
-        SCENE_9 = 224
-        SCENE_10 = 248
-        RANDOM = 252
-
-    def __init__(self, dmx, addr):
+    def __init__(self, dmx: DMXManager, addr: int):
         self.dmx = dmx
         self.addr = addr
 
-    def color_wheel(self, color, rate=0):
-        if color == SpotLight.SpotColor.REVERSE_FLOW:
-            rate = constrain(rate, 0, 200 - 140)  # TODO from enum
-        elif color == SpotLight.SpotColor.FORWARD_FLOW:
-            rate = constrain(rate, 0, 255 - 201)
-
+    def x(self, x: int) -> None:
         self.dmx.set_channel(
-            SpotLight.SpotChannel.COLOR_WHEEL.value + self.addr, color.value + rate
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.X_AXIS.value, x
         )
 
-    def cut_strobe(self, strobe, rate=0):
-        if strobe == SpotLight.SpotStrobe.STROBE:
-            rate = constrain(rate, 0, 103 - 4)
-        elif strobe == SpotLight.SpotStrobe.PULSE:
-            rate = constrain(rate, 0, 207 - 108)
-        elif strobe == SpotLight.SpotStrobe.RANDOM:
-            rate = constrain(rate, 0, 251 - 213)
-
+    def x_fine(self, x_fine: int) -> None:
         self.dmx.set_channel(
-            SpotLight.SpotChannel.STROBE.value + self.addr + 1, strobe.value + rate
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.X_AXIS_FINE.value, x_fine
         )
 
-    def dimming(self, value):
-        self.dmx.set_channel(SpotLight.SpotChannel.DIMMING.value + self.addr + 2, value)
-
-    def globo(self, globo, rate=-1):
-        if globo == SpotLight.SpotGlobo.FORWARD_FLOW:
-            rate = constrain(rate, 0, 217 - 180)
-        if globo == SpotLight.SpotGlobo.REVERSE_FLOW:
-            rate = constrain(rate, 0, 255 - 218)
-
+    def y(self, y: int) -> None:
         self.dmx.set_channel(
-            SpotLight.SpotChannel.GLOBO.value + self.addr, globo.value + rate
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.Y_AXIS.value, y
         )
 
-    def prisim(self, prisim, rotation=0):
+    def y_fine(self, y_fine: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.Y_AXIS_FINE.value, y_fine
+        )
+
+    def xy_speed(self, xy_speed: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.XY_SPEED.value, xy_speed
+        )
+
+    def dimming(self, value: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.DIMMING.value, value
+        )
+
+    def shutter_strobe(self, shutter_strobe: YRXY200SpotStrobe, rate: int = 0):
+        if shutter_strobe == YRXY200SpotLight.YRXY200SpotStrobe.STROBE:
+            rate = cast(int, constrain(rate, 0, 249 - 10))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.STROBE.value,
+            shutter_strobe.value + rate,
+        )
+
+    def color(self, color: YRXY200SpotColor, rate: int = 0) -> None:
+        if color == YRXY200SpotLight.YRXY200SpotColor.REVERSE_FLOW:
+            rate = cast(int, constrain(rate, 0, 255 - 198))  # TODO from enum
+        elif color == YRXY200SpotLight.YRXY200SpotColor.FORWARD_FLOW:
+            rate = cast(int, constrain(rate, 0, 197 - 140))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.COLOR.value,
+            color.value + rate,
+        )
+
+    def pattern(self, pattern: YRXY200SpotPattern, rate: int = 0) -> None:
+        if pattern == YRXY200SpotLight.YRXY200SpotPattern.CIRCULAR_WHITE:
+            rate = cast(int, constrain(rate, 0, 5))
+        elif pattern == YRXY200SpotLight.YRXY200SpotPattern.PATTERN:
+            rate = cast(int, constrain(rate, 0, 71 - 6))
+        elif pattern == YRXY200SpotLight.YRXY200SpotPattern.PATTERN_DITHER:
+            rate = cast(int, constrain(rate, 0, 143 - 72))
+        elif pattern == YRXY200SpotLight.YRXY200SpotPattern.FORWARD_FLOW:
+            rate = cast(int, constrain(rate, 0, 144 - 199))
+        elif pattern == YRXY200SpotLight.YRXY200SpotPattern.REVERSE_FLOW:
+            rate = cast(int, constrain(rate, 0, 255 - 200))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.PATTERN.value,
+            pattern.value + rate,
+        )
+
+    def colorful(self, colorful: YRXY200SpotColorful) -> None:
+        self.dmx.set_channel(
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.COLORFUL.value,
+            colorful.value,
+        )
+
+    def prisim(self, prisim: YRXY200SpotPrisim, rotation: int = 0) -> None:
         # TODO bounce non enum
-        if prisim == SpotLight.SpotPrisim.PRISIM_ROTATION:
-            rotation = constrain(rotation, 0, 255 - 192)
+        if prisim == YRXY200SpotLight.YRXY200SpotPrisim.PRISIM_ROTATION:
+            rotation = cast(int, constrain(rotation, 0, 255 - 192))
+        else:
+            rotation = 0
 
         self.dmx.set_channel(
-            SpotLight.SpotChannel.PRISIM.value, prisim.value + rotation
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.PRISIM.value,
+            prisim.value + rotation,
         )
 
-    def atomize(self, atomize):
-        self.dmx.set_channel(SpotLight.SpotChannel.ATOMIZE.value, atomize.value)
+    def self_propelled(
+        self, self_propelled: YRXY200SpotSelfPropelled, rate: int = 0
+    ) -> None:
+        if self_propelled == YRXY200SpotLight.YRXY200SpotSelfPropelled.SELF_PROPELLED:
+            rate = cast(int, constrain(rate, 0, 149 - 30))
+        elif (
+            self_propelled == YRXY200SpotLight.YRXY200SpotSelfPropelled.VOICE_ACTIVATED
+        ):
+            rate = cast(int, constrain(rate, 0, 255 - 150))
+        else:
+            rate = 0
 
-    def focusing(self, value):
-        self.dmx.set_channel(SpotLight.SpotChannel.FOCUSING.value, value)
-
-    def x(self, x):
-        self.dmx.set_channel(SpotLight.SpotChannel.X_AXIS.value, x)
-
-    def x_fine(self, x_fine):
-        self.dmx.set_channel(SpotLight.SpotChannel.X_AXIS_FINE.value, x_fine)
-
-    def y(self, y):
-        self.dmx.set_channel(SpotLight.SpotChannel.Y_AXIS.value, y)
-
-    def y_fine(self, y_fine):
-        self.dmx.set_channel(SpotLight.SpotChannel.Y_AXIS_FINE.value, y_fine)
-
-    def xy_speed(self, xy_speed):
-        self.dmx.set_channel(SpotLight.SpotChannel.XY_SPEED.value, xy_speed)
-
-    def self_propelled(self, self_propelled):
         self.dmx.set_channel(
-            SpotLight.SpotChannel.SELF_PROPELLED.value, self_propelled.value
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.SELF_PROPELLED.value,
+            self_propelled.value + rate,
         )
 
-    def reset(self, reset):
-        self.dmx.set_channel(SpotLight.SpotChannel.RESET.value, reset.value)
-
-    def ring_light_strobe(self, ring_light_strobe, rate=0):
-        if ring_light_strobe == SpotLight.SpotLightRingStrobe.STROBE:
-            rate = constrain(rate, 0, 255 - 128)
-
+    def reset(self, reset: YRXY200SpotReset) -> None:
         self.dmx.set_channel(
-            SpotLight.SpotChannel.RING_LIGHT_STROBE.value,
-            ring_light_strobe.value + rate,
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.RESET.value, reset.value
         )
 
-    def ring_light_red(self, ring_light_red):
-        self.dmx.set_channel(SpotLight.SpotChannel.RING_LIGHT_RED.value, ring_light_red)
+    def light_strip_scene(
+        self, light_strip_scene: YRXY200SpotLightRingScene, rate: int = 0
+    ) -> None:
+        if (
+            light_strip_scene
+            == YRXY200SpotLight.YRXY200SpotLightRingScene.COLOR_SELECTION
+        ):
+            rate = cast(int, constrain(rate, 0, 74 - 5))
+        elif (
+            light_strip_scene
+            == YRXY200SpotLight.YRXY200SpotLightRingScene.EFFECT_SELECTION
+        ):
+            rate = cast(int, constrain(rate, 0, 248 - 75))
+        elif (
+            light_strip_scene
+            == YRXY200SpotLight.YRXY200SpotLightRingScene.RANDOM_SELECTION
+        ):
+            rate = cast(int, constrain(rate, 0, 255 - 249))
+        else:
+            rate = 0
 
-    def ring_light_green(self, ring_light_green):
         self.dmx.set_channel(
-            SpotLight.SpotChannel.RING_LIGHT_GREEN.value, ring_light_green
+            YRXY200SpotLight.YRXY200SpotChannel.LIGHT_STRIP_SCENE.value,
+            light_strip_scene.value + rate,
         )
 
-    def ring_light_blue(self, ring_light_blue):
+    def scene_speed(self, scene_speed):
         self.dmx.set_channel(
-            SpotLight.SpotChannel.RING_LIGHT_BLUE.value, ring_light_blue
-        )
-
-    def ring_light_scene(self, ring_light_scene):
-        self.dmx.set_channel(
-            SpotLight.SpotChannel.RING_LIGHT_SCENE.value, ring_light_scene.value
-        )
-
-    def ring_light_scene_speed(self, ring_light_scene_speed):
-        self.dmx.set_channel(
-            SpotLight.SpotChannel.RING_LIGHT_SCENE_SPEED.value, ring_light_scene_speed
+            self.addr + YRXY200SpotLight.YRXY200SpotChannel.SCENE_SPEED.value,
+            scene_speed,
         )
 
 
@@ -1233,7 +1203,6 @@ def run(
     osc.set_debug(debug)
     dmx = DMXManager(osc, art_net_ip)
     dmx.use_art_net = boot_art_net
-    print(SpotLight.SpotColor.WHITE.value)
 
     # pin = PinSpot(dmx, 1)
     # pin.set(255, 0, 0, 0)
