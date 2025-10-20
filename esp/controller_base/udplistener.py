@@ -11,7 +11,7 @@ import socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 server_address = "0.0.0.0"
-server_port = 1337
+server_port = 5005
 
 server = (server_address, server_port)
 sock.bind(server)

@@ -44,7 +44,7 @@ unsigned long previousMillis = millis();
 
 const IPAddress outIp(192, 168, 88, 88);
 WiFiUDP udp;
-MicroOscUdp<1024> oscEndpoint(&udp, outIp, 1337);
+MicroOscUdp<1024> oscEndpoint(&udp, outIp, 5005);
 
 uint32_t Wheel(byte WheelPos) {
 	WheelPos = 255 - WheelPos;
@@ -219,13 +219,17 @@ void loop() {
 	if (!(x > 510 && x < 530)) {
 		joystick_active = true;
 		Serial.print("X: ");
-		Serial.print(x);
+		Serial.print((int32_t) x);
+
+		oscEndpoint.sendMessage("/joystick_x", "i", (int32_t) x);
 	}
 
 	if (!(y > 510 && y < 530)) {
 		joystick_active = true;
 		Serial.print("Y: ");
-		Serial.print(y);
+		Serial.print((int32_t) y);
+
+		oscEndpoint.sendMessage("/joystick_y", "i", (int32_t) y);
 	}
 
 	if (b != 1) {
