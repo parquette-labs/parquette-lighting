@@ -11,7 +11,7 @@ import pprint
 
 import click
 
-from .fixtures import YRXY200SpotLight
+from .fixtures import YRXY200Spot
 
 from .generators import (
     FFTGenerator,
