@@ -155,13 +155,13 @@ class YRXY200Spot(object):
         )
 
     def colorful(self, colorful: YRXY200Colorful) -> None:
+        # light prisim doing color diffraction
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.COLORFUL.value,
             colorful.value,
         )
 
     def prisim(self, prisim: YRXY200Prisim, rotation: int = 0) -> None:
-        # TODO bounce non enum
         if prisim == YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION:
             rotation = cast(int, constrain(rotation, 0, 255 - 192))
         else:
@@ -375,19 +375,19 @@ class PinSpot(object):
         self.dmx = dmx
         self.addr = addr
 
-    def back(self):
+    def black(self):
         self.off()
 
     def off(self):
-        self.set(0, 0, 0, 0)
+        self.rgbw(0, 0, 0, 0)
 
     def white(self):
-        self.set(0, 0, 0, 255)
+        self.rgbw(0, 0, 0, 255)
 
     def on(self):
-        self.set(255, 255, 255, 255)
+        self.rgbw(255, 255, 255, 255)
 
-    def set(self, r, g, b, w):
+    def rgbw(self, r, g, b, w):
         self.dmx.set_channel(0 + self.addr, 255)
         self.dmx.set_channel(1 + self.addr, r)
         self.dmx.set_channel(2 + self.addr, g)

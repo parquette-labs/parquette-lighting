@@ -11,7 +11,7 @@ import pprint
 
 import click
 
-from .fixtures import YRXY200Spot, YUER150Spot
+from .fixtures import YRXY200Spot, YUER150Spot, RGBWash
 
 from .generators import (
     FFTGenerator,
