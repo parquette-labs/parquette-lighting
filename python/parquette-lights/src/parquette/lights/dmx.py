@@ -64,6 +64,12 @@ class DMXManager(object):
                 print(e, flush=True)
                 self.close()
 
+    def art_net_auto_send(self, auto):
+        if auto:
+            self.art_net_controller.start()
+        else:
+            self.art_net_controller.stop()
+
     def set_channel(
         self, chan: int, val: Union[int, float], clamp: bool = True
     ) -> None:

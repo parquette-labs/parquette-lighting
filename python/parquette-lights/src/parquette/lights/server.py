@@ -11,7 +11,7 @@ import pprint
 
 import click
 
-from .fixtures import YRXY200Spot
+from .fixtures import YRXY200Spot, YUER150Spot
 
 from .generators import (
     FFTGenerator,
@@ -445,6 +445,7 @@ class SignalPatchParam(OSCParam):
 )
 @click.option("--debug", is_flag=True, default=False)
 @click.option("--boot-art-net", is_flag=True, default=False)
+@click.option("--art-net-auto", is_flag=True, default=False)
 @click.option(
     "--presets-file",
     default="params.pickle",
@@ -460,6 +461,7 @@ def run(
     art_net_ip: str,
     debug: bool,
     boot_art_net: bool,
+    art_net_auto: bool,
     presets_file: str,
 ) -> None:
     print("Setup", flush=True)
@@ -469,6 +471,7 @@ def run(
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug)
     dmx = DMXManager(osc, art_net_ip)
+    dmx.art_net_auto_send(art_net_auto)
     dmx.use_art_net = boot_art_net
 
     # pin = PinSpot(dmx, 1)

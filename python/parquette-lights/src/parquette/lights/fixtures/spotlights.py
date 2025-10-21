@@ -111,15 +111,15 @@ class YRXY200Spot(object):
             self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, value
         )
 
-    def shutter_strobe(self, shutter_strobe: YRXY200Strobe, rate: int = 0):
-        if shutter_strobe == YRXY200Spot.YRXY200Strobe.STROBE:
+    def strobe(self, strobe: YRXY200Strobe, rate: int = 0):
+        if strobe == YRXY200Spot.YRXY200Strobe.STROBE:
             rate = cast(int, constrain(rate, 0, 249 - 10))
         else:
             rate = 0
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
-            shutter_strobe.value + rate,
+            strobe.value + rate,
         )
 
     def color(self, color: YRXY200Color, rate: int = 0) -> None:
@@ -213,6 +213,160 @@ class YRXY200Spot(object):
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.SCENE_SPEED.value,
             scene_speed,
+        )
+
+
+class YUER150Spot(object):
+    class YUER150Channel(Enum):
+        X_AXIS = 0
+        X_AXIS_FINE = 1
+        Y_AXIS = 2
+        Y_AXIS_FINE = 3
+        XY_SPEED = 4
+        DIMMING = 5
+        STROBE = 6
+        COLOR = 7
+        PATTERN = 8
+        PRISIM = 9
+        SELF_PROPELLED = 10
+        RESET = 11
+
+    class YUER150Strobe(Enum):
+        NO_STROBE = 0
+        STROBE = 16
+
+    class YUER150Color(Enum):
+        WHITE = 0
+        COLOR_1_RED = 16
+        COLOR_2_GREEN = 32
+        COLOR_3_BLUE = 48
+        COLOR_4_PURPLE = 64
+        COLOR_5_ORANGE = 80
+        COLOR_6_TEAL = 96
+        COLOR_7_YELLOW = 112
+        FORWARD_FLOW = 128
+
+    class YUER150Pattern(Enum):
+        CIRCULAR_WHITE = 0
+        PATTERN_1_MUSIC = 16
+        PATTERN_2_ZIG = 32
+        PATTERN_3_CROSS = 48
+        PATTERN_4_FLOWER = 64
+        PATTERN_5_CROSS = 80
+        PATTERN_6_TRIDENT = 96
+        PATTERN_7_SMALL_FLOWER = 112
+        REVERSE_FLOW = 128
+
+    class YUER150Prisim(Enum):
+        NONE = 0
+        PRISIM = 127
+        PRISIM_ROTATION = 137
+
+    class YUER150SelfPropelled(Enum):
+        NONE = 0
+        FAST = 51
+        SLOW = 101
+        SOUND = 201
+
+    class YUER150Reset(Enum):
+        NONE = 0
+        RESET = 250
+
+    def __init__(self, dmx: DMXManager, addr: int):
+        self.dmx = dmx
+        self.addr = addr
+
+    def x(self, x: int) -> None:
+        self.dmx.set_channel(self.addr + YUER150Spot.YUER150Channel.X_AXIS.value, x)
+
+    def x_fine(self, x_fine: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.X_AXIS_FINE.value, x_fine
+        )
+
+    def y(self, y: int) -> None:
+        self.dmx.set_channel(self.addr + YUER150Spot.YUER150Channel.Y_AXIS.value, y)
+
+    def y_fine(self, y_fine: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.Y_AXIS_FINE.value, y_fine
+        )
+
+    def xy_speed(self, xy_speed: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, xy_speed
+        )
+
+    def dimming(self, value: int) -> None:
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
+        )
+
+    def strobe(self, strobe: YUER150Strobe, rate: int = 0):
+        if strobe == YUER150Spot.YUER150Strobe.STROBE:
+            rate = cast(int, constrain(rate, 0, 255 - 16))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.STROBE.value,
+            strobe.value + rate,
+        )
+
+    def color(self, color: YUER150Color, rate: int = 0) -> None:
+        if color == YUER150Spot.YUER150Color.FORWARD_FLOW:
+            rate = cast(int, constrain(rate, 0, 255 - 128))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.COLOR.value,
+            color.value + rate,
+        )
+
+    def pattern(self, pattern: YUER150Pattern, rate: int = 0) -> None:
+        if pattern == YUER150Spot.YUER150Pattern.REVERSE_FLOW:
+            rate = cast(int, constrain(rate, 0, 255 - 128))
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.PATTERN.value,
+            pattern.value + rate,
+        )
+
+    def prisim(self, prisim: YUER150Prisim, rotation: int = 0) -> None:
+        if prisim == YUER150Spot.YUER150Prisim.PRISIM_ROTATION:
+            rotation = cast(int, constrain(rotation, 0, 255 - 137))
+        else:
+            rotation = 0
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
+            prisim.value + rotation,
+        )
+
+    def self_propelled(
+        self, self_propelled: YUER150SelfPropelled, rate: int = 0
+    ) -> None:
+        if self_propelled == YUER150Spot.YUER150SelfPropelled.FAST:
+            rate = cast(int, constrain(rate, 0, 100 - 51))
+        elif self_propelled == YUER150Spot.YUER150SelfPropelled.SLOW:
+            rate = cast(int, constrain(rate, 0, 200 - 101))
+        elif self_propelled == YUER150Spot.YUER150SelfPropelled.SOUND:
+            rate = cast(int, constrain(rate, 0, 255 - 201))
+
+        else:
+            rate = 0
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.SELF_PROPELLED.value,
+            self_propelled.value + rate,
+        )
+
+    def reset(self, reset: YUER150Reset) -> None:
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.RESET.value, reset.value
         )
 
 
