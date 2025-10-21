@@ -40,11 +40,37 @@ JOYSTICK joystick;
 #define QWIIC_ADDR_KEYPAD 0x4B
 KEYPAD keypad;
 
-unsigned long previousMillis = millis();
+#define WIFI_RECONNECT_INTERVAL 4000
+unsigned long last_wifi_reconnect = millis();
+bool wifi_connected = false;
 
 const IPAddress outIp(192, 168, 88, 88);
 WiFiUDP udp;
 MicroOscUdp<1024> oscEndpoint(&udp, outIp, 5005);
+
+// typedef struct {
+// 	void (*connect_callback)(sensor_t*);
+// 	void (*callback)(sensor_t*);
+// 	void* object;
+// 	bool flag;
+// 	bool connected;
+// 	uint8_t i2c_addr;
+// 	uint16_t interval;
+// 	uint16_t offset;
+// } sensor_t;
+
+// sensor_t sensors[] = {
+// 	{
+// 		.callback = &trigger_temp_conversion,
+// 		.connect_callback = &trigger_temp_conversion,
+// 		.flag = false,
+// 		.connected = false,
+// 		.interval = 500,
+// 		.offset = 0,
+// 	},
+// };
+
+// const uint16_t num_sensors = sizeof(sensors) / sizeof(sensor_t);
 
 uint32_t Wheel(byte WheelPos) {
 	WheelPos = 255 - WheelPos;
@@ -59,25 +85,59 @@ uint32_t Wheel(byte WheelPos) {
 	return enc1_pixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
 
-void setup() {
-	Serial.begin(115200);
-	while (!Serial) delay(10);
-
-	Serial.println("Startup");
-
+void wifi_connect() {
 	WiFi.mode(WIFI_STA);
 	WiFi.begin("purple24", "red-black-white-green");
-	Serial.print("Connecting to WiFi ..");
-	while (WiFi.status() != WL_CONNECTED) {
+
+	Serial.print("Connecting to WiFi ...");
+	for (uint8_t i = 0; i < 25 && WiFi.status() != WL_CONNECTED; i++) {
 		Serial.print('.');
-		delay(1000);
+		delay(500);
 	}
+
+	Serial.println("");
+
+	Serial.print("WiFi Connected, assigned IP: ");
 	Serial.println(WiFi.localIP());
 
-	udp.begin(1337);
+	wifi_connected = WiFi.status() == WL_CONNECTED;
 
+	udp.begin(5007);
+}
 
-	Wire.begin(); //Join I2C bus
+void wifi_reconnect() {
+	unsigned long current_millis = millis();
+
+	if (!wifi_connected && WiFi.status() == WL_CONNECTED) {
+		Serial.println("Successfully reconnected WiFi");
+	}
+
+	if ((WiFi.status() != WL_CONNECTED) && (current_millis - last_wifi_reconnect >= WIFI_RECONNECT_INTERVAL)) {
+		Serial.println("Trying to reconnecting to WiFi...");
+		WiFi.disconnect();
+		WiFi.reconnect();
+		last_wifi_reconnect = current_millis;
+	}
+
+	wifi_connected = WiFi.status() == WL_CONNECTED;
+}
+
+// void led_btn_setup(sensor_t* sensor) {
+// 	(QwiicButton*)sensor->object
+// 	red_button.begin(QWIIC_ADDR_REDBTN)
+
+// }
+
+// void led_btn_sensor(void) {
+
+// }
+
+void setup() {
+	Serial.begin(115200);
+	
+	Wire.begin();
+
+	wifi_connect();
 
 	//check if red_button will acknowledge over I2C
 	if (!red_button.begin(QWIIC_ADDR_REDBTN) || !joystick.begin(Wire, QWIIC_ADDR_JOYSTICK) || !keypad.begin(Wire, QWIIC_ADDR_KEYPAD)) {
@@ -249,15 +309,7 @@ void loop() {
 		Serial.println(keypad_button);
 	}
 
-	unsigned long currentMillis = millis();
-	// if WiFi is down, try reconnecting
-	if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= 4000)) {
-		Serial.print(millis());
-		Serial.println("Reconnecting to WiFi...");
-		WiFi.disconnect();
-		WiFi.reconnect();
-		previousMillis = currentMillis;
-	}
+	wifi_reconnect();
 
 	// don't overwhelm serial port
 	delay(10);
