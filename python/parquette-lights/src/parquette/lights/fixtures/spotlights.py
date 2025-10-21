@@ -84,29 +84,41 @@ class YRXY200Spot(object):
     def __init__(self, dmx: DMXManager, addr: int):
         self.dmx = dmx
         self.addr = addr
+        self.x_val = [0, 0]
+        self.y_val = [0, 0]
 
     def x(self, x: int) -> None:
-        self.dmx.set_channel(self.addr + YRXY200Spot.YRXY200Channel.X_AXIS.value, x)
+        self.x_val[0] = cast(int, constrain(x, 0, 255))
+        self.dmx.set_channel(
+            self.addr + YRXY200Spot.YRXY200Channel.X_AXIS.value, self.x_val[0]
+        )
 
     def x_fine(self, x_fine: int) -> None:
+        self.x_val[1] = cast(int, constrain(x_fine, 0, 255))
         self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.X_AXIS_FINE.value, x_fine
+            self.addr + YRXY200Spot.YRXY200Channel.X_AXIS_FINE.value, self.x_val[1]
         )
 
     def y(self, y: int) -> None:
-        self.dmx.set_channel(self.addr + YRXY200Spot.YRXY200Channel.Y_AXIS.value, y)
+        self.y_val[0] = cast(int, constrain(y, 0, 255))
+        self.dmx.set_channel(
+            self.addr + YRXY200Spot.YRXY200Channel.Y_AXIS.value, self.y_val[0]
+        )
 
     def y_fine(self, y_fine: int) -> None:
+        self.y_val[1] = cast(int, constrain(y_fine, 0, 255))
         self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.Y_AXIS_FINE.value, y_fine
+            self.addr + YRXY200Spot.YRXY200Channel.Y_AXIS_FINE.value, self.y_val[1]
         )
 
     def xy_speed(self, xy_speed: int) -> None:
+        xy_speed = cast(int, constrain(xy_speed, 0, 255))
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.XY_SPEED.value, xy_speed
         )
 
     def dimming(self, value: int) -> None:
+        value = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, value
         )
@@ -136,6 +148,7 @@ class YRXY200Spot(object):
         )
 
     def pattern(self, pattern: YRXY200Pattern, rate: int = 0) -> None:
+        # TODO get the specific pattern addresses
         if pattern == YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE:
             rate = cast(int, constrain(rate, 0, 5))
         elif pattern == YRXY200Spot.YRXY200Pattern.PATTERN:
@@ -275,29 +288,41 @@ class YUER150Spot(object):
     def __init__(self, dmx: DMXManager, addr: int):
         self.dmx = dmx
         self.addr = addr
+        self.x_val = [0, 0]
+        self.y_val = [0, 0]
 
     def x(self, x: int) -> None:
-        self.dmx.set_channel(self.addr + YUER150Spot.YUER150Channel.X_AXIS.value, x)
+        self.x_val[0] = cast(int, constrain(x, 0, 255))
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.X_AXIS.value, self.x_val[0]
+        )
 
     def x_fine(self, x_fine: int) -> None:
+        self.x_val[1] = cast(int, constrain(x_fine, 0, 255))
         self.dmx.set_channel(
-            self.addr + YUER150Spot.YUER150Channel.X_AXIS_FINE.value, x_fine
+            self.addr + YUER150Spot.YUER150Channel.X_AXIS_FINE.value, self.x_val[1]
         )
 
     def y(self, y: int) -> None:
-        self.dmx.set_channel(self.addr + YUER150Spot.YUER150Channel.Y_AXIS.value, y)
+        self.y_val[0] = cast(int, constrain(y, 0, 255))
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.Y_AXIS.value, self.y_val[0]
+        )
 
     def y_fine(self, y_fine: int) -> None:
+        self.y_val[1] = cast(int, constrain(y_fine, 0, 255))
         self.dmx.set_channel(
-            self.addr + YUER150Spot.YUER150Channel.Y_AXIS_FINE.value, y_fine
+            self.addr + YUER150Spot.YUER150Channel.Y_AXIS_FINE.value, self.y_val[1]
         )
 
     def xy_speed(self, xy_speed: int) -> None:
+        xy_speed = cast(int, constrain(xy_speed, 0, 255))
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, xy_speed
         )
 
     def dimming(self, value: int) -> None:
+        value = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
         )

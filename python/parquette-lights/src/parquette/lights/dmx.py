@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from DMXEnttecPro import Controller as EnttecProController  # type: ignore[import-untyped]
-from stupidArtnet import StupidArtnet
+from stupidArtnet import StupidArtnet  # type: ignore[import-untyped]
 
 from serial import SerialException
 import serial.tools.list_ports as slp

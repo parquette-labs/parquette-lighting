@@ -160,9 +160,6 @@ class Mixer(object):
                 "ceil_3",
             ):
                 self.channels[0][i] = val * self.wash_master
-        # for g in self.generators:
-        #     if g.name == "bpm":
-        #         print(g.value(ts), flush=True)
 
     def runOutputMix(self) -> None:
         self.dmx.set_channel(
@@ -474,12 +471,31 @@ def run(
     dmx.art_net_auto_send(art_net_auto)
     dmx.use_art_net = boot_art_net
 
-    # pin = PinSpot(dmx, 1)
-    # pin.set(255, 0, 0, 0)
-    # dmx.submit()
-    # time.sleep(4)
-    # pin.off()
-    # dmx.submit()
+    yp = YRXY200Spot(dmx, 33)
+    yp.dimming(0)
+    yp.strobe(YRXY200Spot.YRXY200Strobe.OPEN)
+    yp.color(YRXY200Spot.YRXY200Color.WHITE)
+    yp.pattern(YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE)
+    yp.prisim(YRXY200Spot.YRXY200Prisim.NONE)
+    yp.colorful(YRXY200Spot.YRXY200Colorful.COLORFUL_OPEN)
+    yp.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    yp.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    yp.scene_speed(0)
+    yp.x(0)
+    yp.y(127)
+
+    sp = YUER150Spot(dmx, 21)
+    sp.x(0)
+    sp.y(127)
+    sp.dimming(0)
+    sp.strobe(YUER150Spot.YUER150Strobe.NO_STROBE)
+    sp.color(YUER150Spot.YUER150Color.WHITE)
+    sp.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp.prisim(YUER150Spot.YUER150Prisim.NONE)
+    sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+
+    w = RGBWash(dmx, 48)
+    w.rgb(0, 0, 0)
 
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
@@ -747,6 +763,19 @@ def run(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
+
+    def receive_joystick_x(_, *args):
+        incr = (args[0] - (1024 / 2)) / 300
+        sp.x(sp.x_val[0] + incr)
+        yp.x(yp.x_val[0] + incr)
+
+    def receive_joystick_y(_, *args):
+        incr = (args[0] - (1024 / 2)) / 300
+        sp.y(sp.y_val[0] - incr)
+        yp.y(yp.y_val[0] - incr)
+
+    osc.dispatcher.map("/joystick_x", receive_joystick_x)
+    osc.dispatcher.map("/joystick_y", receive_joystick_y)
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
