@@ -236,16 +236,6 @@ void loop() {
 	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_SELECT)) {
 		Serial.println("SELECT pressed!");
 
-		// OSCMessage msg("/test");
-
-		// myOsc.sendInt("/test", 123);
-
-		// udp.beginPacket(outIp, 1337);
-		// udp.write('a');
-		// udp.endPacket();
-		oscEndpoint.sendMessage("/stuff", "i", (int32_t) 12);
-
-
 		rgbLedWrite(RGB_BUILTIN, RGB_BRIGHTNESS, 0, 0);  // Red
 		delay(250);
 		rgbLedWrite(RGB_BUILTIN, 0, RGB_BRIGHTNESS, 0);  // Green
@@ -253,7 +243,6 @@ void loop() {
 		rgbLedWrite(RGB_BUILTIN, 0, 0, RGB_BRIGHTNESS);  // Blue
 		delay(250);
 		rgbLedWrite(RGB_BUILTIN, 0, 0, 0);  // Off / black
-
 	}
 	if (! rot_wheel.digitalRead(ROT_WHEEL_SWITCH_LEFT)) {
 		Serial.println("LEFT pressed!");
