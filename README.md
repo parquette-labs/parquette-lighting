@@ -83,10 +83,10 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 	* Annotate FFT with key freqs
 * New ideas
-	* Run open stage control on CLI
+	* <s>Run open stage control on CLI</s>
+	* <s>Auto start process</s>
 	* Auto detection for low/high intensity of music that can trigger mode changes or similar
 	* Blue/green deploy mechanism
-	* Auto start process
 	* Optimize compute by idyling FFT and BPM when there is no audio and/or no interaction for multiple days
 	* Separate / perma linked punch for blinders
 	* Spinning mode
