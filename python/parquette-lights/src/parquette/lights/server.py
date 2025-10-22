@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 from typing import List, Dict, Any, cast, Callable, Tuple
 import sys
 import time

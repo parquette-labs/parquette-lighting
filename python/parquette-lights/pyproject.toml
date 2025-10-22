@@ -44,4 +44,5 @@ pylint = "pylint --rcfile=./pylintrc -f colorized ./src/"
 mypy = "mypy ."
 black = "black ./"
 pytest = "pytest"
-check = ["black", "pylint", "mypy"]
+check.sequence = ["black", "pylint", "mypy"]
+check.ignore_fail = "return_non_zero"
