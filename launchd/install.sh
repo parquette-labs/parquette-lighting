@@ -9,6 +9,8 @@ cd $script_path
 
 declare -a services=("ca.parquette.lighting.openstagecontrol" "ca.parquette.lighting.server")
 
+mkdir ~/Library/LaunchAgents
+
 for service_name in "${services[@]}"
 do
     # if [ -f ~/Library/LaunchAgents/$service_name.plist ]; then
