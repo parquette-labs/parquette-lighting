@@ -12,6 +12,13 @@
 	* `poetry sync`
 	* `poetry run server`
 
+# Launchd setup
+
+* in `launchd/`
+	* `./install` will install and offer to launch the launchctl service
+	* check status with `launchctl list ca.parquette.lighting.server` `launchctl list ca.parquette.lighting.openstagecontrol` and check for `LastExitStatus = 0`
+	* should auto launch on machine boot
+
 # Running the system
 
 * Wiring
