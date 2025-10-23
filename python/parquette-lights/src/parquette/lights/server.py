@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 import sys
 import time
 
@@ -61,7 +63,7 @@ def run(
     dmx.art_net_auto_send(art_net_auto)
     dmx.use_art_net = boot_art_net
 
-    yp = YRXY200Spot(dmx, 33)
+    yp = YRXY200Spot(dmx, 21)
     yp.dimming(0)
     yp.shutter(False)
     yp.color(YRXY200Spot.YRXY200Color.WHITE)
@@ -74,7 +76,7 @@ def run(
     yp.x(0)
     yp.y(127)
 
-    sp = YUER150Spot(dmx, 21)
+    sp = YUER150Spot(dmx, 36)
     sp.x(0)
     sp.y(127)
     sp.dimming(0)
@@ -84,7 +86,17 @@ def run(
     sp.prisim(False)
     sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
-    w = RGBLight(dmx, 48)
+    sp = YUER150Spot(dmx, 48)
+    sp.x(0)
+    sp.y(127)
+    sp.dimming(0)
+    sp.strobe(False)
+    sp.color(YUER150Spot.YUER150Color.WHITE)
+    sp.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp.prisim(False)
+    sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+
+    w = RGBLight(dmx, 60)
     w.rgb(0, 0, 0)
 
     audio_capture = AudioCapture(osc)
@@ -200,142 +212,135 @@ def run(
         else:
             fft.set_bounds(args[0], args[2])
 
-    exposed_params = [
-        OSCParam(
-            osc,
-            "/amp",
-            lambda: noise1.amp,
-            lambda _, args: OSCParam.obj_param_setter(
-                args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+    exposed_params: Dict[str, List[OSCParam]] = {
+        "fft": [
+            OSCParam(
+                osc,
+                "/fft1_amp",
+                lambda: fft1.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
             ),
-        ),
-        OSCParam(
-            osc,
-            "/period",
-            lambda: noise1.period,
-            lambda _, args: OSCParam.obj_param_setter(
-                args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+            OSCParam(
+                osc,
+                "/fft2_amp",
+                lambda: fft2.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
             ),
-        ),
-        OSCParam(
-            osc,
-            "/fft1_amp",
-            lambda: fft1.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
-        ),
-        OSCParam(
-            osc,
-            "/fft2_amp",
-            lambda: fft2.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_amp",
-            lambda: impulse.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_period",
-            lambda: impulse.period,
-            lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_duty",
-            lambda: impulse.duty,
-            lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_echo",
-            lambda: impulse.echo,
-            lambda _, args: OSCParam.obj_param_setter(args, "echo", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_decay",
-            lambda: impulse.echo_decay,
-            lambda _, args: OSCParam.obj_param_setter(args, "echo_decay", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/stutter_period",
-            lambda: mixer.stutter_period,
-            lambda _, args: OSCParam.obj_param_setter(args, "stutter_period", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/master_fader",
-            lambda: mixer.master_amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "master_amp", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/wash_master",
-            lambda: mixer.wash_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "wash_master", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/mode_switch",
-            lambda: mixer.mode,
-            lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/fft_threshold_1",
-            lambda: fft1.thres,
-            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
-        ),
-        OSCParam(
-            osc,
-            "/fft_threshold_2",
-            lambda: fft2.thres,
-            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
-        ),
-        OSCParam(
-            osc,
-            "/manual_bpm_offset",
-            lambda: bpm.manual_offset,
-            lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_mult",
-            lambda: bpm.bpm_mult,
-            lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_duty",
-            lambda: bpm.duty,
-            lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_amp",
-            lambda: bpm.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
-        ),
-        SignalPatchParam(osc, "/signal_patchbay", mixer),
-        OSCParam(
-            osc,
-            "/fft_bounds_1",
-            lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
-            lambda addr, *args: fft_dispatch_wedge(fft1, args),
-        ),
-        OSCParam(
-            osc,
-            "/fft_bounds_2",
-            lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
-            lambda addr, *args: fft_dispatch_wedge(fft2, args),
-        ),
-    ]
+            OSCParam(
+                osc,
+                "/fft_threshold_1",
+                lambda: fft1.thres,
+                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
+            ),
+            OSCParam(
+                osc,
+                "/fft_threshold_2",
+                lambda: fft2.thres,
+                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
+            ),
+            OSCParam(
+                osc,
+                "/fft_bounds_1",
+                lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
+                lambda addr, *args: fft_dispatch_wedge(fft1, args),
+            ),
+            OSCParam(
+                osc,
+                "/fft_bounds_2",
+                lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
+                lambda addr, *args: fft_dispatch_wedge(fft2, args),
+            ),
+            OSCParam(
+                osc,
+                "/manual_bpm_offset",
+                lambda: bpm.manual_offset,
+                lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
+            ),
+        ],
+        "reds": [
+            OSCParam(
+                osc,
+                "/amp",
+                lambda: noise1.amp,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/period",
+                lambda: noise1.period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/mode_switch",
+                lambda: mixer.mode,
+                lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_mult",
+                lambda: bpm.bpm_mult,
+                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_duty",
+                lambda: bpm.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_amp",
+                lambda: bpm.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
+            ),
+            SignalPatchParam(osc, "/signal_patchbay", mixer),
+        ],
+        "strobes": [
+            OSCParam(
+                osc,
+                "/impulse_amp",
+                lambda: impulse.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_period",
+                lambda: impulse.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_duty",
+                lambda: impulse.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
+            ),
+        ],
+        "plants": [],
+        "washes": [],
+        "spots": [],
+        "non-saved": [
+            OSCParam(
+                osc,
+                "/master_fader",
+                lambda: mixer.master_amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "master_amp", [mixer]),
+            ),
+            OSCParam(
+                osc,
+                "/wash_master",
+                lambda: mixer.wash_master,
+                lambda _, args: OSCParam.obj_param_setter(args, "wash_master", [mixer]),
+            ),
+        ],
+    }
 
     for chan_name in mixer.channel_names:
-        exposed_params.append(
+        exposed_params["reds"].append(
             OSCParam(
                 osc,
                 "/chan_levels/{}".format(chan_name),
@@ -345,8 +350,6 @@ def run(
         )
 
     presets = PresetManager(osc, exposed_params, presets_file, debug)
-    presets.load()
-    presets.select("default")
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
