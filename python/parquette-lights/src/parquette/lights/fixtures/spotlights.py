@@ -365,16 +365,18 @@ class YUER150Spot(object):
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
         )
 
-    def strobe(self, strobe: YUER150Strobe, rate: int = 0):
-        if strobe == YUER150Spot.YUER150Strobe.STROBE:
-            rate = cast(int, constrain(rate, 0, 255 - 16))
+    def strobe(self, enable: bool, rate: int = 0):
+        if not enable:
+            self.dmx.set_channel(
+                self.addr + YUER150Spot.YUER150Channel.STROBE.value,
+                YUER150Spot.YUER150Strobe.NO_STROBE.value,
+            )
         else:
-            rate = 0
-
-        self.dmx.set_channel(
-            self.addr + YUER150Spot.YUER150Channel.STROBE.value,
-            strobe.value + rate,
-        )
+            rate = cast(int, constrain(rate, 0, 255 - 16))
+            self.dmx.set_channel(
+                self.addr + YUER150Spot.YUER150Channel.STROBE.value,
+                YUER150Spot.YUER150Strobe.STROBE.value + rate,
+            )
 
     def color(self, color: YUER150Color, rate: int = 0) -> None:
         if color == YUER150Spot.YUER150Color.FORWARD_FLOW:
@@ -398,16 +400,23 @@ class YUER150Spot(object):
             pattern.value + rate,
         )
 
-    def prisim(self, prisim: YUER150Prisim, rotation: int = 0) -> None:
-        if prisim == YUER150Spot.YUER150Prisim.PRISIM_ROTATION:
-            rotation = cast(int, constrain(rotation, 0, 255 - 137))
+    def prisim(self, enable: bool, rotation: int = 0) -> None:
+        if not enable:
+            self.dmx.set_channel(
+                self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
+                YUER150Spot.YUER150Prisim.NONE.value,
+            )
+        elif rotation == 0:
+            self.dmx.set_channel(
+                self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
+                YUER150Spot.YUER150Prisim.PRISIM.value,
+            )
         else:
-            rotation = 0
-
-        self.dmx.set_channel(
-            self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
-            prisim.value + rotation,
-        )
+            rotation = cast(int, constrain(rotation, 0, 255 - 137))
+            self.dmx.set_channel(
+                self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
+                YUER150Spot.YUER150Prisim.PRISIM_ROTATION.value + rotation,
+            )
 
     def self_propelled(
         self, self_propelled: YUER150SelfPropelled, offset: int = 0

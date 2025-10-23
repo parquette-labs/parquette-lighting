@@ -459,10 +459,10 @@ def run(
     sp.x(0)
     sp.y(127)
     sp.dimming(0)
-    sp.strobe(YUER150Spot.YUER150Strobe.NO_STROBE)
+    sp.strobe(False)
     sp.color(YUER150Spot.YUER150Color.WHITE)
     sp.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
-    sp.prisim(YUER150Spot.YUER150Prisim.NONE)
+    sp.prisim(False)
     sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
     w = RGBLight(dmx, 48)
