@@ -9,7 +9,7 @@ import pprint
 
 import click
 
-from .fixtures import YRXY200Spot, YUER150Spot, RGBWash
+from .fixtures import YRXY200Spot, YUER150Spot, RGBLight, SingleLight
 
 from .generators import (
     FFTGenerator,
@@ -63,13 +63,23 @@ class Mixer(object):
         self.num_channels = len(self.channel_names)
 
         self.dmx_mappings = {
-            "left": [4, 3, 2, 1],
-            "right": [5, 6, 7, 8],
-            "front": [12, 9],
-            "under": [10, 11],
-            "spot": [13],
-            "sodium": [20],
-            "ceil": [18, 19, 17],
+            "left": [
+                SingleLight(dmx, 4),
+                SingleLight(dmx, 3),
+                SingleLight(dmx, 2),
+                SingleLight(dmx, 1),
+            ],
+            "right": [
+                SingleLight(dmx, 5),
+                SingleLight(dmx, 6),
+                SingleLight(dmx, 7),
+                SingleLight(dmx, 8),
+            ],
+            "front": [SingleLight(dmx, 12), SingleLight(dmx, 9)],
+            "under": [SingleLight(dmx, 10), SingleLight(dmx, 11)],
+            "spot": [SingleLight(dmx, 13)],
+            "sodium": [SingleLight(dmx, 20)],
+            "ceil": [SingleLight(dmx, 18), SingleLight(dmx, 19), SingleLight(dmx, 17)],
         }
 
         # TODO control the matrix sizing in open sound control with this var?
@@ -160,70 +170,60 @@ class Mixer(object):
                 self.channels[0][i] = val * self.wash_master
 
     def runOutputMix(self) -> None:
-        self.dmx.set_channel(
-            self.dmx_mappings["spot"][0],
-            self.channels[0][self.channel_names.index("chan_spot")],
+        self.dmx_mappings["spot"][0].on(
+            self.channels[0][self.channel_names.index("chan_spot")]
         )
-
-        self.dmx.set_channel(
-            self.dmx_mappings["under"][0],
-            self.channels[0][self.channel_names.index("under_1")],
+        self.dmx_mappings["under"][0].on(
+            self.channels[0][self.channel_names.index("under_1")]
         )
-        self.dmx.set_channel(
-            self.dmx_mappings["under"][1],
-            self.channels[0][self.channel_names.index("under_2")],
+        self.dmx_mappings["under"][1].on(
+            self.channels[0][self.channel_names.index("under_2")]
         )
-
-        self.dmx.set_channel(
-            self.dmx_mappings["sodium"][0],
-            self.channels[0][self.channel_names.index("sodium")],
+        self.dmx_mappings["sodium"][0].on(
+            self.channels[0][self.channel_names.index("sodium")]
         )
-        self.dmx.set_channel(
-            self.dmx_mappings["ceil"][0],
-            self.channels[0][self.channel_names.index("ceil_1")],
+        self.dmx_mappings["ceil"][0].on(
+            self.channels[0][self.channel_names.index("ceil_1")]
         )
-
-        self.dmx.set_channel(
-            self.dmx_mappings["ceil"][1],
-            self.channels[0][self.channel_names.index("ceil_2")],
+        self.dmx_mappings["ceil"][1].on(
+            self.channels[0][self.channel_names.index("ceil_2")]
         )
-        self.dmx.set_channel(
-            self.dmx_mappings["ceil"][2],
-            self.channels[0][self.channel_names.index("ceil_3")],
+        self.dmx_mappings["ceil"][2].on(
+            self.channels[0][self.channel_names.index("ceil_3")]
         )
 
         if self.mode == "MONO":
-            for group, chans in self.dmx_mappings.items():
+            for group, fixtures in self.dmx_mappings.items():
                 if not group in ("spot", "under", "ceil", "sodium"):
-                    for chan in chans:
-                        self.dmx.set_channel(chan, self.channels[0][0])
+                    for fixture in fixtures:
+                        fixture.on(self.channels[0][0])
 
         elif self.mode == "PENTA":
-            for i, (chan_l, chan_r) in enumerate(
+            for i, (fixture_l, fixture_r) in enumerate(
                 zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
             ):
-                self.dmx.set_channel(chan_l, self.channels[0][i + 1])
-                self.dmx.set_channel(chan_r, self.channels[0][i + 1])
+                fixture_l.on(self.channels[0][i + 1])
+                fixture_r.on(self.channels[0][i + 1])
 
-            self.dmx.set_channel(self.dmx_mappings["front"][0], self.channels[0][0])
-            self.dmx.set_channel(self.dmx_mappings["front"][1], self.channels[0][0])
+            self.dmx_mappings["front"][0].on(self.channels[0][0])
+            self.dmx_mappings["front"][1].on(self.channels[0][0])
         elif self.mode == "DECA":
-            for i, chan in enumerate(
+            for i, fixture in enumerate(
                 self.dmx_mappings["left"]
                 + self.dmx_mappings["right"]
                 + self.dmx_mappings["front"]
             ):
-                self.dmx.set_channel(chan, self.channels[0][i])
+                fixture.on(self.channels[0][i])
         elif self.mode in ("FWD", "BACK"):
-            chan_zip = list(
+            fixture_zip = list(
                 zip(
                     self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
                     self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
                 )
             )
             if self.mode == "BACK":
-                chan_zip = list(reversed(chan_zip))
-            for i, (chan_l, chan_r) in enumerate(chan_zip):
+                fixture_zip = list(reversed(fixture_zip))
+            for i, (fixture_l, fixture_r) in enumerate(fixture_zip):
                 stutter_index = int(
                     constrain(
                         self.stutter_period * i / 10,
@@ -231,28 +231,10 @@ class Mixer(object):
                         len(self.channels) - 1,
                     )
                 )
-                self.dmx.set_channel(
-                    chan_l,
-                    int(
-                        constrain(
-                            self.channels[stutter_index][0],
-                            0,
-                            255,
-                        )
-                    ),
-                )
-                self.dmx.set_channel(
-                    chan_r,
-                    int(
-                        constrain(
-                            self.channels[stutter_index][1],
-                            0,
-                            255,
-                        )
-                    ),
-                )
+                fixture_l.on(int(constrain(self.channels[stutter_index][0], 0, 255)))
+                fixture_r.on(int(constrain(self.channels[stutter_index][1], 0, 255)))
         elif self.mode == "ZIG":
-            interleaved_chans = [
+            interleaved_fixtures = [
                 val
                 for tup in zip(
                     self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
@@ -261,7 +243,7 @@ class Mixer(object):
                 for val in tup
             ]
 
-            for i, chan in enumerate(interleaved_chans):
+            for i, fixture in enumerate(interleaved_fixtures):
                 stutter_index = int(
                     constrain(
                         self.stutter_period * i / 10,
@@ -269,16 +251,7 @@ class Mixer(object):
                         len(self.channels) - 1,
                     )
                 )
-                self.dmx.set_channel(
-                    chan,
-                    int(
-                        constrain(
-                            self.channels[stutter_index][0],
-                            0,
-                            255,
-                        )
-                    ),
-                )
+                fixture.on(int(constrain(self.channels[stutter_index][0], 0, 255)))
 
     def updateDMX(self) -> None:
         self.dmx.submit()
@@ -471,10 +444,10 @@ def run(
 
     yp = YRXY200Spot(dmx, 33)
     yp.dimming(0)
-    yp.strobe(YRXY200Spot.YRXY200Strobe.OPEN)
+    yp.shutter(False)
     yp.color(YRXY200Spot.YRXY200Color.WHITE)
     yp.pattern(YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE)
-    yp.prisim(YRXY200Spot.YRXY200Prisim.NONE)
+    yp.prisim(False)
     yp.colorful(YRXY200Spot.YRXY200Colorful.COLORFUL_OPEN)
     yp.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
     yp.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
@@ -492,7 +465,7 @@ def run(
     sp.prisim(YUER150Spot.YUER150Prisim.NONE)
     sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
-    w = RGBWash(dmx, 48)
+    w = RGBLight(dmx, 48)
     w.rgb(0, 0, 0)
 
     audio_capture = AudioCapture(osc)

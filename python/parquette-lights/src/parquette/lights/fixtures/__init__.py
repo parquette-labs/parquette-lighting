@@ -1,2 +1,2 @@
 from .spotlights import *
-from .washes import *
+from .basics import *

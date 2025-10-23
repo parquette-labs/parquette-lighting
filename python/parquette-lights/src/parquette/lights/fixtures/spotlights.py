@@ -87,6 +87,16 @@ class YRXY200Spot(object):
         self.x_val = [0, 0]
         self.y_val = [0, 0]
 
+    def xy(self, x: int, y: int, fine=False):
+        if not fine:
+            self.x(x)
+            self.y(y)
+        else:
+            self.x((x & 0xFF00) >> 8)
+            self.x_fine((x & 0xFF00) >> 8)
+            self.x(x & 0xFF)
+            self.y_fine(y & 0xFF)
+
     def x(self, x: int) -> None:
         self.x_val[0] = cast(int, constrain(x, 0, 255))
         self.dmx.set_channel(
@@ -111,27 +121,34 @@ class YRXY200Spot(object):
             self.addr + YRXY200Spot.YRXY200Channel.Y_AXIS_FINE.value, self.y_val[1]
         )
 
-    def xy_speed(self, xy_speed: int) -> None:
-        xy_speed = cast(int, constrain(xy_speed, 0, 255))
+    def xy_speed(self, speed: int) -> None:
         self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.XY_SPEED.value, xy_speed
+            self.addr + YRXY200Spot.YRXY200Channel.XY_SPEED.value, speed
         )
 
     def dimming(self, value: int) -> None:
-        value = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, value
         )
 
-    def strobe(self, strobe: YRXY200Strobe, rate: int = 0):
-        if strobe == YRXY200Spot.YRXY200Strobe.STROBE:
-            rate = cast(int, constrain(rate, 0, 249 - 10))
+    def shutter(self, close_shutter: bool):
+        if close_shutter:
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
+                YRXY200Spot.YRXY200Strobe.CLOSE.value,
+            )
         else:
-            rate = 0
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
+                YRXY200Spot.YRXY200Strobe.OPEN.value,
+            )
+
+    def strobe(self, rate: int):
+        rate = cast(int, constrain(rate, 0, 249 - 10))
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
-            strobe.value + rate,
+            YRXY200Spot.YRXY200Strobe.STROBE.value + rate,
         )
 
     def color(self, color: YRXY200Color, rate: int = 0) -> None:
@@ -167,37 +184,50 @@ class YRXY200Spot(object):
             pattern.value + rate,
         )
 
-    def colorful(self, colorful: YRXY200Colorful) -> None:
+    def colorful(self, enabled) -> None:
         # light prisim doing color diffraction
-        self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.COLORFUL.value,
-            colorful.value,
-        )
-
-    def prisim(self, prisim: YRXY200Prisim, rotation: int = 0) -> None:
-        if prisim == YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION:
-            rotation = cast(int, constrain(rotation, 0, 255 - 192))
+        if enabled:
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.COLORFUL.value,
+                YRXY200Spot.YRXY200Colorful.COLORFUL_CLOSE.value,
+            )
         else:
-            rotation = 0
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.COLORFUL.value,
+                YRXY200Spot.YRXY200Colorful.COLORFUL_OPEN.value,
+            )
 
-        self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
-            prisim.value + rotation,
-        )
+    def prisim(self, enable: bool, rotation: int = 0) -> None:
+        if not enable:
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
+                YRXY200Spot.YRXY200Prisim.NONE.value,
+            )
+        elif rotation == 0:
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
+                YRXY200Spot.YRXY200Prisim.PRISIM.value,
+            )
+        else:
+            rotation = cast(int, constrain(rotation, 0, 255 - 192))
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
+                YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION.value + rotation,
+            )
 
     def self_propelled(
-        self, self_propelled: YRXY200SelfPropelled, rate: int = 0
+        self, self_propelled: YRXY200SelfPropelled, offset: int = 0
     ) -> None:
         if self_propelled == YRXY200Spot.YRXY200SelfPropelled.SELF_PROPELLED:
-            rate = cast(int, constrain(rate, 0, 149 - 30))
+            offset = cast(int, constrain(offset, 0, 149 - 30))
         elif self_propelled == YRXY200Spot.YRXY200SelfPropelled.VOICE_ACTIVATED:
-            rate = cast(int, constrain(rate, 0, 255 - 150))
+            offset = cast(int, constrain(offset, 0, 255 - 150))
         else:
-            rate = 0
+            offset = 0
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.SELF_PROPELLED.value,
-            self_propelled.value + rate,
+            self_propelled.value + offset,
         )
 
     def reset(self, reset: YRXY200Reset) -> None:
@@ -291,6 +321,16 @@ class YUER150Spot(object):
         self.x_val = [0, 0]
         self.y_val = [0, 0]
 
+    def xy(self, x: int, y: int, fine=False):
+        if not fine:
+            self.x(x)
+            self.y(y)
+        else:
+            self.x((x & 0xFF00) >> 8)
+            self.x_fine((x & 0xFF00) >> 8)
+            self.x(x & 0xFF)
+            self.y_fine(y & 0xFF)
+
     def x(self, x: int) -> None:
         self.x_val[0] = cast(int, constrain(x, 0, 255))
         self.dmx.set_channel(
@@ -315,14 +355,12 @@ class YUER150Spot(object):
             self.addr + YUER150Spot.YUER150Channel.Y_AXIS_FINE.value, self.y_val[1]
         )
 
-    def xy_speed(self, xy_speed: int) -> None:
-        xy_speed = cast(int, constrain(xy_speed, 0, 255))
+    def xy_speed(self, speed: int) -> None:
         self.dmx.set_channel(
-            self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, xy_speed
+            self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, speed
         )
 
     def dimming(self, value: int) -> None:
-        value = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
         )
@@ -372,21 +410,21 @@ class YUER150Spot(object):
         )
 
     def self_propelled(
-        self, self_propelled: YUER150SelfPropelled, rate: int = 0
+        self, self_propelled: YUER150SelfPropelled, offset: int = 0
     ) -> None:
         if self_propelled == YUER150Spot.YUER150SelfPropelled.FAST:
-            rate = cast(int, constrain(rate, 0, 100 - 51))
+            offset = cast(int, constrain(offset, 0, 100 - 51))
         elif self_propelled == YUER150Spot.YUER150SelfPropelled.SLOW:
-            rate = cast(int, constrain(rate, 0, 200 - 101))
+            offset = cast(int, constrain(offset, 0, 200 - 101))
         elif self_propelled == YUER150Spot.YUER150SelfPropelled.SOUND:
-            rate = cast(int, constrain(rate, 0, 255 - 201))
+            offset = cast(int, constrain(offset, 0, 255 - 201))
 
         else:
-            rate = 0
+            offset = 0
 
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.SELF_PROPELLED.value,
-            self_propelled.value + rate,
+            self_propelled.value + offset,
         )
 
     def reset(self, reset: YUER150Reset) -> None:
