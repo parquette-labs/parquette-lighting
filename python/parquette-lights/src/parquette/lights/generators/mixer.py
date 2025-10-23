@@ -1,4 +1,4 @@
-from typing import List, Tuple, cast
+from typing import List, Tuple, cast, Dict
 
 import time
 from copy import copy
@@ -24,25 +24,38 @@ class Mixer(object):
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
+        self.categorized_channel_names: Dict[str, List[str]] = {
+            "reds": [
+                "chan_1",
+                "chan_2",
+                "chan_3",
+                "chan_4",
+                "chan_5",
+                "chan_6",
+                "chan_7",
+                "chan_8",
+                "chan_9",
+                "chan_10",
+            ],
+            "strobes": ["sodium"],
+            "plants": [
+                "ceil_1",
+                "ceil_2",
+                "ceil_3",
+            ],
+            "booth": [
+                "under_1",
+                "under_2",
+            ],
+            "spots": ["chan_spot"],
+        }
+
         self.channel_names: List[str] = [
-            "chan_1",
-            "chan_2",
-            "chan_3",
-            "chan_4",
-            "chan_5",
-            "chan_6",
-            "chan_7",
-            "chan_8",
-            "chan_9",
-            "chan_10",
-            "under_1",
-            "under_2",
-            "chan_spot",
-            "sodium",
-            "ceil_1",
-            "ceil_2",
-            "ceil_3",
+            name
+            for _, names in self.categorized_channel_names.items()
+            for name in names
         ]
+
         self.num_channels = len(self.channel_names)
 
         self.dmx_mappings = {
