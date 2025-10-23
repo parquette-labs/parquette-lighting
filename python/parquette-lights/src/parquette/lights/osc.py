@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Callable
 
 from threading import Thread
 
@@ -76,3 +76,40 @@ class UIDebugFrame(dict):
         for key, val in self.items():
             result += "{}: {}\n".format(key, val)
         return str(result)
+
+
+class OSCParam(object):
+    # pylint: disable-next=too-many-positional-arguments
+    def __init__(
+        self,
+        osc: OSCManager,
+        addr: str,
+        value_lambda: Callable,
+        dispatch_lambda: Callable,
+    ) -> None:
+        self.osc = osc
+        self.addr = addr
+        self.value_lambda = value_lambda
+        self.dispatch_lambda = dispatch_lambda
+
+        osc.dispatcher.map(addr, dispatch_lambda)
+
+    def load(self, addr: str, args: Any) -> None:
+        self.dispatch_lambda(addr, args)
+        self.sync()
+
+    def sync(self) -> None:
+        self.osc.send_osc(self.addr, self.value_lambda())
+
+    @classmethod
+    def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:
+        for obj in objs:
+            # TODO I assume this is hacky and can be nicer
+            try:
+                _field = getattr(obj.__class__, field)
+                # this is some trash surely the pylint is a warning I'm doing garbage, but fix later
+                # pylint: disable-next=unnecessary-dunder-call
+                _field.__set__(obj, value)
+
+            except AttributeError:
+                obj.__dict__[field] = value
