@@ -9,7 +9,7 @@ cd $script_path
 
 declare -a services=("ca.parquette.lighting.openstagecontrol" "ca.parquette.lighting.server")
 
-mkdir ~/Library/LaunchAgents
+mkdir -p ~/Library/LaunchAgents
 
 for service_name in "${services[@]}"
 do
