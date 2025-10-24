@@ -302,7 +302,7 @@ class YUER150Spot(object):
 
     class YUER150Prisim(Enum):
         NONE = 0
-        PRISIM = 127
+        PRISIM = 128
         PRISIM_ROTATION = 137
 
     class YUER150SelfPropelled(Enum):
