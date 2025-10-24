@@ -70,6 +70,9 @@ class PresetManager(object):
         """
         Save the current state of the parameters for the category into the pickle. Since we are saving current state we don't require the state to exist in current presets, only for the category to be valid and the preset name to exist
         """
+        if category == "non-saved":
+            return
+
         if not category in self.exposed_params:
             # we have never any data for this preset category, no-op
             print(

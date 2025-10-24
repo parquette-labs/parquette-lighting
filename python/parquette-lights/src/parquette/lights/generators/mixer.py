@@ -37,7 +37,6 @@ class Mixer(object):
                 "chan_9",
                 "chan_10",
             ],
-            "strobes": ["sodium"],
             "plants": [
                 "ceil_1",
                 "ceil_2",
@@ -47,7 +46,7 @@ class Mixer(object):
                 "under_1",
                 "under_2",
             ],
-            "spots": ["chan_spot"],
+            "non-saved": ["chan_spot", "sodium"],
         }
 
         self.channel_names: List[str] = [
@@ -92,8 +91,9 @@ class Mixer(object):
         ]
 
         self.stutter_period = 500
-        self.master_amp = 1
-        self.wash_master = 1
+        self.reds_master = 1
+        self.booth_master = 1
+        self.plants_master = 1
 
     def setChannelLevel(self, chan_name: str, level: float):
         self.channel_offsets[self.channel_names.index(chan_name)] = level
@@ -153,17 +153,22 @@ class Mixer(object):
                 "ceil_2",
                 "ceil_3",
             ):
-                self.channels[0][i] = val * self.master_amp
+                self.channels[0][i] = val * self.reds_master
+
+        for i, val in enumerate(self.channels[0]):
+            if self.channel_names[i] in (
+                "ceil_1",
+                "ceil_2",
+                "ceil_3",
+            ):
+                self.channels[0][i] = val * self.plants_master
 
         for i, val in enumerate(self.channels[0]):
             if self.channel_names[i] in (
                 "under_1",
                 "under_2",
-                "ceil_1",
-                "ceil_2",
-                "ceil_3",
             ):
-                self.channels[0][i] = val * self.wash_master
+                self.channels[0][i] = val * self.booth_master
 
     def runOutputMix(self) -> None:
         self.dmx_mappings["spot"][0].on(

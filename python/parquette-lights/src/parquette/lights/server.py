@@ -216,13 +216,11 @@ def run(
         "fft": [],
         "reds": [],
         "plants": [],
-        "washes": [],
-        "spots": [],
-        "non-saved": [],
         "booth": [],
+        "non-saved": [],
     }
 
-    exposed_params["fft"] = [
+    exposed_params["audio"] = [
         OSCParam(
             osc,
             "/fft1_amp",
@@ -332,15 +330,21 @@ def run(
     exposed_params["non-saved"] = [
         OSCParam(
             osc,
-            "/master_fader",
-            lambda: mixer.master_amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "master_amp", [mixer]),
+            "/reds_master",
+            lambda: mixer.reds_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "reds_master", [mixer]),
         ),
         OSCParam(
             osc,
-            "/wash_master",
-            lambda: mixer.wash_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "wash_master", [mixer]),
+            "/plants_master",
+            lambda: mixer.plants_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "plants_master", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/booth_master",
+            lambda: mixer.booth_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "booth_master", [mixer]),
         ),
     ]
 
