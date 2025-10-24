@@ -74,7 +74,7 @@ def run(
     yp.shutter(False)
     yp.color(YRXY200Spot.YRXY200Color.WHITE)
     yp.pattern(YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE)
-    yp.prisim(True, 100)
+    yp.prisim(False)
     yp.colorful(False)
     yp.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
     yp.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
@@ -89,7 +89,7 @@ def run(
     sp2.strobe(False)
     sp2.color(YUER150Spot.YUER150Color.WHITE)
     sp2.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
-    sp2.prisim(True, 100)
+    sp2.prisim(False)
     sp2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
     sp1 = YUER150Spot(dmx, 48)
@@ -99,7 +99,7 @@ def run(
     sp1.strobe(False)
     sp1.color(YUER150Spot.YUER150Color.WHITE)
     sp1.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
-    sp1.prisim(True, 100)
+    sp1.prisim(False)
     sp1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
     w = RGBLight(dmx, 60)
