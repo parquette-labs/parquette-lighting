@@ -21,10 +21,15 @@ class PresetManager(object):
         self.current_presets: Dict[str, str] = {}
         self.debug = debug
 
-        osc.dispatcher.map("/save_preset", lambda addr, args: self.save(args))
-        osc.dispatcher.map("/clear_preset", lambda addr, args: self.clear(args))
         osc.dispatcher.map(
-            "/preset_selector", lambda _, *args: self.select(args[0], args[1])
+            "/save_preset/*", lambda addr, args: self.save(addr.split("/")[2])
+        )
+        osc.dispatcher.map(
+            "/clear_preset/*", lambda addr, args: self.clear(addr.split("/")[2])
+        )
+        osc.dispatcher.map(
+            "/preset_selector/*",
+            lambda addr, args: self.select(addr.split("/")[2], args),
         )
 
         self.load()

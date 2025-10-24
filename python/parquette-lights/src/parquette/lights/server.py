@@ -82,25 +82,25 @@ def run(
     yp.x(0)
     yp.y(127)
 
-    sp = YUER150Spot(dmx, 36)
-    sp.x(0)
-    sp.y(127)
-    sp.dimming(0)
-    sp.strobe(False)
-    sp.color(YUER150Spot.YUER150Color.WHITE)
-    sp.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
-    sp.prisim(False)
-    sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sp2 = YUER150Spot(dmx, 36)
+    sp2.x(0)
+    sp2.y(127)
+    sp2.dimming(0)
+    sp2.strobe(False)
+    sp2.color(YUER150Spot.YUER150Color.WHITE)
+    sp2.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp2.prisim(False)
+    sp2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
-    sp = YUER150Spot(dmx, 48)
-    sp.x(0)
-    sp.y(127)
-    sp.dimming(0)
-    sp.strobe(False)
-    sp.color(YUER150Spot.YUER150Color.WHITE)
-    sp.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
-    sp.prisim(False)
-    sp.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sp1 = YUER150Spot(dmx, 48)
+    sp1.x(0)
+    sp1.y(127)
+    sp1.dimming(0)
+    sp1.strobe(False)
+    sp1.color(YUER150Spot.YUER150Color.WHITE)
+    sp1.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp1.prisim(False)
+    sp1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
     w = RGBLight(dmx, 60)
     w.rgb(0, 0, 0)
@@ -373,18 +373,31 @@ def run(
         lambda addr, *args: impulse.punch(),
     )
 
-    def receive_joystick_x(_, *args):
-        incr = (args[0] - (1024 / 2)) / 300
-        sp.x(sp.x_val[0] + incr)
-        yp.x(yp.x_val[0] + incr)
+    # def receive_joystick_x(_, *args):
+    #     incr = (args[0] - (1024 / 2)) / 300
+    #     sp.x(sp.x_val[0] + incr)
+    #     yp.x(yp.x_val[0] + incr)
 
-    def receive_joystick_y(_, *args):
-        incr = (args[0] - (1024 / 2)) / 300
-        sp.y(sp.y_val[0] - incr)
-        yp.y(yp.y_val[0] - incr)
+    # def receive_joystick_y(_, *args):
+    #     incr = (args[0] - (1024 / 2)) / 300
+    #     sp.y(sp.y_val[0] - incr)
+    #     yp.y(yp.y_val[0] - incr)
 
-    osc.dispatcher.map("/joystick_x", receive_joystick_x)
-    osc.dispatcher.map("/joystick_y", receive_joystick_y)
+    # osc.dispatcher.map("/joystick_x", receive_joystick_x)
+    # osc.dispatcher.map("/joystick_y", receive_joystick_y)
+
+    def joystick(x, y):
+        yp.xy(x, y)
+        sp1.xy(x, y)
+        sp2.xy(x, y)
+
+    def dim(dim):
+        yp.dimming(dim)
+        sp1.dimming(dim)
+        sp2.dimming(dim)
+
+    osc.dispatcher.map("/joystick", lambda addr, *args: joystick(args[0], args[1]))
+    osc.dispatcher.map("/spot_dimmer_1", lambda addr, args: dim(arg))
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
