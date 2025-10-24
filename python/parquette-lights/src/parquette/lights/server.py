@@ -36,6 +36,9 @@ from .preset_manager import PresetManager
 @click.option("--boot-art-net", is_flag=True, default=False)
 @click.option("--art-net-auto", is_flag=True, default=False)
 @click.option(
+    "--entec-auto", default=None, type=str, help="entec port"
+)  # /dev/tty.usbserial-EN264168
+@click.option(
     "--presets-file",
     default="params.pickle",
     type=str,
@@ -51,6 +54,7 @@ def run(
     debug: bool,
     boot_art_net: bool,
     art_net_auto: bool,
+    entec_auto: str,
     presets_file: str,
 ) -> None:
     print("Setup", flush=True)
@@ -60,8 +64,10 @@ def run(
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug)
     dmx = DMXManager(osc, art_net_ip)
-    dmx.art_net_auto_send(art_net_auto)
     dmx.use_art_net = boot_art_net
+    dmx.art_net_auto_send(art_net_auto)
+    if not entec_auto is None:
+        dmx.setup_dmx(entec_auto)
 
     yp = YRXY200Spot(dmx, 21)
     yp.dimming(0)
