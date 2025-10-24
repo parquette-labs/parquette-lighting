@@ -392,12 +392,13 @@ def run(
         sp2.xy(x, y)
 
     def dim(dim):
+        print(dim)
         yp.dimming(dim)
         sp1.dimming(dim)
         sp2.dimming(dim)
 
     osc.dispatcher.map("/joystick", lambda addr, *args: joystick(args[0], args[1]))
-    osc.dispatcher.map("/spot_dimmer_1", lambda addr, args: dim(arg))
+    osc.dispatcher.map("/spot_dimmer_1", lambda addr, args: dim(args))
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
