@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.5",
+  "version": "1.29.8",
   "type": "session",
   "content": {
     "type": "root",
@@ -531,7 +531,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               },
               {
                 "type": "multixy",
@@ -594,7 +596,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -2148,7 +2152,9 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1
+                    "sensitivity": 1,
+                    "stepsX": false,
+                    "stepsY": false
                   },
                   {
                     "type": "multixy",
@@ -2211,7 +2217,9 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1
+                    "sensitivity": 1,
+                    "stepsX": false,
+                    "stepsY": false
                   }
                 ],
                 "tabs": []
@@ -7649,7 +7657,7 @@
                 "top": 0,
                 "left": 360,
                 "lock": false,
-                "id": "spot_dimming_1",
+                "id": "chan_levels/spot_1",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -7706,7 +7714,7 @@
                 "top": 0,
                 "left": 540,
                 "lock": false,
-                "id": "spot_pattern_1",
+                "id": "spot_pattern_5",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -7762,7 +7770,7 @@
                 "top": 290,
                 "left": 660,
                 "lock": false,
-                "id": "spot_prisim_1",
+                "id": "spot_prisim_5",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -7808,7 +7816,7 @@
                 "top": 0,
                 "left": 660,
                 "lock": false,
-                "id": "spot_prisim_rotation_1",
+                "id": "spot_prisim_rotation_5",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -7865,7 +7873,7 @@
                 "top": 0,
                 "left": 410,
                 "lock": false,
-                "id": "spot_color_1",
+                "id": "spot_color_5",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -7973,7 +7981,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -8083,7 +8093,7 @@
                 "top": 0,
                 "left": 360,
                 "lock": false,
-                "id": "spot_dimming_2",
+                "id": "chan_levels/spot_2",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -8345,7 +8355,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -8643,7 +8655,7 @@
                 "top": 0,
                 "left": 360,
                 "lock": false,
-                "id": "spot_dimming_3",
+                "id": "chan_levels/spot_3",
                 "visible": true,
                 "interaction": true,
                 "comments": "",
@@ -8905,7 +8917,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
