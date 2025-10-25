@@ -82,7 +82,17 @@ def run(
     overhead_spot.x(0)
     overhead_spot.y(127)
 
-    sidespot_2 = YUER150Spot(dmx, 36)
+    sidespot_1 = YUER150Spot(dmx, 36)
+    sidespot_1.x(0)
+    sidespot_1.y(0)
+    sidespot_1.dimming(0)
+    sidespot_1.strobe(False)
+    sidespot_1.color(1)
+    sidespot_1.no_pattern()
+    sidespot_1.prisim(False)
+    sidespot_1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+
+    sidespot_2 = YUER150Spot(dmx, 48)
     sidespot_2.x(0)
     sidespot_2.y(127)
     sidespot_2.dimming(0)
@@ -91,16 +101,6 @@ def run(
     sidespot_2.no_pattern()
     sidespot_2.prisim(False)
     sidespot_2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
-
-    sidespot_1 = YUER150Spot(dmx, 48)
-    sidespot_1.x(0)
-    sidespot_1.y(127)
-    sidespot_1.dimming(0)
-    sidespot_1.strobe(False)
-    sidespot_1.color(1)
-    sidespot_1.no_pattern()
-    sidespot_1.prisim(False)
-    sidespot_1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
     spotlights = [overhead_spot, sidespot_1, sidespot_2]
 
