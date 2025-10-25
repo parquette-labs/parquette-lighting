@@ -143,7 +143,7 @@ class PresetManager(object):
             # Someone is creating a new preset, nothing to load
             return
 
-        if not category_preset in self.stored_presets[category_preset]:
+        if not category_preset in self.stored_presets[category]:
             # Someone is creating a new preset, nothing to load
             return
 
