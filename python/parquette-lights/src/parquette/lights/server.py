@@ -223,7 +223,8 @@ def run(
         "reds": [],
         "plants": [],
         "booth": [],
-        "spots": [],
+        "spots_position": [],
+        "spots_light": [],
         "non-saved": [],
     }
 
@@ -366,6 +367,64 @@ def run(
                 )
             )
 
+    for i, fixture in enumerate([yp, sp1, sp2]):
+        exposed_params["spots_position"].append(
+            OSCParam(
+                osc,
+                "/spot_joystick_{}".format(i + 1),
+                lambda fixture=fixture: [fixture.x_val[0], fixture.y_val[0]],
+                lambda _, *args, fixture=fixture: fixture.xy(args[0], args[1]),
+            )
+        )
+
+        exposed_params["spots_light"].append(
+            OSCParam(
+                osc,
+                "/spot_dimming_{}".format(i),
+                lambda fixture=fixture: fixture.dimming_val,
+                lambda _, args, fixture=fixture: fixture.dimming(args),
+            )
+        )
+
+        exposed_params["spots_light"].append(
+            OSCParam(
+                osc,
+                "/spot_color_{}".format(i),
+                lambda fixture=fixture: fixture.color_index,
+                lambda _, args, fixture=fixture: fixture.color(args),
+            )
+        )
+
+        exposed_params["spots_light"].append(
+            OSCParam(
+                osc,
+                "/spot_pattern_{}".format(i),
+                lambda fixture=fixture: fixture.pattern_index,
+                lambda _, args, fixture=fixture: fixture.pattern(args),
+            )
+        )
+
+        exposed_params["spots_light"].append(
+            OSCParam(
+                osc,
+                "/spot_prisim_{}".format(i),
+                lambda fixture=fixture: fixture.prisim_enabled,
+                lambda _, args, fixture=fixture: fixture.prisim(
+                    args, fixture.prisim_rotation
+                ),
+            )
+        )
+
+        exposed_params["spots_light"].append(
+            OSCParam(
+                osc,
+                "/spot_prisim_rotation_{}".format(i),
+                lambda fixture=fixture: fixture.prisim_rotation,
+                lambda _, args, fixture=fixture: fixture.prisim(
+                    fixture.prisim_enabled, args
+                ),
+            )
+        )
     presets = PresetManager(osc, exposed_params, presets_file, debug)
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
@@ -373,32 +432,6 @@ def run(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
-
-    # def receive_joystick_x(_, *args):
-    #     incr = (args[0] - (1024 / 2)) / 300
-    #     sp.x(sp.x_val[0] + incr)
-    #     yp.x(yp.x_val[0] + incr)
-
-    # def receive_joystick_y(_, *args):
-    #     incr = (args[0] - (1024 / 2)) / 300
-    #     sp.y(sp.y_val[0] - incr)
-    #     yp.y(yp.y_val[0] - incr)
-
-    # osc.dispatcher.map("/joystick_x", receive_joystick_x)
-    # osc.dispatcher.map("/joystick_y", receive_joystick_y)
-
-    def joystick(x, y):
-        yp.xy(x, y)
-        sp1.xy(x, y)
-        sp2.xy(x, y)
-
-    def dim(dim):
-        yp.dimming(dim)
-        sp1.dimming(dim)
-        sp2.dimming(dim)
-
-    osc.dispatcher.map("/joystick", lambda addr, *args: joystick(args[0], args[1]))
-    osc.dispatcher.map("/spot_dimmer_1", lambda addr, args: dim(args))
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
