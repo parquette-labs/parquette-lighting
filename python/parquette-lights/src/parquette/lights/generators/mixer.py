@@ -39,7 +39,7 @@ class Mixer(object):
                 "under_1",
                 "under_2",
             ],
-            "spots_light": ["spot_1", "spot_2", "spot_3", "tung_spot"],
+            "spots_light": ["tung_spot", "spot_1", "spot_2", "spot_3"],
             "washes": ["wash_1"],
             "non-saved": ["sodium"],
         }
@@ -313,10 +313,12 @@ class SignalPatchParam(OSCParam):
         self,
         osc: OSCManager,
         addr: str,
+        chan_names: List[str],
         mixer: Mixer,
     ) -> None:
         super().__init__(osc, addr, self.value_builder, self.dispatch_patch)
         self.mixer = mixer
+        self.chan_names = chan_names
 
     def value_builder(self) -> List[List[str]]:
         mappings: List[List[str]] = []
@@ -330,12 +332,7 @@ class SignalPatchParam(OSCParam):
         return mappings
 
     def load(self, addr: str, args: List[List[str]]) -> None:
-        chan_names = set()
-        for conf in args:
-            for chan_name in conf[1:]:
-                chan_names.add(chan_name)
-
-        for chan_name in list(chan_names):
+        for chan_name in self.chan_names:
             self.mixer.clearSignalMatrix(chan_name)
 
         for conf in args:
@@ -345,8 +342,8 @@ class SignalPatchParam(OSCParam):
         self.sync()
 
     def dispatch_patch(self, _: str, *args):
-        for chan_name in args[1:]:
-            self.mixer.configureSignalPath(args[0], chan_name, True)
+        for chan_name in self.chan_names:
+            self.mixer.configureSignalPath(args[0], chan_name, chan_name in args[1:])
 
     def sync(self) -> None:
         for gen_ix in range(len(self.mixer.signal_matrix)):

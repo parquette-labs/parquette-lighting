@@ -226,155 +226,194 @@ def run(
 
     exposed_params: Dict[str, List[OSCParam]] = {
         "fft": [],
-        "reds": [SignalPatchParam(osc, "/signal_patchbay/reds", mixer)],
-        "plants": [SignalPatchParam(osc, "/signal_patchbay/plants", mixer)],
-        "booth": [SignalPatchParam(osc, "/signal_patchbay/booth", mixer)],
+        "reds": [
+            SignalPatchParam(
+                osc,
+                "/signal_patchbay/reds",
+                ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5"],
+                mixer,
+            )
+        ],
+        "plants": [
+            SignalPatchParam(
+                osc, "/signal_patchbay/plants", ["ceil_1", "ceil_2", "ceil_3"], mixer
+            )
+        ],
+        "booth": [
+            SignalPatchParam(
+                osc, "/signal_patchbay/booth", ["under_1", "under_2"], mixer
+            )
+        ],
         "strobes": [],
-        "washes": [SignalPatchParam(osc, "/signal_patchbay/washes", mixer)],
-        "spots_light": [SignalPatchParam(osc, "/signal_patchbay/spots_lights", mixer)],
+        "washes": [SignalPatchParam(osc, "/signal_patchbay/washes", ["wash_1"], mixer)],
+        "spots_light": [
+            SignalPatchParam(
+                osc,
+                "/signal_patchbay/spots_lights",
+                ["tung_spot", "spot_1", "spot_2", "spot_3"],
+                mixer,
+            )
+        ],
         "spots_position": [],
+        "audio": [],
         "non-saved": [],
     }
 
-    exposed_params["audio"] = [
-        OSCParam(
-            osc,
-            "/fft1_amp",
-            lambda: fft1.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
-        ),
-        OSCParam(
-            osc,
-            "/fft2_amp",
-            lambda: fft2.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
-        ),
-        OSCParam(
-            osc,
-            "/fft_threshold_1",
-            lambda: fft1.thres,
-            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
-        ),
-        OSCParam(
-            osc,
-            "/fft_threshold_2",
-            lambda: fft2.thres,
-            lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
-        ),
-        OSCParam(
-            osc,
-            "/fft_bounds_1",
-            lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
-            lambda addr, *args: fft_dispatch_wedge(fft1, args),
-        ),
-        OSCParam(
-            osc,
-            "/fft_bounds_2",
-            lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
-            lambda addr, *args: fft_dispatch_wedge(fft2, args),
-        ),
-        OSCParam(
-            osc,
-            "/manual_bpm_offset",
-            lambda: bpm.manual_offset,
-            lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
-        ),
-    ]
-    exposed_params["reds"] = [
-        OSCParam(
-            osc,
-            "/amp",
-            lambda: noise1.amp,
-            lambda _, args: OSCParam.obj_param_setter(
-                args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+    exposed_params["audio"].extend(
+        [
+            OSCParam(
+                osc,
+                "/fft1_amp",
+                lambda: fft1.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
             ),
-        ),
-        OSCParam(
-            osc,
-            "/period",
-            lambda: noise1.period,
-            lambda _, args: OSCParam.obj_param_setter(
-                args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+            OSCParam(
+                osc,
+                "/fft2_amp",
+                lambda: fft2.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
             ),
-        ),
-        OSCParam(
-            osc,
-            "/mode_switch",
-            lambda: mixer.mode,
-            lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_mult",
-            lambda: bpm.bpm_mult,
-            lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_duty",
-            lambda: bpm.duty,
-            lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
-        ),
-        OSCParam(
-            osc,
-            "/bpm_amp",
-            lambda: bpm.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
-        ),
-    ]
+            OSCParam(
+                osc,
+                "/fft_threshold_1",
+                lambda: fft1.thres,
+                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
+            ),
+            OSCParam(
+                osc,
+                "/fft_threshold_2",
+                lambda: fft2.thres,
+                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
+            ),
+            OSCParam(
+                osc,
+                "/fft_bounds_1",
+                lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
+                lambda addr, *args: fft_dispatch_wedge(fft1, args),
+            ),
+            OSCParam(
+                osc,
+                "/fft_bounds_2",
+                lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
+                lambda addr, *args: fft_dispatch_wedge(fft2, args),
+            ),
+            OSCParam(
+                osc,
+                "/manual_bpm_offset",
+                lambda: bpm.manual_offset,
+                lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
+            ),
+        ]
+    )
+    exposed_params["reds"].extend(
+        [
+            OSCParam(
+                osc,
+                "/amp",
+                lambda: noise1.amp,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/period",
+                lambda: noise1.period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/mode_switch",
+                lambda: mixer.mode,
+                lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_mult",
+                lambda: bpm.bpm_mult,
+                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_duty",
+                lambda: bpm.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_amp",
+                lambda: bpm.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
+            ),
+        ]
+    )
 
-    exposed_params["strobes"] = [
-        OSCParam(
-            osc,
-            "/impulse_amp",
-            lambda: impulse.amp,
-            lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_period",
-            lambda: impulse.period,
-            lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
-        ),
-        OSCParam(
-            osc,
-            "/impulse_duty",
-            lambda: impulse.duty,
-            lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
-        ),
-    ]
-    exposed_params["non-saved"] = [
-        OSCParam(
-            osc,
-            "/reds_master",
-            lambda: mixer.reds_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "reds_master", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/plants_master",
-            lambda: mixer.plants_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "plants_master", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/booth_master",
-            lambda: mixer.booth_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "booth_master", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/washes_master",
-            lambda: mixer.washes_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "washes_master", [mixer]),
-        ),
-        OSCParam(
-            osc,
-            "/spots_master",
-            lambda: mixer.spots_master,
-            lambda _, args: OSCParam.obj_param_setter(args, "spots_master", [mixer]),
-        ),
-    ]
+    exposed_params["strobes"].extend(
+        [
+            OSCParam(
+                osc,
+                "/impulse_amp",
+                lambda: impulse.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_period",
+                lambda: impulse.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_duty",
+                lambda: impulse.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
+            ),
+        ]
+    )
+    exposed_params["non-saved"].extend(
+        [
+            OSCParam(
+                osc,
+                "/reds_master",
+                lambda: mixer.reds_master,
+                lambda _, args: OSCParam.obj_param_setter(args, "reds_master", [mixer]),
+            ),
+            OSCParam(
+                osc,
+                "/plants_master",
+                lambda: mixer.plants_master,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "plants_master", [mixer]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/booth_master",
+                lambda: mixer.booth_master,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "booth_master", [mixer]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/washes_master",
+                lambda: mixer.washes_master,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "washes_master", [mixer]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/spots_master",
+                lambda: mixer.spots_master,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "spots_master", [mixer]
+                ),
+            ),
+        ]
+    )
 
     for category, chan_names in mixer.categorized_channel_names.items():
         for chan_name in chan_names:
