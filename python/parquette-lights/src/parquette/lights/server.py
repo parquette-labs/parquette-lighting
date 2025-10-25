@@ -70,9 +70,9 @@ def run(
         dmx.setup_dmx(entec_auto)
 
     overhead_spot = YRXY200Spot(dmx, 21)
-    overhead_spot.dimming(0)
+    overhead_spot.dimming(255)
     overhead_spot.strobe(False)
-    overhead_spot.color(7)
+    overhead_spot.color(0)
     overhead_spot.no_pattern()
     overhead_spot.prisim(False)
     overhead_spot.colorful(False)
@@ -85,7 +85,7 @@ def run(
     sidespot_1 = YUER150Spot(dmx, 36)
     sidespot_1.x(0)
     sidespot_1.y(0)
-    sidespot_1.dimming(0)
+    sidespot_1.dimming(255)
     sidespot_1.strobe(False)
     sidespot_1.color(1)
     sidespot_1.no_pattern()
@@ -95,7 +95,7 @@ def run(
     sidespot_2 = YUER150Spot(dmx, 48)
     sidespot_2.x(0)
     sidespot_2.y(127)
-    sidespot_2.dimming(0)
+    sidespot_2.dimming(255)
     sidespot_2.strobe(False)
     sidespot_2.color(1)
     sidespot_2.no_pattern()
@@ -384,14 +384,14 @@ def run(
             )
         )
 
-        exposed_params["spots_light"].append(
-            OSCParam(
-                osc,
-                "/spot_dimming_{}".format(i + 1),
-                lambda fixture=fixture: fixture.dimming_val,
-                lambda _, args, fixture=fixture: fixture.dimming(args),
-            )
-        )
+        # exposed_params["spots_light"].append(
+        #     OSCParam(
+        #         osc,
+        #         "/spot_dimming_{}".format(i + 1),
+        #         lambda fixture=fixture: fixture.dimming_val,
+        #         lambda _, args, fixture=fixture: fixture.dimming(args),
+        #     )
+        # )
 
         exposed_params["spots_light"].append(
             OSCParam(

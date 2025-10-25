@@ -119,7 +119,6 @@ class YRXY200Spot(Spot):
         super().__init__(dmx=dmx, addr=addr)
 
     def xy(self, x: int, y: int, fine=False):
-        print(x, y)
         if not fine:
             self.x(x)
             self.y(y)
@@ -430,8 +429,6 @@ class YUER150Spot(Spot):
         super().__init__(dmx=dmx, addr=addr)
 
     def xy(self, x: int, y: int, fine=False):
-        print(x, y)
-
         if not fine:
             self.x(x)
             self.y(y)
