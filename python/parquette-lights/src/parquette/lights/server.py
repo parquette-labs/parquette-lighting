@@ -491,11 +491,11 @@ def run(
         presets.select("booth", "Off")
         presets.select("washes", "Off")
         presets.select("spots_light", "Off")
-        mixer.reds_master = 0
-        mixer.spots_master = 0
-        mixer.washes_master = 0
-        mixer.booth_master = 0
-        mixer.plants_master = 0
+        # mixer.reds_master = 0
+        # mixer.spots_master = 0
+        # mixer.washes_master = 0
+        # mixer.booth_master = 0
+        # mixer.plants_master = 0
         mixer.setChannelLevel("sodium", 0)
 
     def house_lights():
