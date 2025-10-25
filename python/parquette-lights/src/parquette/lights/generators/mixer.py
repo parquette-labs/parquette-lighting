@@ -1,4 +1,4 @@
-from typing import List, Tuple, cast, Dict
+from typing import List, Tuple, cast, Dict, Optional
 
 import time
 from copy import copy
@@ -29,18 +29,7 @@ class Mixer(object):
         # TODO use this as the chan name reference throughout to better filter categories
         # should include what master it uses, what it's mapping is in different scenarios (as a lambda)
         self.categorized_channel_names: Dict[str, List[str]] = {
-            "reds": [
-                "chan_1",
-                "chan_2",
-                "chan_3",
-                "chan_4",
-                "chan_5",
-                "chan_6",
-                "chan_7",
-                "chan_8",
-                "chan_9",
-                "chan_10",
-            ],
+            "reds": ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5"],
             "plants": [
                 "ceil_1",
                 "ceil_2",
@@ -112,11 +101,19 @@ class Mixer(object):
     def getChannelLevel(self, chan_name: str) -> float:
         return self.channel_offsets[self.channel_names.index(chan_name)]
 
-    def clearSignalMatrix(self) -> None:
+    def clearSignalMatrix(self, chan_name: Optional[str] = None) -> None:
         # pylint: disable-next=consider-using-enumerate
         for gen_ix in range(len(self.signal_matrix)):
             for chan_ix in range(len(self.signal_matrix[gen_ix])):
-                self.signal_matrix[gen_ix][chan_ix] = 0
+                if chan_name is None:
+                    self.signal_matrix[gen_ix][chan_ix] = 0
+                elif self.channel_names[chan_ix] == chan_name:
+                    self.signal_matrix[gen_ix][chan_ix] = 0
+
+    def configureSignalPath(self, target_gen: str, target_chan: str, enable: bool):
+        gen_ix = list(map(lambda gen: gen.name, self.generators)).index(target_gen)
+        chan_ix = self.channel_names.index(target_chan)
+        self.signal_matrix[gen_ix][chan_ix] = int(enable)
 
     def configureSignalMatrix(
         self, target_gen: str, target_chans: Tuple[str] | List[str]
@@ -148,6 +145,12 @@ class Mixer(object):
         self.channels[0] = copy(self.channel_offsets)
 
         ts = time.time() * 1000
+
+        impulse_ix = list(map(lambda gen: gen.name, self.generators)).index("impulse")
+        self.channels[0][self.channel_names.index("sodium")] += self.generators[
+            impulse_ix
+        ].value(ts)
+
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
             for chan_idx, chan_connected in enumerate(gen_connected_chans):
                 self.channels[0][chan_idx] += (
@@ -327,20 +330,28 @@ class SignalPatchParam(OSCParam):
         return mappings
 
     def load(self, addr: str, args: List[List[str]]) -> None:
-        self.mixer.clearSignalMatrix()
+        chan_names = set()
+        for conf in args:
+            for chan_name in conf[1:]:
+                chan_names.add(chan_name)
+
+        for chan_name in list(chan_names):
+            self.mixer.clearSignalMatrix(chan_name)
 
         for conf in args:
-            self.mixer.configureSignalMatrix(conf[0], cast(List[str], conf[1:]))
+            for chan_name in conf[1:]:
+                self.mixer.configureSignalPath(conf[0], chan_name, True)
 
         self.sync()
 
     def dispatch_patch(self, _: str, *args):
-        self.mixer.configureSignalMatrix(args[0], args[1:])
+        for chan_name in args[1:]:
+            self.mixer.configureSignalPath(args[0], chan_name, True)
 
     def sync(self) -> None:
         for gen_ix in range(len(self.mixer.signal_matrix)):
             output_val = [self.mixer.generators[gen_ix].name]
-            self.osc.send_osc("/signal_patchbay", output_val)
+            self.osc.send_osc(self.addr, output_val)
 
         # pylint: disable-next=consider-using-enumerate
         for gen_ix in range(len(self.mixer.signal_matrix)):
@@ -349,4 +360,4 @@ class SignalPatchParam(OSCParam):
                 if self.mixer.signal_matrix[gen_ix][chan_ix]:
                     output_val.append(self.mixer.channel_names[chan_ix])
 
-            self.osc.send_osc("/signal_patchbay", output_val)
+            self.osc.send_osc(self.addr, output_val)

@@ -226,12 +226,13 @@ def run(
 
     exposed_params: Dict[str, List[OSCParam]] = {
         "fft": [],
-        "reds": [],
-        "plants": [],
-        "booth": [],
+        "reds": [SignalPatchParam(osc, "/signal_patchbay/reds", mixer)],
+        "plants": [SignalPatchParam(osc, "/signal_patchbay/plants", mixer)],
+        "booth": [SignalPatchParam(osc, "/signal_patchbay/booth", mixer)],
+        "strobes": [],
+        "washes": [SignalPatchParam(osc, "/signal_patchbay/washes", mixer)],
+        "spots_light": [SignalPatchParam(osc, "/signal_patchbay/spots_lights", mixer)],
         "spots_position": [],
-        "washes": [],
-        "spots_light": [],
         "non-saved": [],
     }
 
@@ -320,8 +321,8 @@ def run(
             lambda: bpm.amp,
             lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
         ),
-        SignalPatchParam(osc, "/signal_patchbay", mixer),
     ]
+
     exposed_params["strobes"] = [
         OSCParam(
             osc,
@@ -360,6 +361,18 @@ def run(
             "/booth_master",
             lambda: mixer.booth_master,
             lambda _, args: OSCParam.obj_param_setter(args, "booth_master", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/washes_master",
+            lambda: mixer.washes_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "washes_master", [mixer]),
+        ),
+        OSCParam(
+            osc,
+            "/spots_master",
+            lambda: mixer.spots_master,
+            lambda _, args: OSCParam.obj_param_setter(args, "spots_master", [mixer]),
         ),
     ]
 
