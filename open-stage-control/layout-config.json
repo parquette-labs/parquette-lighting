@@ -6520,7 +6520,6 @@
               "Waves": "Waves",
               "FFT Only": "FFT Only",
               "Disco": "Disco",
-              "Hard Disco": "Hard Disco",
               "Static": "Static",
               "Off": "Off"
             }
@@ -7096,6 +7095,7 @@
             "mode": "tap",
             "values": {
               "White": "White",
+              "White Prisim": "White Prisim",
               "Purple": "Purple",
               "Red": "Red",
               "Orange": "Orange",
@@ -7146,7 +7146,9 @@
             "values": {
               "Booth": "Booth",
               "Disco": "Disco",
-              "Dancers": "Dancers"
+              "Dancers Front": "Dancers Front",
+              "Dancers Crowd": "Dancers Crowd",
+              "Cut": "Cut"
             }
           },
           {

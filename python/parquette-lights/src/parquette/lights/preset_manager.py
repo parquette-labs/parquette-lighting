@@ -12,6 +12,8 @@ class PresetManager(object):
         osc: OSCManager,
         exposed_params: Dict[str, List[OSCParam]],
         filename: str,
+        *,
+        enable_save_clear: bool = False,
         debug: bool = False,
     ) -> None:
         self.osc = osc
@@ -19,6 +21,7 @@ class PresetManager(object):
         self.filename = filename
         self.stored_presets: Dict[str, Dict[str, List[Tuple[str, Any]]]] = {}
         self.current_presets: Dict[str, str] = {}
+        self.enable_save_clear = enable_save_clear
         self.debug = debug
 
         osc.dispatcher.map(
@@ -43,6 +46,9 @@ class PresetManager(object):
             print("Pickle load failed, bad or missing pickle", e, flush=True)
 
     def clear(self, category: str) -> None:
+        if not self.enable_save_clear:
+            return
+
         if not category in self.stored_presets:
             # we have never any data for this preset category, no-op
             print(
@@ -75,6 +81,9 @@ class PresetManager(object):
         """
         Save the current state of the parameters for the category into the pickle. Since we are saving current state we don't require the state to exist in current presets, only for the category to be valid and the preset name to exist
         """
+        if not self.enable_save_clear:
+            return
+
         if category == "non-saved":
             return
 

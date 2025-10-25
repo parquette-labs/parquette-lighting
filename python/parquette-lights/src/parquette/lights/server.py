@@ -35,6 +35,7 @@ from .preset_manager import PresetManager
 @click.option("--debug", is_flag=True, default=False)
 @click.option("--boot-art-net", is_flag=True, default=False)
 @click.option("--art-net-auto", is_flag=True, default=False)
+@click.option("--enable-save-clear", is_flag=True, default=False)
 @click.option(
     "--entec-auto", default=None, type=str, help="entec port"
 )  # /dev/tty.usbserial-EN264168
@@ -54,6 +55,7 @@ def run(
     debug: bool,
     boot_art_net: bool,
     art_net_auto: bool,
+    enable_save_clear: bool,
     entec_auto: str,
     presets_file: str,
 ) -> None:
@@ -489,7 +491,13 @@ def run(
                 ),
             )
         )
-    presets = PresetManager(osc, exposed_params, presets_file, debug)
+    presets = PresetManager(
+        osc,
+        exposed_params,
+        presets_file,
+        enable_save_clear=enable_save_clear,
+        debug=debug,
+    )
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
 
