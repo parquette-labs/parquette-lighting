@@ -25,6 +25,7 @@
 	* Connect DMX Entec Pro to mac mini via USB
 	* Connect USB audio interface (or any audio input your computer detects), connect to line out from the DJ booth. There is currently a small amazon USB audio dongle that takes headphone jack input and an XLR to headphone adapter attached
 	* Connect DMX Entec Pro via DMX cable (need a 5 to 3 pin adapter) to the dimmer pack above the washroom
+	* TODO: Notes on the artnet setup alternative are missing
 * Software
 	* Boot computer, current mac mini is set to auto boot when it has power
 	* Connect via screen share
@@ -37,6 +38,7 @@
 	* Open terminal
 		* `cd ~/parquette/parquette-lighting/python/parquette-lights`
 		* `poetry run server`
+		* TODO notes on auto connect for DMX are missing
 * Config
 	* Go to [http://192.168.1.245:8080](http://192.168.1.245:8080) in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"
@@ -57,6 +59,7 @@
 # Repo information
 
 * `/open-stage-control` contains the configuration for the open stage control front end, the `layout-config.json` contains the front end design, the other files are the server and UI initial state
+* `/launchd` contains the launchd scripts and install
 * `/python/parquette-lights` contains the python server
 	* `/python/parquette-lights/params.pickle` contains the presets, it is auto updated when you adjust the presets in the front end (by clicking save or clear preset). You of course have to save and commit those changes for them to persist
 
