@@ -331,6 +331,14 @@ def run(
             ),
             OSCParam(
                 osc,
+                "/stutter_period",
+                lambda: mixer.stutter_period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "stutter_period", [mixer]
+                ),
+            ),
+            OSCParam(
+                osc,
                 "/bpm_mult",
                 lambda: bpm.bpm_mult,
                 lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
