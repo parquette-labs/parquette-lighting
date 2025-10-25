@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.8",
+  "version": "1.29.5",
   "type": "session",
   "content": {
     "type": "root",
@@ -531,9 +531,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               },
               {
                 "type": "multixy",
@@ -596,9 +594,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               }
             ],
             "tabs": []
@@ -2152,9 +2148,7 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1,
-                    "stepsX": false,
-                    "stepsY": false
+                    "sensitivity": 1
                   },
                   {
                     "type": "multixy",
@@ -2217,9 +2211,7 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1,
-                    "stepsX": false,
-                    "stepsY": false
+                    "sensitivity": 1
                   }
                 ],
                 "tabs": []
@@ -8058,9 +8050,7 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": "",
-                "stepsX": false,
-                "stepsY": false
+                "onTouch": ""
               }
             ],
             "tabs": []
@@ -8432,9 +8422,7 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": "",
-                "stepsX": false,
-                "stepsY": false
+                "onTouch": ""
               }
             ],
             "tabs": []
@@ -8994,9 +8982,7 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": "",
-                "stepsX": false,
-                "stepsY": false
+                "onTouch": ""
               }
             ],
             "tabs": []

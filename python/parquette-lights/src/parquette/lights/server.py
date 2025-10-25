@@ -439,6 +439,11 @@ def run(
         presets.select("booth", "Off")
         presets.select("washes", "Off")
         presets.select("spots_light", "Off")
+        mixer.reds_master = 0
+        mixer.spots_master = 0
+        mixer.washes_master = 0
+        mixer.booth_master = 0
+        mixer.plants_master = 0
         mixer.setChannelLevel("sodium", 0)
 
     def house_lights():
@@ -447,6 +452,11 @@ def run(
         presets.select("booth", "Static")
         presets.select("washes", "Static")
         presets.select("spots_light", "Off")
+        mixer.reds_master = 1
+        mixer.spots_master = 1
+        mixer.washes_master = 1
+        mixer.booth_master = 1
+        mixer.plants_master = 1
         mixer.setChannelLevel("sodium", 255)
 
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
