@@ -230,6 +230,7 @@ def run(
         "plants": [],
         "booth": [],
         "spots_position": [],
+        "washes": [],
         "spots_light": [],
         "non-saved": [],
     }
