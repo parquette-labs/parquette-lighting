@@ -90,6 +90,8 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 	* Annotate FFT with key freqs
 * New ideas
+	* Use inheritance from parent frame to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
+	* Better parent class for Spot with no repeated boiler plate
 	* <s>Run open stage control on CLI</s>
 	* <s>Auto start process</s>
 	* Auto detection for low/high intensity of music that can trigger mode changes or similar
