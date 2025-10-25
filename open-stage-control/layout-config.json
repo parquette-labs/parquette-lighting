@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.5",
+  "version": "1.29.8",
   "type": "session",
   "content": {
     "type": "root",
@@ -531,7 +531,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               },
               {
                 "type": "multixy",
@@ -594,7 +596,9 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1
+                "sensitivity": 1,
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -2148,7 +2152,9 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1
+                    "sensitivity": 1,
+                    "stepsX": false,
+                    "stepsY": false
                   },
                   {
                     "type": "multixy",
@@ -2211,7 +2217,9 @@
                     "logScaleY": false,
                     "axisLock": "",
                     "doubleTap": false,
-                    "sensitivity": 1
+                    "sensitivity": 1,
+                    "stepsX": false,
+                    "stepsY": false
                   }
                 ],
                 "tabs": []
@@ -4801,7 +4809,7 @@
             "visible": true,
             "interaction": true,
             "comments": "",
-            "width": 390,
+            "width": 540,
             "height": 350,
             "expand": false,
             "colorText": "auto",
@@ -5377,6 +5385,100 @@
                 "bypass": true,
                 "onCreate": "",
                 "onValue": ""
+              },
+              {
+                "type": "textarea",
+                "top": 270,
+                "left": 380,
+                "lock": false,
+                "id": "stutter_period_text",
+                "visible": true,
+                "interaction": false,
+                "comments": "",
+                "width": 60,
+                "height": 60,
+                "expand": false,
+                "colorText": "auto",
+                "colorWidget": "auto",
+                "colorStroke": "auto",
+                "colorFill": "auto",
+                "alphaStroke": "auto",
+                "alphaFillOff": "auto",
+                "alphaFillOn": "auto",
+                "lineWidth": "auto",
+                "borderRadius": "auto",
+                "padding": "auto",
+                "html": "",
+                "css": "",
+                "value": "Stutter Period @{stutter_period}",
+                "default": "",
+                "linkId": "",
+                "address": "auto",
+                "preArgs": "",
+                "typeTags": "",
+                "decimals": 2,
+                "target": "",
+                "ignoreDefaults": false,
+                "bypass": true,
+                "onCreate": "",
+                "onValue": ""
+              },
+              {
+                "type": "fader",
+                "top": 10,
+                "left": 380,
+                "lock": false,
+                "id": "stutter_period",
+                "visible": true,
+                "interaction": true,
+                "comments": "",
+                "width": "auto",
+                "height": 260,
+                "expand": false,
+                "colorText": "auto",
+                "colorWidget": "auto",
+                "colorStroke": "auto",
+                "colorFill": "auto",
+                "alphaStroke": "auto",
+                "alphaFillOff": "auto",
+                "alphaFillOn": "auto",
+                "lineWidth": "auto",
+                "borderRadius": "auto",
+                "padding": "auto",
+                "html": "",
+                "css": "",
+                "value": 0,
+                "default": "",
+                "linkId": "",
+                "address": "auto",
+                "preArgs": "",
+                "typeTags": "",
+                "decimals": 2,
+                "target": "",
+                "ignoreDefaults": false,
+                "bypass": false,
+                "onCreate": "",
+                "onValue": "",
+                "design": "default",
+                "knobSize": "auto",
+                "colorKnob": "auto",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "snap": true,
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "range": {
+                  "min": 0,
+                  "max": 2000
+                },
+                "logScale": true,
+                "sensitivity": 1,
+                "steps": "",
+                "origin": "auto",
+                "onTouch": ""
               }
             ],
             "tabs": [],
@@ -5494,7 +5596,7 @@
           {
             "type": "panel",
             "top": 10,
-            "left": 520,
+            "left": 670,
             "lock": false,
             "id": "impulse_panel",
             "visible": true,
@@ -8260,7 +8362,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -8632,7 +8736,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
@@ -9192,7 +9298,9 @@
                 "bypass": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": []
