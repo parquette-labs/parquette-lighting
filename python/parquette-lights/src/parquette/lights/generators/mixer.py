@@ -26,6 +26,8 @@ class Mixer(object):
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
+        # TODO use this as the chan name reference throughout to better filter categories
+        # should include what master it uses, what it's mapping is in different scenarios (as a lambda)
         self.categorized_channel_names: Dict[str, List[str]] = {
             "reds": [
                 "chan_1",
@@ -48,7 +50,9 @@ class Mixer(object):
                 "under_1",
                 "under_2",
             ],
-            "non-saved": ["chan_spot", "sodium"],
+            "spots_light": ["spot_1", "spot_2", "spot_3", "tung_spot"],
+            "washes": ["wash_1"],
+            "non-saved": ["sodium"],
         }
 
         self.channel_names: List[str] = [
@@ -59,7 +63,7 @@ class Mixer(object):
 
         self.num_channels = len(self.channel_names)
 
-        self.dmx_mappings = {
+        self.dmx_mappings: Dict[str, List[Spot | RGBLight | SingleLight]] = {
             "left": [
                 SingleLight(dmx, 4),
                 SingleLight(dmx, 3),
@@ -74,7 +78,10 @@ class Mixer(object):
             ],
             "front": [SingleLight(dmx, 12), SingleLight(dmx, 9)],
             "under": [SingleLight(dmx, 10), SingleLight(dmx, 11)],
-            "spot": [SingleLight(dmx, 13)],
+            "spot": cast(
+                list[Spot | RGBLight | SingleLight], [SingleLight(dmx, 13)] + spots
+            ),
+            "wash": cast(list[Spot | RGBLight | SingleLight], washes),
             "sodium": [SingleLight(dmx, 20)],
             "ceil": [SingleLight(dmx, 18), SingleLight(dmx, 19), SingleLight(dmx, 17)],
         }
@@ -94,6 +101,8 @@ class Mixer(object):
 
         self.stutter_period = 500
         self.reds_master = 1
+        self.spots_master = 1
+        self.washes_master = 1
         self.booth_master = 1
         self.plants_master = 1
 
@@ -147,13 +156,17 @@ class Mixer(object):
 
         for i, val in enumerate(self.channels[0]):
             if not self.channel_names[i] in (
-                "chan_spot",
+                "tung_spot",
                 "under_1",
                 "under_2",
                 "sodium",
                 "ceil_1",
                 "ceil_2",
                 "ceil_3",
+                "spot_1",
+                "spot_2",
+                "spot_3",
+                "wash_1",
             ):
                 self.channels[0][i] = val * self.reds_master
 
@@ -167,56 +180,84 @@ class Mixer(object):
 
         for i, val in enumerate(self.channels[0]):
             if self.channel_names[i] in (
+                "spot_1",
+                "spot_2",
+                "spot_3",
+                "tung_spot",
+            ):
+                self.channels[0][i] = val * self.spots_master
+
+        for i, val in enumerate(self.channels[0]):
+            if self.channel_names[i] in ("wash_1",):
+                self.channels[0][i] = val * self.washes_master
+
+        for i, val in enumerate(self.channels[0]):
+            if self.channel_names[i] in (
                 "under_1",
                 "under_2",
             ):
                 self.channels[0][i] = val * self.booth_master
 
     def runOutputMix(self) -> None:
-        self.dmx_mappings["spot"][0].on(
-            self.channels[0][self.channel_names.index("chan_spot")]
+        # spots
+        self.dmx_mappings["spot"][0].dimming(
+            self.channels[0][self.channel_names.index("tung_spot")]
         )
-        self.dmx_mappings["under"][0].on(
+        self.dmx_mappings["spot"][1].dimming(
+            self.channels[0][self.channel_names.index("spot_1")]
+        )
+        self.dmx_mappings["spot"][2].dimming(
+            self.channels[0][self.channel_names.index("spot_2")]
+        )
+        self.dmx_mappings["spot"][3].dimming(
+            self.channels[0][self.channel_names.index("spot_3")]
+        )
+
+        # washes
+        self.dmx_mappings["wash"][0].dimming(
+            self.channels[0][self.channel_names.index("wash_1")]
+        )
+
+        # booth
+        self.dmx_mappings["under"][0].dimming(
             self.channels[0][self.channel_names.index("under_1")]
         )
-        self.dmx_mappings["under"][1].on(
+        self.dmx_mappings["under"][1].dimming(
             self.channels[0][self.channel_names.index("under_2")]
         )
-        self.dmx_mappings["sodium"][0].on(
+
+        # sodium
+        self.dmx_mappings["sodium"][0].dimming(
             self.channels[0][self.channel_names.index("sodium")]
         )
-        self.dmx_mappings["ceil"][0].on(
+
+        # plants
+        self.dmx_mappings["ceil"][0].dimming(
             self.channels[0][self.channel_names.index("ceil_1")]
         )
-        self.dmx_mappings["ceil"][1].on(
+        self.dmx_mappings["ceil"][1].dimming(
             self.channels[0][self.channel_names.index("ceil_2")]
         )
-        self.dmx_mappings["ceil"][2].on(
+        self.dmx_mappings["ceil"][2].dimming(
             self.channels[0][self.channel_names.index("ceil_3")]
         )
 
         if self.mode == "MONO":
             for group, fixtures in self.dmx_mappings.items():
-                if not group in ("spot", "under", "ceil", "sodium"):
+                if group in ("left", "right", "front"):
                     for fixture in fixtures:
-                        fixture.on(self.channels[0][0])
+                        fixture.dimming(self.channels[0][0])
 
         elif self.mode == "PENTA":
             for i, (fixture_l, fixture_r) in enumerate(
                 zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
             ):
-                fixture_l.on(self.channels[0][i + 1])
-                fixture_r.on(self.channels[0][i + 1])
+                fixture_l.dimming(self.channels[0][i + 1])
+                fixture_r.dimming(self.channels[0][i + 1])
 
-            self.dmx_mappings["front"][0].on(self.channels[0][0])
-            self.dmx_mappings["front"][1].on(self.channels[0][0])
-        elif self.mode == "DECA":
-            for i, fixture in enumerate(
-                self.dmx_mappings["left"]
-                + self.dmx_mappings["right"]
-                + self.dmx_mappings["front"]
-            ):
-                fixture.on(self.channels[0][i])
+            self.dmx_mappings["front"][0].dimming(self.channels[0][0])
+            self.dmx_mappings["front"][1].dimming(self.channels[0][0])
+
         elif self.mode in ("FWD", "BACK"):
             fixture_zip = list(
                 zip(
@@ -234,8 +275,12 @@ class Mixer(object):
                         len(self.channels) - 1,
                     )
                 )
-                fixture_l.on(int(constrain(self.channels[stutter_index][0], 0, 255)))
-                fixture_r.on(int(constrain(self.channels[stutter_index][1], 0, 255)))
+                fixture_l.dimming(
+                    int(constrain(self.channels[stutter_index][0], 0, 255))
+                )
+                fixture_r.dimming(
+                    int(constrain(self.channels[stutter_index][1], 0, 255))
+                )
         elif self.mode == "ZIG":
             interleaved_fixtures = [
                 val
@@ -254,7 +299,7 @@ class Mixer(object):
                         len(self.channels) - 1,
                     )
                 )
-                fixture.on(int(constrain(self.channels[stutter_index][0], 0, 255)))
+                fixture.dimming(int(constrain(self.channels[stutter_index][0], 0, 255)))
 
     def updateDMX(self) -> None:
         self.dmx.submit()

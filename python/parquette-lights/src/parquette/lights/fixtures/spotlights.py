@@ -1,5 +1,5 @@
-from typing import cast, List
-from abc import ABC
+from typing import cast, List, Union
+from abc import ABC, abstractmethod
 
 from enum import Enum
 
@@ -22,6 +22,10 @@ class Spot(ABC):
         self.prisim_rotation = 0
 
         # TODO make base methods
+
+    @abstractmethod
+    def dimming(self, value: Union[int | float]) -> None:
+        pass
 
 
 class YRXY200Spot(Spot):
@@ -153,7 +157,7 @@ class YRXY200Spot(Spot):
             self.addr + YRXY200Spot.YRXY200Channel.XY_SPEED.value, speed
         )
 
-    def dimming(self, value: int) -> None:
+    def dimming(self, value: Union[int | float]) -> None:
         self.dimming_val = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, self.dimming_val
@@ -463,7 +467,7 @@ class YUER150Spot(Spot):
             self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, speed
         )
 
-    def dimming(self, value: int) -> None:
+    def dimming(self, value: Union[int | float]) -> None:
         self.dimming_val = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
