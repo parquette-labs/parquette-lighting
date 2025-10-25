@@ -1,6 +1,8 @@
-from typing import cast
+from typing import cast, List
+
 from enum import Enum
-from ..util.math import constrain
+
+from ..util.math import constrain, value_map
 from ..dmx import DMXManager
 
 
@@ -49,7 +51,17 @@ class YRXY200Spot(object):
 
     class YRXY200Pattern(Enum):
         CIRCULAR_WHITE = 0
-        PATTERN = 6
+        PATTERN_1 = 6
+        PATTERN_2 = 12
+        PATTERN_3 = 18
+        PATTERN_4 = 24
+        PATTERN_5 = 30
+        PATTERN_6 = 36
+        PATTERN_7 = 42
+        PATTERN_8 = 48
+        PATTERN_9 = 54
+        PATTERN_10 = 60
+        PATTERN_11 = 66
         PATTERN_DITHER = 72
         FORWARD_FLOW = 144
         REVERSE_FLOW = 200
@@ -86,6 +98,7 @@ class YRXY200Spot(object):
         self.addr = addr
         self.x_val = [0, 0]
         self.y_val = [0, 0]
+        self.dimming_val = 0
 
     def xy(self, x: int, y: int, fine=False):
         if not fine:
@@ -127,11 +140,12 @@ class YRXY200Spot(object):
         )
 
     def dimming(self, value: int) -> None:
+        self.dimming_val = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, value
+            self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, self.dimming_val
         )
 
-    def shutter(self, close_shutter: bool):
+    def shutter(self, close_shutter: bool) -> None:
         if close_shutter:
             self.dmx.set_channel(
                 self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
@@ -143,45 +157,113 @@ class YRXY200Spot(object):
                 YRXY200Spot.YRXY200Strobe.OPEN.value,
             )
 
-    def strobe(self, rate: int):
-        rate = cast(int, constrain(rate, 0, 249 - 10))
+    def strobe(self, enable: bool, rate: int = 0) -> None:
+        if not enable:
+            self.shutter(False)
+            return
+
+        rate = cast(int, value_map(rate, 0, 255, 0, 249 - 10, True))
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.STROBE.value,
             YRXY200Spot.YRXY200Strobe.STROBE.value + rate,
         )
 
-    def color(self, color: YRXY200Color, rate: int = 0) -> None:
-        if color == YRXY200Spot.YRXY200Color.REVERSE_FLOW:
-            rate = cast(int, constrain(rate, 0, 255 - 198))  # TODO from enum
-        elif color == YRXY200Spot.YRXY200Color.FORWARD_FLOW:
-            rate = cast(int, constrain(rate, 0, 197 - 140))
-        else:
-            rate = 0
+    def colors(self) -> List[YRXY200Spot.YRXY200Color]:
+        return [
+            YRXY200Spot.YRXY200Color.WHITE,
+            YRXY200Spot.YRXY200Color.COLOR_1,
+            YRXY200Spot.YRXY200Color.COLOR_2,
+            YRXY200Spot.YRXY200Color.COLOR_3,
+            YRXY200Spot.YRXY200Color.COLOR_4,
+            YRXY200Spot.YRXY200Color.COLOR_5,
+            YRXY200Spot.YRXY200Color.COLOR_6,
+            YRXY200Spot.YRXY200Color.COLOR_7,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_1,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_2,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_3,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_4,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_5,
+            YRXY200Spot.YRXY200Color.HALF_COLOR_6,
+        ]
+
+    def color(self, index: int) -> None:
+        index = cast(int, constrain(index, 0, len(self.colors())))
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.COLOR.value,
-            color.value + rate,
+            self.colors()[index].value,
         )
 
-    def pattern(self, pattern: YRXY200Pattern, rate: int = 0) -> None:
-        # TODO get the specific pattern addresses
-        if pattern == YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE:
-            rate = cast(int, constrain(rate, 0, 5))
-        elif pattern == YRXY200Spot.YRXY200Pattern.PATTERN:
-            rate = cast(int, constrain(rate, 0, 71 - 6))
-        elif pattern == YRXY200Spot.YRXY200Pattern.PATTERN_DITHER:
-            rate = cast(int, constrain(rate, 0, 143 - 72))
-        elif pattern == YRXY200Spot.YRXY200Pattern.FORWARD_FLOW:
-            rate = cast(int, constrain(rate, 0, 144 - 199))
-        elif pattern == YRXY200Spot.YRXY200Pattern.REVERSE_FLOW:
-            rate = cast(int, constrain(rate, 0, 255 - 200))
+    def white(self) -> None:
+        self.color(0)
+
+    def rotate_color(self, forward: bool, rate: int = 0) -> None:
+        if forward:
+            rate = cast(int, value_map(rate, 0, 255, 0, 197 - 140, True))
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.COLOR.value,
+                YRXY200Spot.YRXY200Color.FORWARD_FLOW.value + rate,
+            )
         else:
-            rate = 0
+            rate = cast(int, value_map(rate, 0, 255, 0, 255 - 198, True))
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.COLOR.value,
+                YRXY200Spot.YRXY200Color.REVERSE_FLOW.value + rate,
+            )
+
+    def patterns(self) -> List[YRXY200Spot.YRXY200Pattern]:
+        return [
+            YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE,
+            YRXY200Spot.YRXY200Pattern.PATTERN_1,
+            YRXY200Spot.YRXY200Pattern.PATTERN_2,
+            YRXY200Spot.YRXY200Pattern.PATTERN_3,
+            YRXY200Spot.YRXY200Pattern.PATTERN_4,
+            YRXY200Spot.YRXY200Pattern.PATTERN_5,
+            YRXY200Spot.YRXY200Pattern.PATTERN_6,
+            YRXY200Spot.YRXY200Pattern.PATTERN_7,
+            YRXY200Spot.YRXY200Pattern.PATTERN_8,
+            YRXY200Spot.YRXY200Pattern.PATTERN_9,
+            YRXY200Spot.YRXY200Pattern.PATTERN_10,
+            YRXY200Spot.YRXY200Pattern.PATTERN_11,
+        ]
+
+    def pattern(self, index: int) -> None:
+        index = cast(int, constrain(index, 0, len(self.patterns())))
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.PATTERN.value,
-            pattern.value + rate,
+            self.patterns()[index].value,
+        )
+
+    def no_pattern(self) -> None:
+        self.pattern(0)
+
+    def rotate_pattern(self, forward: bool, rate: int = 0) -> None:
+        if forward:
+            rate = cast(int, value_map(rate, 0, 255, 0, 144 - 199, True))
+
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.PATTERN.value,
+                YRXY200Spot.YRXY200Pattern.FORWARD_FLOW.value + rate,
+            )
+        else:
+            rate = cast(int, value_map(rate, 0, 255, 0, 255 - 200, True))
+
+            self.dmx.set_channel(
+                self.addr + YRXY200Spot.YRXY200Channel.PATTERN.value,
+                YRXY200Spot.YRXY200Pattern.REVERSE_FLOW.value + rate,
+            )
+
+    def rotate_dither(self, index: int, rate: int) -> None:
+        index = cast(int, constrain(index, 0, len(self.patterns())))
+        rate = cast(int, value_map(rate, 0, 255, 0, 6, True))
+
+        self.dmx.set_channel(
+            self.addr + YRXY200Spot.YRXY200Channel.PATTERN.value,
+            YRXY200Spot.YRXY200Pattern.PATTERN_DITHER.value
+            + self.patterns()[index].value
+            + rate,
         )
 
     def colorful(self, enabled) -> None:
@@ -209,7 +291,7 @@ class YRXY200Spot(object):
                 YRXY200Spot.YRXY200Prisim.PRISIM.value,
             )
         else:
-            rotation = cast(int, constrain(rotation, 0, 255 - 192))
+            rotation = cast(int, value_map(rotation, 0, 255, 0, 255 - 192, True))
             self.dmx.set_channel(
                 self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
                 YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION.value + rotation,
@@ -219,9 +301,9 @@ class YRXY200Spot(object):
         self, self_propelled: YRXY200SelfPropelled, offset: int = 0
     ) -> None:
         if self_propelled == YRXY200Spot.YRXY200SelfPropelled.SELF_PROPELLED:
-            offset = cast(int, constrain(offset, 0, 149 - 30))
+            offset = cast(int, value_map(offset, 0, 255, 0, 149 - 30, True))
         elif self_propelled == YRXY200Spot.YRXY200SelfPropelled.VOICE_ACTIVATED:
-            offset = cast(int, constrain(offset, 0, 255 - 150))
+            offset = cast(int, value_map(offset, 0, 255, 0, 255 - 150, True))
         else:
             offset = 0
 
@@ -239,11 +321,11 @@ class YRXY200Spot(object):
         self, light_strip_scene: YRXY200RingScene, rate: int = 0
     ) -> None:
         if light_strip_scene == YRXY200Spot.YRXY200RingScene.COLOR_SELECTION:
-            rate = cast(int, constrain(rate, 0, 74 - 5))
+            rate = cast(int, value_map(rate, 0, 255, 0, 74 - 5, True))
         elif light_strip_scene == YRXY200Spot.YRXY200RingScene.EFFECT_SELECTION:
-            rate = cast(int, constrain(rate, 0, 248 - 75))
+            rate = cast(int, value_map(rate, 0, 255, 0, 248 - 75, True))
         elif light_strip_scene == YRXY200Spot.YRXY200RingScene.RANDOM_SELECTION:
-            rate = cast(int, constrain(rate, 0, 255 - 249))
+            rate = cast(int, value_map(rate, 0, 255, 0, 255 - 249, True))
         else:
             rate = 0
 
@@ -365,39 +447,82 @@ class YUER150Spot(object):
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
         )
 
-    def strobe(self, enable: bool, rate: int = 0):
+    def strobe(self, enable: bool, rate: int = 0) -> None:
         if not enable:
             self.dmx.set_channel(
                 self.addr + YUER150Spot.YUER150Channel.STROBE.value,
                 YUER150Spot.YUER150Strobe.NO_STROBE.value,
             )
         else:
-            rate = cast(int, constrain(rate, 0, 255 - 16))
+            rate = cast(int, value_map(rate, 0, 255, 0, 255 - 16, True))
             self.dmx.set_channel(
                 self.addr + YUER150Spot.YUER150Channel.STROBE.value,
                 YUER150Spot.YUER150Strobe.STROBE.value + rate,
             )
 
-    def color(self, color: YUER150Color, rate: int = 0) -> None:
-        if color == YUER150Spot.YUER150Color.FORWARD_FLOW:
-            rate = cast(int, constrain(rate, 0, 255 - 128))
-        else:
-            rate = 0
+    def colors(self) -> List[YUER150Spot.YUER150Color]:
+        return [
+            YUER150Spot.YUER150Color.WHITE,
+            YUER150Spot.YUER150Color.COLOR_1_RED,
+            YUER150Spot.YUER150Color.COLOR_2_GREEN,
+            YUER150Spot.YUER150Color.COLOR_3_BLUE,
+            YUER150Spot.YUER150Color.COLOR_4_PURPLE,
+            YUER150Spot.YUER150Color.COLOR_5_ORANGE,
+            YUER150Spot.YUER150Color.COLOR_6_TEAL,
+            YUER150Spot.YUER150Color.COLOR_7_YELLOW,
+        ]
+
+    def color(self, index: int) -> None:
+        index = cast(int, constrain(index, 0, len(self.colors())))
 
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.COLOR.value,
-            color.value + rate,
+            self.colors()[index].value,
         )
 
-    def pattern(self, pattern: YUER150Pattern, rate: int = 0) -> None:
-        if pattern == YUER150Spot.YUER150Pattern.REVERSE_FLOW:
-            rate = cast(int, constrain(rate, 0, 255 - 128))
-        else:
-            rate = 0
+    def white(self) -> None:
+        self.color(0)
+
+    # pylint: disable-next=unused-argument
+    def rotate_color(self, forward: bool, rate: int = 0) -> None:
+        # no reverse flow available
+
+        rate = cast(int, value_map(rate, 0, 255, 0, 255 - 128, True))
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.PATTERN.value,
+            YUER150Spot.YUER150Color.FORWARD_FLOW.value + rate,
+        )
+
+    def patterns(self) -> List[YUER150Spot.YUER150Pattern]:
+        return [
+            YUER150Spot.YUER150Pattern.CIRCULAR_WHITE,
+            YUER150Spot.YUER150Pattern.PATTERN_1_MUSIC,
+            YUER150Spot.YUER150Pattern.PATTERN_2_ZIG,
+            YUER150Spot.YUER150Pattern.PATTERN_3_CROSS,
+            YUER150Spot.YUER150Pattern.PATTERN_4_FLOWER,
+            YUER150Spot.YUER150Pattern.PATTERN_5_CROSS,
+            YUER150Spot.YUER150Pattern.PATTERN_6_TRIDENT,
+            YUER150Spot.YUER150Pattern.PATTERN_7_SMALL_FLOWER,
+        ]
+
+    def pattern(self, index: int) -> None:
+        index = cast(int, constrain(index, 0, len(self.patterns())))
 
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.PATTERN.value,
-            pattern.value + rate,
+            self.patterns()[index].value,
+        )
+
+    def no_pattern(self) -> None:
+        self.pattern(0)
+
+    # pylint: disable-next=unused-argument
+    def rotate_pattern(self, forward: bool, rate: int = 0) -> None:
+        rate = cast(int, constrain(rate, 0, 255 - 128))
+
+        self.dmx.set_channel(
+            self.addr + YUER150Spot.YUER150Channel.PATTERN.value,
+            YUER150Spot.YUER150Pattern.REVERSE_FLOW.value + rate,
         )
 
     def prisim(self, enable: bool, rotation: int = 0) -> None:
@@ -412,7 +537,7 @@ class YUER150Spot(object):
                 YUER150Spot.YUER150Prisim.PRISIM.value,
             )
         else:
-            rotation = cast(int, constrain(rotation, 0, 255 - 137))
+            rotation = cast(int, value_map(rotation, 0, 255, 0, 255 - 137, True))
             self.dmx.set_channel(
                 self.addr + YUER150Spot.YUER150Channel.PRISIM.value,
                 YUER150Spot.YUER150Prisim.PRISIM_ROTATION.value + rotation,
@@ -422,11 +547,11 @@ class YUER150Spot(object):
         self, self_propelled: YUER150SelfPropelled, offset: int = 0
     ) -> None:
         if self_propelled == YUER150Spot.YUER150SelfPropelled.FAST:
-            offset = cast(int, constrain(offset, 0, 100 - 51))
+            offset = cast(int, value_map(offset, 0, 255, 0, 100 - 51, True))
         elif self_propelled == YUER150Spot.YUER150SelfPropelled.SLOW:
-            offset = cast(int, constrain(offset, 0, 200 - 101))
+            offset = cast(int, value_map(offset, 0, 255, 0, 200 - 101, True))
         elif self_propelled == YUER150Spot.YUER150SelfPropelled.SOUND:
-            offset = cast(int, constrain(offset, 0, 255 - 201))
+            offset = cast(int, value_map(offset, 0, 255, 0, 255 - 201, True))
 
         else:
             offset = 0

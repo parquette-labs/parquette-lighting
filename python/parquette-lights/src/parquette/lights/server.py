@@ -71,9 +71,9 @@ def run(
 
     yp = YRXY200Spot(dmx, 21)
     yp.dimming(0)
-    yp.shutter(False)
-    yp.color(YRXY200Spot.YRXY200Color.HALF_COLOR_1)
-    yp.pattern(YRXY200Spot.YRXY200Pattern.CIRCULAR_WHITE)
+    yp.strobe(False)
+    yp.color(7)
+    yp.no_pattern()
     yp.prisim(False)
     yp.colorful(False)
     yp.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
@@ -87,8 +87,8 @@ def run(
     sp2.y(127)
     sp2.dimming(0)
     sp2.strobe(False)
-    sp2.color(YUER150Spot.YUER150Color.COLOR_6_TEAL)
-    sp2.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp2.color(1)
+    sp2.no_pattern()
     sp2.prisim(False)
     sp2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
@@ -97,8 +97,8 @@ def run(
     sp1.y(127)
     sp1.dimming(0)
     sp1.strobe(False)
-    sp1.color(YUER150Spot.YUER150Color.COLOR_5_ORANGE)
-    sp1.pattern(YUER150Spot.YUER150Pattern.CIRCULAR_WHITE)
+    sp1.color(1)
+    sp1.no_pattern()
     sp1.prisim(False)
     sp1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
@@ -223,6 +223,7 @@ def run(
         "reds": [],
         "plants": [],
         "booth": [],
+        "spots": [],
         "non-saved": [],
     }
 
