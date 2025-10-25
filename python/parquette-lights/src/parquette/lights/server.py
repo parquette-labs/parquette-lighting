@@ -432,6 +432,26 @@ def run(
     presets = PresetManager(osc, exposed_params, presets_file, debug)
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
+
+    def all_black():
+        presets.select("reds", "Off")
+        presets.select("plants", "Off")
+        presets.select("booth", "Off")
+        presets.select("washes", "Off")
+        presets.select("spots_light", "Off")
+        mixer.setChannelLevel("sodium", 0)
+
+    def house_lights():
+        presets.select("reds", "Static")
+        presets.select("plants", "Static")
+        presets.select("booth", "Static")
+        presets.select("washes", "Static")
+        presets.select("spots_light", "Off")
+        mixer.setChannelLevel("sodium", 255)
+
+    osc.dispatcher.map("/all_black", lambda addr, args: all_black())
+    osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
+    osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),
