@@ -374,9 +374,11 @@ def run(
                 )
             )
 
-    def fix_xy(fixture, addr, args):
-        print(addr, args)
-        fixture.xy(args[0], args[1])
+    def fix_xy_wedge(fixture, args):
+        if len(args) == 1:
+            fixture.xy(args[0][0], args[0][1])
+        else:
+            fixture.xy(args[0], args[1])
 
     for i, fixture in enumerate(spotlights):
         exposed_params["spots_position"].append(
@@ -384,18 +386,9 @@ def run(
                 osc,
                 "/spot_joystick_{}".format(i + 1),
                 lambda fixture=fixture: [fixture.x_val[0], fixture.y_val[0]],
-                lambda _, *args, fixture=fixture: fix_xy(fixture, args[0], args[1]),
+                lambda _, *args, fixture=fixture: fix_xy_wedge(fixture, args),
             )
         )
-
-        # exposed_params["spots_light"].append(
-        #     OSCParam(
-        #         osc,
-        #         "/spot_dimming_{}".format(i + 1),
-        #         lambda fixture=fixture: fixture.dimming_val,
-        #         lambda _, args, fixture=fixture: fixture.dimming(args),
-        #     )
-        # )
 
         exposed_params["spots_light"].append(
             OSCParam(
