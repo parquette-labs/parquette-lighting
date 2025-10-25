@@ -386,7 +386,7 @@ def run(
         exposed_params["spots_light"].append(
             OSCParam(
                 osc,
-                "/spot_dimming_{}".format(i),
+                "/spot_dimming_{}".format(i + 1),
                 lambda fixture=fixture: fixture.dimming_val,
                 lambda _, args, fixture=fixture: fixture.dimming(args),
             )
@@ -395,7 +395,7 @@ def run(
         exposed_params["spots_light"].append(
             OSCParam(
                 osc,
-                "/spot_color_{}".format(i),
+                "/spot_color_{}".format(i + 1),
                 lambda fixture=fixture: fixture.color_index,
                 lambda _, args, fixture=fixture: fixture.color(args),
             )
@@ -404,7 +404,7 @@ def run(
         exposed_params["spots_light"].append(
             OSCParam(
                 osc,
-                "/spot_pattern_{}".format(i),
+                "/spot_pattern_{}".format(i + 1),
                 lambda fixture=fixture: fixture.pattern_index,
                 lambda _, args, fixture=fixture: fixture.pattern(args),
             )
@@ -413,7 +413,7 @@ def run(
         exposed_params["spots_light"].append(
             OSCParam(
                 osc,
-                "/spot_prisim_{}".format(i),
+                "/spot_prisim_{}".format(i + 1),
                 lambda fixture=fixture: fixture.prisim_enabled,
                 lambda _, args, fixture=fixture: fixture.prisim(
                     args, fixture.prisim_rotation
@@ -424,7 +424,7 @@ def run(
         exposed_params["spots_light"].append(
             OSCParam(
                 osc,
-                "/spot_prisim_rotation_{}".format(i),
+                "/spot_prisim_rotation_{}".format(i + 1),
                 lambda fixture=fixture: fixture.prisim_rotation,
                 lambda _, args, fixture=fixture: fixture.prisim(
                     fixture.prisim_enabled, args
