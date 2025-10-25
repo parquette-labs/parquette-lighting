@@ -69,41 +69,45 @@ def run(
     if not entec_auto is None:
         dmx.setup_dmx(entec_auto)
 
-    yp = YRXY200Spot(dmx, 21)
-    yp.dimming(0)
-    yp.strobe(False)
-    yp.color(7)
-    yp.no_pattern()
-    yp.prisim(False)
-    yp.colorful(False)
-    yp.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    yp.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    yp.scene_speed(0)
-    yp.x(0)
-    yp.y(127)
+    overhead_spot = YRXY200Spot(dmx, 21)
+    overhead_spot.dimming(0)
+    overhead_spot.strobe(False)
+    overhead_spot.color(7)
+    overhead_spot.no_pattern()
+    overhead_spot.prisim(False)
+    overhead_spot.colorful(False)
+    overhead_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    overhead_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    overhead_spot.scene_speed(0)
+    overhead_spot.x(0)
+    overhead_spot.y(127)
 
-    sp2 = YUER150Spot(dmx, 36)
-    sp2.x(0)
-    sp2.y(127)
-    sp2.dimming(0)
-    sp2.strobe(False)
-    sp2.color(1)
-    sp2.no_pattern()
-    sp2.prisim(False)
-    sp2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sidespot_2 = YUER150Spot(dmx, 36)
+    sidespot_2.x(0)
+    sidespot_2.y(127)
+    sidespot_2.dimming(0)
+    sidespot_2.strobe(False)
+    sidespot_2.color(1)
+    sidespot_2.no_pattern()
+    sidespot_2.prisim(False)
+    sidespot_2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
-    sp1 = YUER150Spot(dmx, 48)
-    sp1.x(0)
-    sp1.y(127)
-    sp1.dimming(0)
-    sp1.strobe(False)
-    sp1.color(1)
-    sp1.no_pattern()
-    sp1.prisim(False)
-    sp1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sidespot_1 = YUER150Spot(dmx, 48)
+    sidespot_1.x(0)
+    sidespot_1.y(127)
+    sidespot_1.dimming(0)
+    sidespot_1.strobe(False)
+    sidespot_1.color(1)
+    sidespot_1.no_pattern()
+    sidespot_1.prisim(False)
+    sidespot_1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
 
-    w = RGBLight(dmx, 60)
-    w.rgb(0, 0, 0)
+    spotlights = [overhead_spot, sidespot_1, sidespot_2]
+
+    wash = RGBLight(dmx, 60)
+    wash.rgb(0, 0, 0)
+
+    washes = [wash]
 
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
@@ -209,6 +213,8 @@ def run(
         osc=osc,
         dmx=dmx,
         generators=generators,
+        spots=spotlights,
+        washes=washes,
         history_len=666 * 6,
     )
 
@@ -367,7 +373,7 @@ def run(
                 )
             )
 
-    for i, fixture in enumerate([yp, sp1, sp2]):
+    for i, fixture in enumerate(spotlights):
         exposed_params["spots_position"].append(
             OSCParam(
                 osc,

@@ -7,7 +7,7 @@ import math
 from . import Generator
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
-from ..fixtures import SingleLight
+from ..fixtures import SingleLight, Spot, RGBLight
 from ..util.math import constrain
 
 
@@ -18,6 +18,8 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
+        spots: List[Spot],
+        washes: List[RGBLight],
         history_len: float,
     ) -> None:
         self.mode = "MONO"

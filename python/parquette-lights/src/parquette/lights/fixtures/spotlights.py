@@ -275,7 +275,7 @@ class YRXY200Spot(Spot):
             )
 
     def rotate_dither(self, index: int, rate: int) -> None:
-        index = index(constrain(index, 0, len(self.patterns()) - 1))
+        index = int(constrain(index, 0, len(self.patterns()) - 1))
         rate = cast(int, value_map(rate, 0, 255, 0, 6, True))
 
         self.dmx.set_channel(
