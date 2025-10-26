@@ -206,7 +206,6 @@ class Mixer(object):
         self.dmx_mappings["spot"][0].dimming(
             self.channels[0][self.channel_names.index("tung_spot")]
         )
-        print(self.channels[0][self.channel_names.index("tung_spot")])
         self.dmx_mappings["spot"][1].dimming(
             self.channels[0][self.channel_names.index("spot_1")]
         )
