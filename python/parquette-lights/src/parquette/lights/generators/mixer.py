@@ -337,7 +337,8 @@ class SignalPatchParam(OSCParam):
 
         for conf in args:
             for chan_name in conf[1:]:
-                self.mixer.configureSignalPath(conf[0], chan_name, True)
+                if chan_name in self.chan_names:
+                    self.mixer.configureSignalPath(conf[0], chan_name, True)
 
         self.sync()
 
