@@ -8299,19 +8299,19 @@
                 "mode": "tap",
                 "values": {
                   "WHITE": 0,
-                  "COLOR_1": 1,
-                  "COLOR_2": 2,
-                  "COLOR_3": 3,
-                  "COLOR_4": 4,
-                  "COLOR_5": 5,
-                  "COLOR_6": 6,
-                  "COLOR_7": 7,
-                  "HALF_COLOR_1": 8,
-                  "HALF_COLOR_2": 9,
-                  "HALF_COLOR_3": 10,
-                  "HALF_COLOR_4": 11,
-                  "HALF_COLOR_5": 12,
-                  "HALF_COLOR_6": 13
+                  "Red": 1,
+                  "Yellow": 2,
+                  "Blue": 3,
+                  "Green": 4,
+                  "Orange": 5,
+                  "Purple": 6,
+                  "Teal": 7,
+                  "Purple and Teal": 8,
+                  "Purple and Orange": 9,
+                  "Orange and Green": 10,
+                  "Green and Blue": 11,
+                  "Blue and Yellow": 12,
+                  "Yellow and Red": 13
                 }
               },
               {
