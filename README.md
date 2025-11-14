@@ -65,19 +65,23 @@
 
 ## Notes/Ideas/TODOs
 * Some kind of visualizer to test in realtime without lights
-* Presets and automations
-	* Split up presets between for washes (ambient) and reds (active) lighting
+* Presets, automations and controls
 	* Interpolate between presets when you switch over
-	* Split off the master levels from the presets
+	* Need a way to lock / unlock the preset saving
+	* Slider smoothing
+* Spots
+	* XY mapping for control
+	* Auto fade in-out for color changes (as a conf option)
 * Math problems
 	* Adjust how master level works
 	* Add floor / ceil / scaling instead of just offest and mult for chans
-	* Prevent negative values
+	* Prevent negative values?
 	* Per chanel master multipler sliders
 	* FWD/BACK memory slice needs the memory slices to be log spaced or similar, e.g. more slices at the short time scale and fewer slices at the long timescale
 	* Bug with adjusting the period of osciallators causing jump
 * Bugs
 	* Preset synth patch load is broken
+	* Preset overwritting may have bugs
 	* Improve threading issues, can we run faster
 	* Timing / race condition with the threading causing punch issues and latency issues
 	* Validate if we can reconfigure audio and dmx on the fly
@@ -93,17 +97,14 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 	* Annotate FFT with key freqs
 * New ideas
+	* Optimize compute by idyling FFT and BPM when there is no audio and/or no interaction for multiple days
 	* Use inheritance from parent frame to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Better parent class for Spot with no repeated boiler plate
-	* <s>Run open stage control on CLI</s>
-	* <s>Auto start process</s>
+	* Some type of sequencer source
 	* Auto detection for low/high intensity of music that can trigger mode changes or similar
 	* Blue/green deploy mechanism
-	* Optimize compute by idyling FFT and BPM when there is no audio and/or no interaction for multiple days
-	* Separate / perma linked punch for blinders
 	* Spinning mode
 	* Switch to dual spectrograms for harmonic and percussive
 	* Wave generators should be able to switch shapes without rewiring in the patchbay? Or general rethink of the patchbay
 	* Can I move the mapping definitions for output mix into the front end fully?
 	* Auto load channel and generator names from the front end or scrupting to sync between front and backend
-	* Align stutter automatically to beat quantization

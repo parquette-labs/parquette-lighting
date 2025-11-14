@@ -1,16 +1,16 @@
-from typing import cast, List, Union
-from abc import ABC, abstractmethod
+from typing import cast, List
 
 from enum import Enum
+from abc import ABC
 
 from ..util.math import constrain, value_map
-from ..dmx import DMXManager
+from .basics import LightFixture
+from ..dmx import DMXManager, DMXValue
 
 
-class Spot(ABC):
-    def __init__(self, dmx: DMXManager, addr: int):
-        self.dmx = dmx
-        self.addr = addr
+class Spot(LightFixture, ABC):
+    def __init__(self, dmx: DMXManager, *, addr: int, num_chans: int):
+        super().__init__(dmx, addr=addr, num_chans=num_chans)
 
         self.x_val = [0, 0]
         self.y_val = [0, 0]
@@ -22,10 +22,6 @@ class Spot(ABC):
         self.prisim_rotation = 0
 
         # TODO make base methods
-
-    @abstractmethod
-    def dimming(self, value: Union[int | float]) -> None:
-        pass
 
 
 class YRXY200Spot(Spot):
@@ -116,7 +112,7 @@ class YRXY200Spot(Spot):
         RANDOM_SELECTION = 32
 
     def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx=dmx, addr=addr)
+        super().__init__(dmx=dmx, addr=addr, num_chans=15)
 
     def xy(self, x: int, y: int, fine=False):
         if not fine:
@@ -157,7 +153,8 @@ class YRXY200Spot(Spot):
             self.addr + YRXY200Spot.YRXY200Channel.XY_SPEED.value, speed
         )
 
-    def dimming(self, value: Union[int | float]) -> None:
+    def dimming(self, value: DMXValue) -> None:
+        # Can this be a decorator setter
         self.dimming_val = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.DIMMING.value, self.dimming_val
@@ -426,7 +423,7 @@ class YUER150Spot(Spot):
         RESET = 250
 
     def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx=dmx, addr=addr)
+        super().__init__(dmx=dmx, addr=addr, num_chans=12)
 
     def xy(self, x: int, y: int, fine=False):
         if not fine:
@@ -467,7 +464,7 @@ class YUER150Spot(Spot):
             self.addr + YUER150Spot.YUER150Channel.XY_SPEED.value, speed
         )
 
-    def dimming(self, value: Union[int | float]) -> None:
+    def dimming(self, value: DMXValue) -> None:
         self.dimming_val = cast(int, constrain(value, 0, 255))
         self.dmx.set_channel(
             self.addr + YUER150Spot.YUER150Channel.DIMMING.value, value
@@ -603,10 +600,7 @@ class YUER150Spot(Spot):
 
 class PinSpot(Spot):
     def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx=dmx, addr=addr)
-
-    def black(self):
-        self.off()
+        super().__init__(dmx=dmx, addr=addr, num_chans=6)
 
     def off(self):
         self.rgbw(0, 0, 0, 0)
@@ -618,9 +612,4 @@ class PinSpot(Spot):
         self.rgbw(255, 255, 255, 255)
 
     def rgbw(self, r, g, b, w):
-        self.dmx.set_channel(0 + self.addr, 255)
-        self.dmx.set_channel(1 + self.addr, r)
-        self.dmx.set_channel(2 + self.addr, g)
-        self.dmx.set_channel(3 + self.addr, b)
-        self.dmx.set_channel(4 + self.addr, w)
-        self.dmx.set_channel(5 + self.addr, 0)
+        self.set([255, r, g, b, w, 0])

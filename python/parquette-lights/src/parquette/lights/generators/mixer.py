@@ -1,4 +1,10 @@
-from typing import List, Tuple, cast, Dict, Optional
+from typing import (
+    List,
+    Tuple,
+    cast,
+    Dict,
+    Optional,
+)
 
 import time
 from copy import copy
@@ -18,6 +24,7 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
+        # fixtures: List[Fixture],
         spots: List[Spot],
         washes: List[RGBLight],
         history_len: float,

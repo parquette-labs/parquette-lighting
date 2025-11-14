@@ -9,6 +9,9 @@ import serial.tools.list_ports as slp
 from .osc import OSCManager
 from .util.math import constrain
 
+DMXValue = Union[int, float]
+DMXListOrValue = Union[List[DMXValue], DMXValue]
+
 
 class DMXManager(object):
     enttec_pro_controller: EnttecProController = None
@@ -70,35 +73,31 @@ class DMXManager(object):
         else:
             self.art_net_controller.stop()
 
-    def set_channel(
-        self, chan: int, val: Union[int, float], clamp: bool = True
-    ) -> None:
-        if clamp:
-            val = int(constrain(val, 0, 255))
+    def set_channel(self, chan: int, val: DMXListOrValue) -> None:
+        if not isinstance(val, list):
+            val = [val]
 
-        if self.use_art_net:
-            self.art_net_controller.set_single_value(chan, val)
-            return
+        for i, v in enumerate(val):
+            v = int(constrain(v, 0, 255))
 
-        if self.enttec_pro_controller is None:
-            return
-        try:
-            self.enttec_pro_controller.set_channel(chan, val)
-        except SerialException:
-            self.close()
+            if self.use_art_net:
+                self.art_net_controller.set_single_value(chan + i, v)
+                return
+            elif not self.enttec_pro_controller is None:
+                try:
+                    self.enttec_pro_controller.set_channel(chan + i, v)
+                except SerialException:
+                    self.close()
 
     def submit(self) -> None:
         if self.use_art_net:
             self.art_net_controller.show()
             return
-
-        if self.enttec_pro_controller is None:
-            return
-
-        try:
-            self.enttec_pro_controller.submit()
-        except SerialException:
-            self.close()
+        elif not self.enttec_pro_controller is None:
+            try:
+                self.enttec_pro_controller.submit()
+            except SerialException:
+                self.close()
 
     def close(self, deselect=True) -> None:
         self.use_art_net = False
