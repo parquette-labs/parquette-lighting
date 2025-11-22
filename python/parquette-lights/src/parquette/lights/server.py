@@ -578,12 +578,12 @@ def run(
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
-        "/eye_punch",
+        "/impulse_punch",
         lambda addr, *args: impulse.punch(),
     )
 
     osc.dispatcher.map(
-        "/impulse_punch",
+        "/eye_punch",
         lambda addr, *args: impulse_eye.punch(),
     )
 
