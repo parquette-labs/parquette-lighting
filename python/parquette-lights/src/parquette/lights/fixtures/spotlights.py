@@ -91,7 +91,7 @@ class Spot(LightFixture):
                 )
             self.dmx.set_channel(
                 self.addr + self.strobe_channel.offset,
-                133,
+                self.strobe_channel.map(range_name="on"),
             )
 
     def strobe_rate(self, val: DMXValue) -> None:
