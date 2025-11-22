@@ -146,6 +146,8 @@ class DMXManager(object):
             self.art_net_controller.stop()
 
     def set_channel(self, chan: int, val: DMXListOrValue) -> None:
+        if chan == 21 + 6:
+            print(val)
         if not isinstance(val, list):
             val = [val]
 
@@ -164,9 +166,9 @@ class DMXManager(object):
                     self.close()
 
     def submit(self) -> None:
-        print(self.chans[22 : 22 + 15])
+        print(self.chans[21 : 21 + 15])
         if not self.enttec_pro_controller is None:
-            print(self.chans[22 + 6], self.enttec_pro_controller.get_channel(22 + 6))
+            print(self.chans[21 + 6], self.enttec_pro_controller.get_channel(21 + 6))
         if self.use_art_net:
             self.art_net_controller.show()
             return
