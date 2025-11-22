@@ -136,7 +136,7 @@ class Spot(LightFixture):
 
         self.dmx.set_channel(
             self.addr + self.pattern_channel.offset,
-            self.pattern_channel.map(range_index=self.color_index),
+            self.pattern_channel.map(range_index=self.pattern_index),
         )
 
     def no_pattern(self) -> None:
