@@ -116,10 +116,10 @@ def run(
     spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
 
     wash1 = RGBWLight(dmx, 66)
-    wash1.rgbw(50, 0, 0, 0)
+    wash1.rgbw(0, 0, 0, 0)
 
     wash2 = RGBWLight(dmx, 70)
-    wash2.rgbw(0, 50, 0, 0)
+    wash2.rgbw(0, 0, 0, 0)
 
     washes = [wash1, wash2]
 
@@ -259,7 +259,11 @@ def run(
             )
         ],
         "strobes": [],
-        "washes": [SignalPatchParam(osc, "/signal_patchbay/washes", ["wash_1"], mixer)],
+        "washes": [
+            SignalPatchParam(
+                osc, "/signal_patchbay/washes", ["wash_1", "wash_2"], mixer
+            )
+        ],
         "spots_light": [
             SignalPatchParam(
                 osc,

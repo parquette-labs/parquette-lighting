@@ -232,7 +232,7 @@ class Mixer(object):
         self.dmx_mappings["wash"][0].dimming(
             self.channels[0][self.channel_names.index("wash_1")]
         )
-        self.dmx_mappings["wash"][0].dimming(
+        self.dmx_mappings["wash"][1].dimming(
             self.channels[0][self.channel_names.index("wash_2")]
         )
 
