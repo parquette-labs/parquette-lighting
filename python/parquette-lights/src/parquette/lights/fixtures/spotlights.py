@@ -82,13 +82,6 @@ class Spot(LightFixture):
         if self.strobe_enabled and not rate is None:
             self.strobe_rate(rate)
         else:
-            if self.addr == 21:
-                print(
-                    "strobe",
-                    self.addr,
-                    self.strobe_channel.offset,
-                    self.strobe_channel.map(range_name="on"),
-                )
             self.dmx.set_channel(
                 self.addr + self.strobe_channel.offset,
                 self.strobe_channel.map(range_name="on"),
