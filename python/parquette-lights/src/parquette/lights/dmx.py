@@ -91,6 +91,8 @@ class DMXManager(object):
     def __init__(self, osc: OSCManager, art_net_ip: str) -> None:
         self.osc = osc
 
+        self.chans: List[int] = [0 for i in range(512)]
+
         self.art_net_ip = art_net_ip
         self.art_net_controller = StupidArtnet(self.art_net_ip)
         self.art_net_controller.set_simplified(False)
@@ -150,6 +152,7 @@ class DMXManager(object):
         for i, v in enumerate(val):
             v = int(constrain(v, 0, 255))
 
+            self.chans[chan + i] = v
             if self.use_art_net:
                 self.art_net_controller.set_single_value(chan + i, v)
                 return
@@ -160,6 +163,7 @@ class DMXManager(object):
                     self.close()
 
     def submit(self) -> None:
+        print(self.chans[21 : 21 + 15])
         if self.use_art_net:
             self.art_net_controller.show()
             return

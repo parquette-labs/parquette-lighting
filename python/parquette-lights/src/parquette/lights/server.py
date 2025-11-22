@@ -73,7 +73,8 @@ def run(
 
     overhead_spot = YRXY200Spot(dmx, addr=21)
     overhead_spot.dimming(255)
-    # overhead_spot.shutter(False)
+    overhead_spot.strobe(False)
+    overhead_spot.shutter(False)
     overhead_spot.color(0)
     overhead_spot.no_pattern()
     overhead_spot.prisim(False)
@@ -82,13 +83,12 @@ def run(
     overhead_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
     overhead_spot.scene_speed(0)
     overhead_spot.x(0)
-    overhead_spot.y(127)
-    overhead_spot.strobe(True, 127)
+    overhead_spot.y(0)
 
     sidespot_1 = YRXY200Spot(dmx, addr=36)
     sidespot_1.dimming(255)
-    sidespot_1.strobe(100)
-    # sidespot_1.shutter(False)
+    sidespot_1.strobe(False)
+    sidespot_1.shutter(False)
     sidespot_1.color(0)
     sidespot_1.no_pattern()
     sidespot_1.prisim(False)
@@ -97,12 +97,12 @@ def run(
     sidespot_1.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
     sidespot_1.scene_speed(0)
     sidespot_1.x(0)
-    sidespot_1.y(127)
+    sidespot_1.y(0)
 
     sidespot_2 = YRXY200Spot(dmx, addr=51)
     sidespot_2.dimming(255)
-    sidespot_2.strobe(100)
-    # sidespot_2.shutter(False)
+    sidespot_2.strobe(False)
+    sidespot_2.shutter(False)
     sidespot_2.color(0)
     sidespot_2.no_pattern()
     sidespot_2.prisim(False)
@@ -111,7 +111,7 @@ def run(
     sidespot_2.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
     sidespot_2.scene_speed(0)
     sidespot_2.x(0)
-    sidespot_2.y(127)
+    sidespot_2.y(0)
 
     spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
 

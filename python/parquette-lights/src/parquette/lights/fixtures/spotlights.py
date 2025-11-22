@@ -74,13 +74,13 @@ class Spot(LightFixture):
 
     def dimming(self, val: DMXValue) -> None:
         self._dimming = cast(DMXValue, self.dimming_channel.map(val))
-        if self.addr == 21:
-            print(
-                "dimming",
-                self.addr,
-                self.dimming_channel.offset,
-                self._dimming,
-            )
+        # if self.addr == 21:
+        #     print(
+        #         "dimming",
+        #         self.addr,
+        #         self.dimming_channel.offset,
+        #         self._dimming,
+        #     )
         self.dmx.set_channel(self.addr + self.dimming_channel.offset, self._dimming)
 
     def strobe(self, enable: bool, rate: Optional[int] = None) -> None:
@@ -89,13 +89,13 @@ class Spot(LightFixture):
         if self.strobe_enabled and not rate is None:
             self.strobe_rate(rate)
         else:
-            if self.addr == 21:
-                print(
-                    "strobe",
-                    self.addr,
-                    self.strobe_channel.offset,
-                    self.strobe_channel.map(range_name="on"),
-                )
+            # if self.addr == 21:
+            #     print(
+            #         "strobe",
+            #         self.addr,
+            #         self.strobe_channel.offset,
+            #         self.strobe_channel.map(range_name="on"),
+            #     )
             self.dmx.set_channel(
                 self.addr + self.strobe_channel.offset,
                 self.strobe_channel.map(range_name="on"),
@@ -105,13 +105,13 @@ class Spot(LightFixture):
         self._strobe_rate = cast(
             DMXValue, self.strobe_channel.map(val, range_name="strobe")
         )
-        if self.addr == 21:
-            print(
-                "strobe",
-                self.addr,
-                self.strobe_channel.offset,
-                self._strobe_rate,
-            )
+        # if self.addr == 21:
+        # print(
+        #     "strobe",
+        #     self.addr,
+        #     self.strobe_channel.offset,
+        #     self._strobe_rate,
+        # )
         self.dmx.set_channel(self.addr + self.strobe_channel.offset, self._strobe_rate)
 
     def colors(self) -> List[str]:
