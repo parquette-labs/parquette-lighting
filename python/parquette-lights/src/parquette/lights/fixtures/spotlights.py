@@ -264,7 +264,7 @@ class YRXY200Spot(Spot):
             [
                 DMXControlRange("off", 0, 10),
                 DMXControlRange("strobe", 10, 250),
-                DMXControlRange("on", 250, 255),
+                DMXControlRange("on", 251, 255),
             ],
         )
         self.color_channel = DMXControlChannel(
