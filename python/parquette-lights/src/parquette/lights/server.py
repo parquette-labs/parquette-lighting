@@ -121,7 +121,7 @@ def run(
     wash2 = RGBWLight(dmx, 70)
     wash2.rgbw(0, 50, 0, 0)
 
-    washes = []
+    washes = [wash1, wash2]
 
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
