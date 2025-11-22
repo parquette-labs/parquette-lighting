@@ -153,7 +153,9 @@ class DMXManager(object):
             v = int(constrain(v, 0, 255))
 
             if chan + i == 21 + 6:
-                print(v)
+                if v != 133:
+                    raise Exception("wweeeeee")
+                    print(v)
             self.chans[chan + i] = v
 
             if self.use_art_net:
