@@ -152,16 +152,16 @@ class DMXManager(object):
         for i, v in enumerate(val):
             v = int(constrain(v, 0, 255))
 
-            self.chans[chan + i] = v
+            self.chans[chan + i - 1] = v
 
     def submit(self) -> None:
         for i, v in enumerate(self.chans):
             if self.use_art_net:
-                self.art_net_controller.set_single_value(i, v)
+                self.art_net_controller.set_single_value(i + 1, v)
                 return
             elif not self.enttec_pro_controller is None:
                 try:
-                    self.enttec_pro_controller.set_channel(i, v)
+                    self.enttec_pro_controller.set_channel(i + 1, v)
                 except SerialException:
                     self.close()
 
