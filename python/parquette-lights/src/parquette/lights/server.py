@@ -74,6 +74,7 @@ def run(
     overhead_spot = YRXY200Spot(dmx, addr=21)
     overhead_spot.dimming(255)
     overhead_spot.strobe(False)
+    overhead_spot.shutter(False)
     overhead_spot.color(0)
     overhead_spot.no_pattern()
     overhead_spot.prisim(False)
@@ -87,6 +88,7 @@ def run(
     sidespot_1 = YRXY200Spot(dmx, addr=36)
     sidespot_1.dimming(255)
     sidespot_1.strobe(False)
+    sidespot_1.shutter(False)
     sidespot_1.color(0)
     sidespot_1.no_pattern()
     sidespot_1.prisim(False)
@@ -100,6 +102,7 @@ def run(
     sidespot_2 = YRXY200Spot(dmx, addr=51)
     sidespot_2.dimming(255)
     sidespot_2.strobe(False)
+    sidespot_2.shutter(False)
     sidespot_2.color(0)
     sidespot_2.no_pattern()
     sidespot_2.prisim(False)
@@ -113,10 +116,10 @@ def run(
     spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
 
     wash1 = RGBWLight(dmx, 66)
-    wash1.rgbw(0, 0, 0, 0)
+    wash1.rgbw(50, 0, 0, 0)
 
     wash2 = RGBWLight(dmx, 70)
-    wash2.rgbw(0, 0, 0, 0)
+    wash2.rgbw(0, 50, 0, 0)
 
     washes = [wash1, wash2]
 

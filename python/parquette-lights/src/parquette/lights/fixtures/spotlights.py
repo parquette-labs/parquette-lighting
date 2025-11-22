@@ -232,8 +232,8 @@ class YRXY200Spot(Spot):
         super().__init__(dmx=dmx, addr=addr, num_chans=15)
 
         self.x_channel = DMXControlChannel("x_channel", 0)
-        self.y_channel = DMXControlChannel("y_channel", 1)
-        self.x_fine_channel = DMXControlChannel("x_fine_channel", 2)
+        self.y_channel = DMXControlChannel("x_fine_channel", 1)
+        self.x_fine_channel = DMXControlChannel("y_channel", 2)
         self.y_fine_channel = DMXControlChannel("y_fine_channel", 3)
         self.xy_speed_channel = DMXControlChannel("xy_speed_channel", 4)
         self.dimming_channel = DMXControlChannel("dimming_channel", 5)
