@@ -152,7 +152,10 @@ class DMXManager(object):
         for i, v in enumerate(val):
             v = int(constrain(v, 0, 255))
 
+            if chan + i == 21 + 6:
+                print(v)
             self.chans[chan + i] = v
+
             if self.use_art_net:
                 self.art_net_controller.set_single_value(chan + i, v)
                 return
