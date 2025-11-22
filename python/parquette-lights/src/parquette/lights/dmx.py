@@ -164,7 +164,7 @@ class DMXManager(object):
                     self.close()
 
     def submit(self) -> None:
-        print(self.chans[21 : 21 + 15 * 3])
+        # print(self.chans[21 : 21 + 15 * 3])
         if self.use_art_net:
             self.art_net_controller.show()
             return
