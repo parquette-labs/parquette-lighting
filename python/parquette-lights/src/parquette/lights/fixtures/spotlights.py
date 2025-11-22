@@ -105,6 +105,13 @@ class Spot(LightFixture):
         self._strobe_rate = cast(
             DMXValue, self.strobe_channel.map(val, range_name="strobe")
         )
+        if self.addr == 21:
+            print(
+                "strobe",
+                self.addr,
+                self.strobe_channel.offset,
+                self._strobe_rate,
+            )
         self.dmx.set_channel(self.addr + self.strobe_channel.offset, self._strobe_rate)
 
     def colors(self) -> List[str]:
