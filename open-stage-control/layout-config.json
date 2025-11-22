@@ -7149,7 +7149,9 @@
             "values": {
               "Booth": "Booth",
               "Disco": "Disco",
+              "Disco Front": "Disco Front",
               "Dancers Front": "Dancers Front",
+              "Speakers": "Speakers",
               "Dancers Crowd": "Dancers Crowd",
               "Cut": "Cut",
               "Plants": "Plants",
