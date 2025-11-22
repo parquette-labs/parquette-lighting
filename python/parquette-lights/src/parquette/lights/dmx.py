@@ -88,10 +88,12 @@ class DMXManager(object):
     art_net_controller: StupidArtnet = None
     use_art_net: bool = False
 
-    def __init__(self, osc: OSCManager, art_net_ip: str) -> None:
+    def __init__(
+        self, osc: OSCManager, art_net_ip: str, universe_size: int = 256
+    ) -> None:
         self.osc = osc
-
-        self.chans: List[int] = [0 for i in range(512)]
+        self.universe_size = universe_size
+        self.chans: List[int] = [0 for i in range(universe_size)]
 
         self.art_net_ip = art_net_ip
         self.art_net_controller = StupidArtnet(self.art_net_ip)
@@ -132,7 +134,7 @@ class DMXManager(object):
         if not self.use_art_net:
             try:
                 self.enttec_pro_controller = EnttecProController(
-                    port, auto_submit=False, dmx_size=256
+                    port, auto_submit=False, dmx_size=self.universe_size
                 )
                 self.osc.send_osc("/dmx_port_name", [port])
             except SerialException as e:
