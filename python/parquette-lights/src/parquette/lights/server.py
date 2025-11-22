@@ -83,7 +83,7 @@ def run(
     overhead_spot.scene_speed(0)
     overhead_spot.x(0)
     overhead_spot.y(127)
-    overhead_spot.strobe(127)
+    overhead_spot.strobe(True, 127)
 
     sidespot_1 = YRXY200Spot(dmx, addr=36)
     sidespot_1.dimming(255)
