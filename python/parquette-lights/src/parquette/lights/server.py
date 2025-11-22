@@ -73,7 +73,7 @@ def run(
 
     overhead_spot = YRXY200Spot(dmx, addr=21)
     overhead_spot.dimming(255)
-    overhead_spot.strobe(False)
+    overhead_spot.strobe(100)
     # overhead_spot.shutter(False)
     overhead_spot.color(0)
     overhead_spot.no_pattern()
@@ -87,7 +87,7 @@ def run(
 
     sidespot_1 = YRXY200Spot(dmx, addr=36)
     sidespot_1.dimming(255)
-    sidespot_1.strobe(False)
+    sidespot_1.strobe(100)
     # sidespot_1.shutter(False)
     sidespot_1.color(0)
     sidespot_1.no_pattern()
@@ -101,7 +101,7 @@ def run(
 
     sidespot_2 = YRXY200Spot(dmx, addr=51)
     sidespot_2.dimming(255)
-    sidespot_2.strobe(False)
+    sidespot_2.strobe(100)
     # sidespot_2.shutter(False)
     sidespot_2.color(0)
     sidespot_2.no_pattern()
