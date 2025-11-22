@@ -564,7 +564,6 @@ def run(
             mixer.runOutputMix()
             mixer.updateDMX()
             time.sleep(0.01)
-            overhead_spot.strobe(False)
 
     except KeyboardInterrupt:
         print("\nShutdown FFT", flush=True)
