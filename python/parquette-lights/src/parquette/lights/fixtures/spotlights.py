@@ -99,10 +99,15 @@ class Spot(LightFixture):
     def color(self, index: int) -> None:
         self.color_index = int(constrain(index, 0, len(self.colors()) - 1))
 
+        self.dimming(0)
+
         self.dmx.set_channel(
             self.addr + self.color_channel.offset,
             self.color_channel.map(range_index=self.color_index),
         )
+        time.sleep(1)
+
+        self.dimming(255)
 
     def white(self) -> None:
         self.color(0)
