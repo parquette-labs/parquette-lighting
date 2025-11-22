@@ -273,7 +273,39 @@ def run(
         "washes": [
             SignalPatchParam(
                 osc, "/signal_patchbay/washes", ["wash_1", "wash_2"], mixer
-            )
+            ),
+            OSCParam(
+                osc,
+                "/wash_r",
+                lambda: wash1.r_target,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "r_target", [wash1, wash2]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/wash_g",
+                lambda: wash1.g_target,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "g_target", [wash1, wash2]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/wash_b",
+                lambda: wash1.b_target,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "b_target", [wash1, wash2]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/wash_w",
+                lambda: wash1.w_target,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "w_target", [wash1, wash2]
+                ),
+            ),
         ],
         "spots_light": [
             SignalPatchParam(

@@ -1,5 +1,6 @@
-from typing import List, Callable
+from typing import List, Callable, Optional
 from ..dmx import DMXManager, DMXListOrValue, DMXValue
+from ..util.math import value_map
 
 ControlTarget = Callable[[DMXValue], None]
 
@@ -70,6 +71,36 @@ class RGBLight(LightFixture):
 class RGBWLight(LightFixture):
     def __init__(self, dmx: DMXManager, addr: int):
         super().__init__(dmx, addr=addr, num_chans=4)
+        self.r_target: DMXValue = 255
+        self.g_target: DMXValue = 255
+        self.b_target: DMXValue = 255
+        self.w_target: DMXValue = 255
+
+    def set_dimming_target(
+        self,
+        r: Optional[DMXValue] = None,
+        g: Optional[DMXValue] = None,
+        b: Optional[DMXValue] = None,
+        w: Optional[DMXValue] = None,
+    ) -> None:
+        if not r is None:
+            self.r_target = r
+        if not g is None:
+            self.g_target = g
+        if not b is None:
+            self.b_target = b
+        if not w is None:
+            self.w_target = w
+
+    def dimming(self, val: DMXValue) -> None:
+        self._dimming = val
+
+        r = value_map(val, 0, 255, 0, self.r_target)
+        g = value_map(val, 0, 255, 0, self.g_target)
+        b = value_map(val, 0, 255, 0, self.b_target)
+        w = value_map(val, 0, 255, 0, self.w_target)
+
+        self.rgbw(r, g, b, w)
 
     def rgbw(self, r: DMXValue, g: DMXValue, b: DMXValue, w: DMXValue) -> None:
         self.set([r, g, b, w])
