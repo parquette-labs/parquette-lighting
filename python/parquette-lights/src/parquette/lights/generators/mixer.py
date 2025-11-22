@@ -13,7 +13,7 @@ import math
 from . import Generator
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
-from ..fixtures import SingleLight, Spot, RGBLight
+from ..fixtures import LightFixture, Spot, RGBWLight
 from ..util.math import constrain
 
 
@@ -26,7 +26,7 @@ class Mixer(object):
         generators: List[Generator],
         # fixtures: List[Fixture],
         spots: List[Spot],
-        washes: List[RGBLight],
+        washes: List[RGBWLight],
         history_len: float,
     ) -> None:
         self.mode = "MONO"
@@ -59,27 +59,31 @@ class Mixer(object):
 
         self.num_channels = len(self.channel_names)
 
-        self.dmx_mappings: Dict[str, List[Spot | RGBLight | SingleLight]] = {
+        self.dmx_mappings: Dict[str, List[Spot | RGBWLight | LightFixture]] = {
             "left": [
-                SingleLight(dmx, 4),
-                SingleLight(dmx, 3),
-                SingleLight(dmx, 2),
-                SingleLight(dmx, 1),
+                LightFixture(dmx, 4),
+                LightFixture(dmx, 3),
+                LightFixture(dmx, 2),
+                LightFixture(dmx, 1),
             ],
             "right": [
-                SingleLight(dmx, 5),
-                SingleLight(dmx, 6),
-                SingleLight(dmx, 7),
-                SingleLight(dmx, 8),
+                LightFixture(dmx, 5),
+                LightFixture(dmx, 6),
+                LightFixture(dmx, 7),
+                LightFixture(dmx, 8),
             ],
-            "front": [SingleLight(dmx, 12), SingleLight(dmx, 9)],
-            "under": [SingleLight(dmx, 10), SingleLight(dmx, 11)],
+            "front": [LightFixture(dmx, 12), LightFixture(dmx, 9)],
+            "under": [LightFixture(dmx, 10), LightFixture(dmx, 11)],
             "spot": cast(
-                list[Spot | RGBLight | SingleLight], [SingleLight(dmx, 13)] + spots
+                list[Spot | RGBWLight | LightFixture], [LightFixture(dmx, 13)] + spots
             ),
-            "wash": cast(list[Spot | RGBLight | SingleLight], washes),
-            "sodium": [SingleLight(dmx, 20)],
-            "ceil": [SingleLight(dmx, 18), SingleLight(dmx, 19), SingleLight(dmx, 17)],
+            "wash": cast(list[Spot | RGBWLight | LightFixture], washes),
+            "sodium": [LightFixture(dmx, 20)],
+            "ceil": [
+                LightFixture(dmx, 18),
+                LightFixture(dmx, 19),
+                LightFixture(dmx, 17),
+            ],
         }
 
         # TODO control the matrix sizing in open sound control with this var?

@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 
 from DMXEnttecPro import Controller as EnttecProController  # type: ignore[import-untyped]
 from stupidArtnet import StupidArtnet  # type: ignore[import-untyped]
@@ -7,10 +7,80 @@ from serial import SerialException
 import serial.tools.list_ports as slp
 
 from .osc import OSCManager
-from .util.math import constrain
+from .util.math import constrain, value_map
 
 DMXValue = Union[int, float]
 DMXListOrValue = Union[List[DMXValue], DMXValue]
+
+
+class DMXControlRange(object):
+    def __init__(self, name: str, start_val: int, end_val: Optional[int] = None):
+        if start_val > 255 or start_val < 0:
+            raise ValueError(
+                "DMX control range start_val must be a valid DMX value between 0-255, value passed was {}".format(
+                    start_val
+                )
+            )
+
+        if not end_val is None:
+            if end_val > 255 or end_val < 0:
+                raise ValueError(
+                    "DMX control range end_val must be a valid DMX value between 0-255, value passed was {}".format(
+                        end_val
+                    )
+                )
+
+        self.start_val = start_val
+        self.end_val = end_val
+        self.name = name
+
+    def map(self, val: DMXValue = 0) -> DMXValue:
+        if self.end_val is None:
+            return self.start_val
+
+        return value_map(val, 0, 255, self.start_val, self.end_val, True)
+
+
+class DMXControlChannel(object):
+    def __init__(
+        self,
+        name: str,
+        offset: int,
+        ranges: Optional[List[DMXControlRange]] = None,
+    ):
+        self.offset = offset
+        self.name = name
+        self.ranges = ranges
+
+    def range_names(self) -> List[str]:
+        if self.ranges is None:
+            return []
+        else:
+            return [r.name for r in self.ranges]
+
+    def get_range(
+        self, *, range_index: Optional[int] = None, range_name: Optional[str] = None
+    ):
+        if not range_name is None and range_index is None:
+            range_index = self.range_names().index(range_name)
+        if range_index is None or self.ranges is None:
+            return None
+        else:
+            return self.ranges[range_index]
+
+    def map(
+        self,
+        val: DMXValue = 0,
+        *,
+        range_index: Optional[int] = None,
+        range_name: Optional[str] = None,
+    ) -> DMXValue:
+        dmx_range = self.get_range(range_index=range_index, range_name=range_name)
+
+        if dmx_range is None:
+            return constrain(val, 0, 255)
+        else:
+            return dmx_range.map(val)
 
 
 class DMXManager(object):

@@ -5,7 +5,7 @@ import time
 
 import click
 
-from .fixtures import YRXY200Spot, YUER150Spot, RGBLight
+from .fixtures import RGBWLight, YRXY200Spot, Spot
 
 from .generators import (
     FFTGenerator,
@@ -71,7 +71,7 @@ def run(
     if not entec_auto is None:
         dmx.setup_dmx(entec_auto)
 
-    overhead_spot = YRXY200Spot(dmx, 21)
+    overhead_spot = YRXY200Spot(dmx, addr=21)
     overhead_spot.dimming(255)
     overhead_spot.strobe(False)
     overhead_spot.color(0)
@@ -84,32 +84,41 @@ def run(
     overhead_spot.x(0)
     overhead_spot.y(127)
 
-    sidespot_1 = YUER150Spot(dmx, 36)
-    sidespot_1.x(0)
-    sidespot_1.y(0)
+    sidespot_1 = YRXY200Spot(dmx, addr=36)
     sidespot_1.dimming(255)
     sidespot_1.strobe(False)
-    sidespot_1.color(1)
+    sidespot_1.color(0)
     sidespot_1.no_pattern()
     sidespot_1.prisim(False)
-    sidespot_1.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sidespot_1.colorful(False)
+    sidespot_1.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    sidespot_1.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    sidespot_1.scene_speed(0)
+    sidespot_1.x(0)
+    sidespot_1.y(127)
 
-    sidespot_2 = YUER150Spot(dmx, 48)
-    sidespot_2.x(0)
-    sidespot_2.y(127)
+    sidespot_2 = YRXY200Spot(dmx, addr=51)
     sidespot_2.dimming(255)
     sidespot_2.strobe(False)
-    sidespot_2.color(1)
+    sidespot_2.color(0)
     sidespot_2.no_pattern()
     sidespot_2.prisim(False)
-    sidespot_2.self_propelled(YUER150Spot.YUER150SelfPropelled.NONE)
+    sidespot_2.colorful(False)
+    sidespot_2.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    sidespot_2.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    sidespot_2.scene_speed(0)
+    sidespot_2.x(0)
+    sidespot_2.y(127)
 
-    spotlights = [overhead_spot, sidespot_1, sidespot_2]
+    spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
 
-    wash = RGBLight(dmx, 60)
-    wash.rgb(0, 0, 0)
+    wash1 = RGBWLight(dmx, 66)
+    wash1.rgbw(0, 0, 0, 0)
 
-    washes = [wash]
+    wash2 = RGBWLight(dmx, 70)
+    wash2.rgbw(0, 0, 0, 0)
+
+    washes = [wash1, wash2]
 
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
@@ -447,7 +456,7 @@ def run(
             OSCParam(
                 osc,
                 "/spot_joystick_{}".format(i + 1),
-                lambda fixture=fixture: [fixture.x_val[0], fixture.y_val[0]],
+                lambda fixture=fixture: [fixture._x, fixture._y],
                 lambda _, *args, fixture=fixture: fix_xy_wedge(fixture, args),
             )
         )

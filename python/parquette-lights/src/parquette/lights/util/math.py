@@ -10,15 +10,12 @@ def value_map(
     new_max: Union[float, int],
     constrain_result: bool = False,
 ) -> Union[float, int]:
+    result = (value - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
     if constrain_result:
-        return constrain(
-            (value - old_min) / (old_max - old_min) * (new_max - new_min) + new_min,
-            new_min,
-            new_max,
-        )
+        return constrain(result, new_min, new_max)
 
     else:
-        return (value - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
+        return result
 
 
 def constrain(
