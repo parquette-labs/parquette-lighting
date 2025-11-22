@@ -37,6 +37,9 @@ class PresetManager(object):
 
         self.load()
 
+    def set_enable_save_clear(self, enable: bool) -> None:
+        self.enable_save_clear = enable
+
     def load(self):
         try:
             with open(self.filename, "rb") as f:

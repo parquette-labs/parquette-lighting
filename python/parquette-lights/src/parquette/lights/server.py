@@ -579,6 +579,9 @@ def run(
     )
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
+    osc.dispatcher.map(
+        "/enable_save", lambda _, args: presets.set_enable_save_clear(args)
+    )
 
     def all_black():
         presets.select("reds", "Off")
