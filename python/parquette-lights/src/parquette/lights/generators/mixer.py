@@ -162,6 +162,16 @@ class Mixer(object):
             impulse_ix
         ].value(ts)
 
+        impulse_eye_ix = list(map(lambda gen: gen.name, self.generators)).index(
+            "impulse_eye"
+        )
+        self.channels[0][self.channel_names.index("wash_1")] += self.generators[
+            impulse_eye_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_2")] += self.generators[
+            impulse_eye_ix
+        ].value(ts)
+
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
             for chan_idx, chan_connected in enumerate(gen_connected_chans):
                 self.channels[0][chan_idx] += (

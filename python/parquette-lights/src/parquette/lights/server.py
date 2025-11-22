@@ -200,6 +200,16 @@ def run(
         duty=100,
     )
 
+    impulse_eye = ImpulseGenerator(
+        name="impulse_eye",
+        amp=255,
+        offset=0,
+        period=150,
+        echo=1,
+        echo_decay=1,
+        duty=100,
+    )
+
     fft1 = FFTGenerator(name="fft_1", amp=1, offset=0, subdivisions=1, memory_length=20)
     fft2 = FFTGenerator(name="fft_2", amp=1, offset=0, subdivisions=1, memory_length=20)
 
@@ -215,6 +225,7 @@ def run(
         sq2,
         sq3,
         impulse,
+        impulse_eye,
         fft1,
         fft2,
         bpm,
@@ -396,6 +407,26 @@ def run(
                 lambda: impulse.duty,
                 lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
             ),
+            OSCParam(
+                osc,
+                "/impulse_amp_eye",
+                lambda: impulse_eye.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse_eye]),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_period_eye",
+                lambda: impulse_eye.period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "period", [impulse_eye]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/impulse_duty_eye",
+                lambda: impulse_eye.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse_eye]),
+            ),
         ]
     )
     exposed_params["non-saved"].extend(
@@ -547,8 +578,13 @@ def run(
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
-        "/impulse_punch",
+        "/eye_punch",
         lambda addr, *args: impulse.punch(),
+    )
+
+    osc.dispatcher.map(
+        "/impulse_punch",
+        lambda addr, *args: impulse_eye.punch(),
     )
 
     print("Start OSC server", flush=True)
