@@ -67,7 +67,6 @@
 * Some kind of visualizer to test in realtime without lights
 * Presets, automations and controls
 	* Interpolate between presets when you switch over
-	* Need a way to lock / unlock the preset saving
 	* Slider smoothing
 * Spots
 	* XY mapping for control
