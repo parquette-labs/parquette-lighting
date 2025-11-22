@@ -113,7 +113,7 @@ def run(
     # sidespot_2.x(0)
     # sidespot_2.y(0)
 
-    spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
+    spotlights: List[Spot] = [overhead_spot]
 
     wash1 = RGBWLight(dmx, 66)
     wash1.rgbw(0, 0, 0, 0)

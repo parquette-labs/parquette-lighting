@@ -221,12 +221,12 @@ class Mixer(object):
         self.dmx_mappings["spot"][1].dimming(
             self.channels[0][self.channel_names.index("spot_1")]
         )
-        self.dmx_mappings["spot"][2].dimming(
-            self.channels[0][self.channel_names.index("spot_2")]
-        )
-        self.dmx_mappings["spot"][3].dimming(
-            self.channels[0][self.channel_names.index("spot_3")]
-        )
+        # self.dmx_mappings["spot"][2].dimming(
+        #     self.channels[0][self.channel_names.index("spot_2")]
+        # )
+        # self.dmx_mappings["spot"][3].dimming(
+        #     self.channels[0][self.channel_names.index("spot_3")]
+        # )
 
         # washes
         self.dmx_mappings["wash"][0].dimming(
