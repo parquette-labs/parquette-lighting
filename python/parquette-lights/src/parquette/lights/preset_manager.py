@@ -1,7 +1,8 @@
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Set
 
 import pickle
 import pprint
+from copy import copy
 
 from .osc import OSCManager, OSCParam
 
@@ -21,6 +22,7 @@ class PresetManager(object):
         self.filename = filename
         self.stored_presets: Dict[str, Dict[str, List[Tuple[str, Any]]]] = {}
         self.current_presets: Dict[str, str] = {}
+        self.prev_current_presets: Dict[str, str] = {}
         self.enable_save_clear = enable_save_clear
         self.debug = debug
 
@@ -36,6 +38,33 @@ class PresetManager(object):
         )
 
         self.load()
+
+    def all_categories(self) -> Set[str]:
+        all_categories = set(["reds", "plants", "booth", "washes", "spots_light"])
+
+        for key in self.current_presets:
+            all_categories.add(key)
+
+        return all_categories
+
+    def select_all(self, category_preset: str) -> None:
+        if all((category_preset == preset for preset in self.current_presets.values())):
+            return
+
+        self.prev_current_presets = copy(self.current_presets)
+
+        for cat in self.all_categories():
+            self.select(cat, category_preset)
+
+    def all_black(self) -> None:
+        self.select_all("Off")
+
+    def house_lights(self) -> None:
+        self.select_all("Static")
+
+    def restore_lights(self) -> None:
+        for cat, cat_preset in self.prev_current_presets.items():
+            self.select(cat, cat_preset)
 
     def set_enable_save_clear(self, enable: bool) -> None:
         self.enable_save_clear = enable

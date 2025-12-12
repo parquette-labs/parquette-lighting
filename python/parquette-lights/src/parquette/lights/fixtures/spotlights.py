@@ -52,6 +52,12 @@ class Spot(LightFixture):
             self.x(x & 0xFF)
             self.y_fine(y & 0xFF)
 
+    def get_x(self) -> DMXValue:
+        return self._x
+
+    def get_y(self) -> DMXValue:
+        return self._y
+
     def x(self, val: DMXValue) -> None:
         self._x = cast(DMXValue, self.x_channel.map(val))
         self.dmx.set_channel(self.addr + self.x_channel.offset, self._x)

@@ -100,6 +100,7 @@ class Mixer(object):
         ]
 
         self.stutter_period = 500
+
         self.reds_master = 1
         self.spots_master = 1
         self.washes_master = 1
