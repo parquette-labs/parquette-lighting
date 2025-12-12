@@ -374,6 +374,7 @@ class SignalPatchParam(OSCParam):
     def sync(self) -> None:
         for gen_ix in range(len(self.mixer.signal_matrix)):
             output_val = [self.mixer.generators[gen_ix].name]
+            output_val.append("")
             self.osc.send_osc(self.addr, output_val)
 
         # pylint: disable-next=consider-using-enumerate
