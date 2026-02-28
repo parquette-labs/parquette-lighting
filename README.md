@@ -65,6 +65,7 @@
 
 ## Notes/Ideas/TODOs
 * Some kind of visualizer to test in realtime without lights
+* One send FFT visualization when needed, wasting compute
 * Presets, automations and controls
 	* Interpolate between presets when you switch over
 	* Slider smoothing
