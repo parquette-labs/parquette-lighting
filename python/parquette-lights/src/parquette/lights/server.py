@@ -612,7 +612,7 @@ def run(
 
     def reset_spots(reset: bool) -> None:
         for spot in spotlights:
-            spot.reset_movement(reset)
+            spot.reset(reset)
 
     osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
 

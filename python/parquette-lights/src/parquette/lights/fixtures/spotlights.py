@@ -146,10 +146,7 @@ class Spot(LightFixture):
                 self.addr + self.prisim_channel.offset, self.prisim_rotation
             )
 
-    def reset_movement(self, reset: bool) -> None:
-        pass
-
-    def reset_lights(self, reset: bool) -> None:
+    def reset(self, reset: bool) -> None:
         pass
 
 
@@ -413,21 +410,13 @@ class YRXY200Spot(Spot):
             self_propelled.value + offset,
         )
 
-    def reset_movement(self, reset: bool) -> None:
+    def reset(self, reset: bool) -> None:
+        value = YRXY200Spot.YRXY200Reset.NONE
         if reset:
-            self.reset(YRXY200Spot.YRXY200Reset.XY_AXIS)
-        else:
-            self.reset(YRXY200Spot.YRXY200Reset.NONE)
+            value = YRXY200Spot.YRXY200Reset.LAMPS
 
-    def reset_lights(self, reset: bool) -> None:
-        if reset:
-            self.reset(YRXY200Spot.YRXY200Reset.LAMPS)
-        else:
-            self.reset(YRXY200Spot.YRXY200Reset.NONE)
-
-    def reset(self, reset: YRXY200Reset) -> None:
         self.dmx.set_channel(
-            self.addr + YRXY200Spot.YRXY200Channel.RESET.value, reset.value
+            self.addr + YRXY200Spot.YRXY200Channel.RESET.value, value.value
         )
 
     def light_strip_scene(
