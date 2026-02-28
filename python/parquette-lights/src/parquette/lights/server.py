@@ -610,6 +610,12 @@ def run(
         lambda addr, *args: impulse.punch(),
     )
 
+    def reset_spots(reset: bool) -> None:
+        for spot in spotlights:
+            spot.reset_movement(reset)
+
+    osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
+
     osc.dispatcher.map(
         "/eye_punch",
         lambda addr, *args: impulse_eye.punch(),

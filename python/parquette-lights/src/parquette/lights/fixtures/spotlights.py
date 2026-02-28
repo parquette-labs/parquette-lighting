@@ -146,6 +146,12 @@ class Spot(LightFixture):
                 self.addr + self.prisim_channel.offset, self.prisim_rotation
             )
 
+    def reset_movement(self, reset: bool) -> None:
+        pass
+
+    def reset_lights(self, reset: bool) -> None:
+        pass
+
 
 class YRXY200Spot(Spot):
     # https://yuerlighting.com/product/280w-rgbw-led-moving-head-light-200w-white-21x-smd-5050-rgb-540-pan-200-tilt-for-dj-shows-weddings-church-services-events/
@@ -406,6 +412,18 @@ class YRXY200Spot(Spot):
             self.addr + YRXY200Spot.YRXY200Channel.SELF_PROPELLED.value,
             self_propelled.value + offset,
         )
+
+    def reset_movement(self, reset: bool) -> None:
+        if reset:
+            self.reset(YRXY200Spot.YRXY200Reset.XY_AXIS)
+        else:
+            self.reset(YRXY200Spot.YRXY200Reset.NONE)
+
+    def reset_lights(self, reset: bool) -> None:
+        if reset:
+            self.reset(YRXY200Spot.YRXY200Reset.LAMPS)
+        else:
+            self.reset(YRXY200Spot.YRXY200Reset.NONE)
 
     def reset(self, reset: YRXY200Reset) -> None:
         self.dmx.set_channel(
