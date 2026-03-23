@@ -6861,6 +6861,8 @@
               "Purple/Teal Prisim": "Purple/Teal Prisim",
               "Red": "Red",
               "Red Prisim": "Red Prisim",
+              "Teal": "Teal",
+              "Teal Prisim": "Teal Prisim",
               "Orange": "Orange",
               "Orange Prisim": "Orange Prisim",
               "Off": "Off"
@@ -6916,7 +6918,7 @@
               "Dancers Crowd": "Dancers Crowd",
               "Cut": "Cut",
               "Plants": "Plants",
-              "Flush Disco": "Flush Disco",
+              "Install Above Booth": "Install Above Booth",
               "Live": "Live"
             }
           },
