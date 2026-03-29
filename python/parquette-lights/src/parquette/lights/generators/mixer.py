@@ -303,28 +303,28 @@ class Mixer(object):
                     for fixture in fixtures:
                         fixture.dimming(self.channels[0][0])
             # washes
-            self.dmx_mappings["wash"][0].dimming(
+            self.dmx_mappings["washes"][0].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][1].dimming(
+            self.dmx_mappings["washes"][1].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][2].dimming(
+            self.dmx_mappings["washes"][2].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][3].dimming(
+            self.dmx_mappings["washes"][3].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][4].dimming(
+            self.dmx_mappings["washes"][4].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][5].dimming(
+            self.dmx_mappings["washes"][5].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][6].dimming(
+            self.dmx_mappings["washes"][6].dimming(
                 self.channels[0][self.channel_names.index("wash_7")]
             )
-            self.dmx_mappings["wash"][7].dimming(
+            self.dmx_mappings["washes"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
 
@@ -339,28 +339,28 @@ class Mixer(object):
             self.dmx_mappings["front"][1].dimming(self.channels[0][0])
 
             # washes
-            self.dmx_mappings["wash"][0].dimming(
+            self.dmx_mappings["washes"][0].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][1].dimming(
+            self.dmx_mappings["washes"][1].dimming(
                 self.channels[0][self.channel_names.index("wash_2")]
             )
-            self.dmx_mappings["wash"][2].dimming(
+            self.dmx_mappings["washes"][2].dimming(
                 self.channels[0][self.channel_names.index("wash_3")]
             )
-            self.dmx_mappings["wash"][3].dimming(
+            self.dmx_mappings["washes"][3].dimming(
                 self.channels[0][self.channel_names.index("wash_4")]
             )
-            self.dmx_mappings["wash"][4].dimming(
+            self.dmx_mappings["washes"][4].dimming(
                 self.channels[0][self.channel_names.index("wash_5")]
             )
-            self.dmx_mappings["wash"][5].dimming(
+            self.dmx_mappings["washes"][5].dimming(
                 self.channels[0][self.channel_names.index("wash_6")]
             )
-            self.dmx_mappings["wash"][6].dimming(
+            self.dmx_mappings["washes"][6].dimming(
                 self.channels[0][self.channel_names.index("wash_7")]
             )
-            self.dmx_mappings["wash"][7].dimming(
+            self.dmx_mappings["washes"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
 
@@ -435,10 +435,10 @@ class Mixer(object):
                     )
                 )
 
-            self.dmx_mappings["wash"][6].dimming(
+            self.dmx_mappings["washes"][6].dimming(
                 self.channels[0][self.channel_names.index("wash_7")]
             )
-            self.dmx_mappings["wash"][7].dimming(
+            self.dmx_mappings["washes"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
 
@@ -463,28 +463,28 @@ class Mixer(object):
                 fixture.dimming(int(constrain(self.channels[stutter_index][0], 0, 255)))
 
             # washes
-            self.dmx_mappings["wash"][0].dimming(
+            self.dmx_mappings["washes"][0].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][1].dimming(
+            self.dmx_mappings["washes"][1].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][2].dimming(
+            self.dmx_mappings["washes"][2].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][3].dimming(
+            self.dmx_mappings["washes"][3].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][4].dimming(
+            self.dmx_mappings["washes"][4].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][5].dimming(
+            self.dmx_mappings["washes"][5].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
             )
-            self.dmx_mappings["wash"][6].dimming(
+            self.dmx_mappings["washes"][6].dimming(
                 self.channels[0][self.channel_names.index("wash_7")]
             )
-            self.dmx_mappings["wash"][7].dimming(
+            self.dmx_mappings["washes"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
 
