@@ -172,31 +172,6 @@ class Mixer(object):
             impulse_ix
         ].value(ts)
 
-        self.channels[0][self.channel_names.index("wash_1")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_2")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_3")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_4")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_5")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_6")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_7")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_8")] += self.generators[
-            impulse_ix
-        ].value(ts)
-
         for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
             for chan_idx, chan_connected in enumerate(gen_connected_chans):
                 self.channels[0][chan_idx] += (
@@ -253,6 +228,31 @@ class Mixer(object):
                 "wash_8",
             ):
                 self.channels[0][i] = val * self.washes_master
+
+        self.channels[0][self.channel_names.index("wash_1")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_2")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_3")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_4")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_5")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_6")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_7")] += self.generators[
+            impulse_ix
+        ].value(ts)
+        self.channels[0][self.channel_names.index("wash_8")] += self.generators[
+            impulse_ix
+        ].value(ts)
 
         for i, val in enumerate(self.channels[0]):
             if self.channel_names[i] in (
