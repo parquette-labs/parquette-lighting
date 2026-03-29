@@ -7915,10 +7915,9 @@
             "wrap": false,
             "mode": "tap",
             "values": {
-              "Red Static": "Red Static",
-              "Red Wave": "Red Wave",
+              "Static": "Static",
+              "Wave": "Wave",
               "FFT Mono": "FFT Mono",
-              "White Static": "White Static",
               "Off": "Off"
             }
           },
@@ -8094,6 +8093,9 @@
             "mode": "tap",
             "values": {
               "Red": "Red",
+              "Orange": "Orange",
+              "Purple": "Purple",
+              "Teal": "Teal",
               "White": "White"
             }
           },
