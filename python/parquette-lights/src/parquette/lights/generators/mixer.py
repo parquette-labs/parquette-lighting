@@ -26,7 +26,7 @@ class Mixer(object):
         generators: List[Generator],
         # fixtures: List[Fixture],
         spots: List[Spot],
-        washes: List[RGBWLight],
+        washes: List[LightFixture],
         history_len: float,
     ) -> None:
         self.mode = "MONO"
@@ -46,7 +46,7 @@ class Mixer(object):
                 "under_1",
                 "under_2",
             ],
-            "spots_light": ["tung_spot", "spot_1", "spot_2", "spot_3"],
+            "spots_light": ["tung_spot", "spot_front", "spot_rear"],
             "washes": ["wash_1", "wash_2"],
             "non-saved": ["sodium"],
         }
@@ -188,9 +188,8 @@ class Mixer(object):
                 "ceil_1",
                 "ceil_2",
                 "ceil_3",
-                "spot_1",
-                "spot_2",
-                "spot_3",
+                "spot_front",
+                "spot_rear",
                 "wash_1",
                 "wash_2",
             ):
@@ -206,9 +205,8 @@ class Mixer(object):
 
         for i, val in enumerate(self.channels[0]):
             if self.channel_names[i] in (
-                "spot_1",
-                "spot_2",
-                "spot_3",
+                "spot_front",
+                "spot_rear",
                 "tung_spot",
             ):
                 self.channels[0][i] = val * self.spots_master
@@ -230,13 +228,10 @@ class Mixer(object):
             self.channels[0][self.channel_names.index("tung_spot")]
         )
         self.dmx_mappings["spot"][1].dimming(
-            self.channels[0][self.channel_names.index("spot_1")]
+            self.channels[0][self.channel_names.index("spot_front")]
         )
         self.dmx_mappings["spot"][2].dimming(
-            self.channels[0][self.channel_names.index("spot_2")]
-        )
-        self.dmx_mappings["spot"][3].dimming(
-            self.channels[0][self.channel_names.index("spot_3")]
+            self.channels[0][self.channel_names.index("spot_rear")]
         )
 
         # washes

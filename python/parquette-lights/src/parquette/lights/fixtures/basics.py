@@ -63,6 +63,31 @@ class LightFixture(Fixture):
 class RGBLight(LightFixture):
     def __init__(self, dmx: DMXManager, addr: int):
         super().__init__(dmx, addr=addr, num_chans=3)
+        self.r_target: DMXValue = 255
+        self.g_target: DMXValue = 255
+        self.b_target: DMXValue = 255
+
+    def set_dimming_target(
+        self,
+        r: Optional[DMXValue] = None,
+        g: Optional[DMXValue] = None,
+        b: Optional[DMXValue] = None,
+    ) -> None:
+        if not r is None:
+            self.r_target = r
+        if not g is None:
+            self.g_target = g
+        if not b is None:
+            self.b_target = b
+
+    def dimming(self, val: DMXValue) -> None:
+        self._dimming = val
+
+        r = value_map(val, 0, 255, 0, self.r_target)
+        g = value_map(val, 0, 255, 0, self.g_target)
+        b = value_map(val, 0, 255, 0, self.b_target)
+
+        self.rgb(r, g, b)
 
     def rgb(self, r: DMXValue, g: DMXValue, b: DMXValue) -> None:
         self.set([r, g, b])

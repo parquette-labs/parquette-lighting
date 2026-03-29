@@ -5,7 +5,7 @@ import time
 
 import click
 
-from .fixtures import RGBWLight, YRXY200Spot, Spot
+from .fixtures import RGBWLight, RGBLight, YRXY200Spot, Spot
 
 from .generators import (
     FFTGenerator,
@@ -71,57 +71,61 @@ def run(
     if not entec_auto is None:
         dmx.setup_dmx(entec_auto)
 
-    overhead_spot = YRXY200Spot(dmx, addr=21)
-    overhead_spot.dimming(255)
-    overhead_spot.strobe(False)
-    # overhead_spot.shutter(False)
-    overhead_spot.color(0)
-    overhead_spot.no_pattern()
-    overhead_spot.prisim(False)
-    overhead_spot.colorful(False)
-    overhead_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    overhead_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    overhead_spot.scene_speed(0)
-    overhead_spot.x(0)
-    overhead_spot.y(0)
+    front_spot = YRXY200Spot(dmx, addr=21)
+    front_spot.dimming(255)
+    front_spot.strobe(False)
+    # front_spot.shutter(False)
+    front_spot.color(0)
+    front_spot.no_pattern()
+    front_spot.prisim(False)
+    front_spot.colorful(False)
+    front_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    front_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    front_spot.scene_speed(0)
+    front_spot.x(0)
+    front_spot.y(0)
 
-    sidespot_1 = YRXY200Spot(dmx, addr=36)
-    sidespot_1.dimming(255)
-    sidespot_1.strobe(False)
-    # sidespot_1.shutter(False)
-    sidespot_1.color(0)
-    sidespot_1.no_pattern()
-    sidespot_1.prisim(False)
-    sidespot_1.colorful(False)
-    sidespot_1.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    sidespot_1.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    sidespot_1.scene_speed(0)
-    sidespot_1.x(0)
-    sidespot_1.y(0)
+    back_spot = YRXY200Spot(dmx, addr=200)
+    back_spot.dimming(255)
+    back_spot.strobe(False)
+    # back_spot.shutter(False)
+    back_spot.color(0)
+    back_spot.no_pattern()
+    back_spot.prisim(False)
+    back_spot.colorful(False)
+    back_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+    back_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+    back_spot.scene_speed(0)
+    back_spot.x(0)
+    back_spot.y(0)
 
-    sidespot_2 = YRXY200Spot(dmx, addr=51)
-    sidespot_2.dimming(255)
-    sidespot_2.strobe(False)
-    # sidespot_2.shutter(False)
-    sidespot_2.color(0)
-    sidespot_2.no_pattern()
-    sidespot_2.prisim(False)
-    sidespot_2.colorful(False)
-    sidespot_2.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    sidespot_2.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    sidespot_2.scene_speed(0)
-    sidespot_2.x(0)
-    sidespot_2.y(0)
+    spotlights: List[Spot] = [front_spot, back_spot]
 
-    spotlights: List[Spot] = [overhead_spot, sidespot_1, sidespot_2]
+    washfl = RGBLight(dmx, 104)
+    washfl.rgb(0, 0, 0)
 
-    wash1 = RGBWLight(dmx, 66)
-    wash1.rgbw(0, 0, 0, 0)
+    washfr = RGBLight(dmx, 107)
+    washfr.rgb(0, 0, 0)
 
-    wash2 = RGBWLight(dmx, 70)
-    wash2.rgbw(0, 0, 0, 0)
+    washml = RGBLight(dmx, 110)
+    washml.rgb(0, 0, 0)
 
-    washes = [wash1, wash2]
+    washmr = RGBLight(dmx, 113)
+    washmr.rgb(0, 0, 0)
+
+    washbl = RGBLight(dmx, 120)
+    washbl.rgb(0, 0, 0)
+
+    washbr = RGBLight(dmx, 123)
+    washbr.rgb(0, 0, 0)
+
+    washceilf = RGBWLight(dmx, 100)
+    washceilf.rgbw(0, 0, 0, 0)
+
+    washceilr = RGBWLight(dmx, 116)
+    washceilr.rgbw(0, 0, 0, 0)
+
+    washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
 
     audio_capture = AudioCapture(osc)
     fft_manager = FFTManager(osc, audio_capture)
@@ -272,38 +276,88 @@ def run(
         "strobes": [],
         "washes": [
             SignalPatchParam(
-                osc, "/signal_patchbay/washes", ["wash_1", "wash_2"], mixer
+                osc,
+                "/signal_patchbay/washes",
+                [
+                    "washfl",
+                    "washfr",
+                    "washml",
+                    "washmr",
+                    "washbl",
+                    "washbr",
+                    "washceilf",
+                    "washceilr",
+                ],
+                mixer,
             ),
             OSCParam(
                 osc,
                 "/wash_r",
-                lambda: wash1.r_target,
+                lambda: washceilf.r_target,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "r_target", [wash1, wash2]
+                    args,
+                    "r_target",
+                    [
+                        washfl,
+                        washfr,
+                        washml,
+                        washmr,
+                        washbl,
+                        washbr,
+                        washceilf,
+                        washceilr,
+                    ],
                 ),
             ),
             OSCParam(
                 osc,
                 "/wash_g",
-                lambda: wash1.g_target,
+                lambda: washceilf.g_target,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "g_target", [wash1, wash2]
+                    args,
+                    "g_target",
+                    [
+                        washfl,
+                        washfr,
+                        washml,
+                        washmr,
+                        washbl,
+                        washbr,
+                        washceilf,
+                        washceilr,
+                    ],
                 ),
             ),
             OSCParam(
                 osc,
                 "/wash_b",
-                lambda: wash1.b_target,
+                lambda: washceilf.b_target,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "b_target", [wash1, wash2]
+                    args,
+                    "b_target",
+                    [
+                        washfl,
+                        washfr,
+                        washml,
+                        washmr,
+                        washbl,
+                        washbr,
+                        washceilf,
+                        washceilr,
+                    ],
                 ),
             ),
             OSCParam(
                 osc,
                 "/wash_w",
-                lambda: wash1.w_target,
+                lambda: washceilf.w_target,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "w_target", [wash1, wash2]
+                    args,
+                    "w_target",
+                    [
+                        washceilf,
+                        washceilr,
+                    ],
                 ),
             ),
         ],
@@ -311,7 +365,7 @@ def run(
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/spots_lights",
-                ["tung_spot", "spot_1", "spot_2", "spot_3"],
+                ["tung_spot", "spot_front", "spot_rear"],
                 mixer,
             )
         ],
