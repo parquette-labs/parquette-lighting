@@ -46,7 +46,7 @@ class Mixer(object):
                 "under_1",
                 "under_2",
             ],
-            "spots_light": ["tung_spot", "spot_front", "spot_rear"],
+            "spots_light": ["tung_spot", "spot_1", "spot_2"],
             "washes": ["wash_1", "wash_2"],
             "non-saved": ["sodium"],
         }
@@ -188,8 +188,8 @@ class Mixer(object):
                 "ceil_1",
                 "ceil_2",
                 "ceil_3",
-                "spot_front",
-                "spot_rear",
+                "spot_1",
+                "spot_2",
                 "wash_1",
                 "wash_2",
             ):
@@ -205,8 +205,8 @@ class Mixer(object):
 
         for i, val in enumerate(self.channels[0]):
             if self.channel_names[i] in (
-                "spot_front",
-                "spot_rear",
+                "spot_1",
+                "spot_2",
                 "tung_spot",
             ):
                 self.channels[0][i] = val * self.spots_master
@@ -228,10 +228,10 @@ class Mixer(object):
             self.channels[0][self.channel_names.index("tung_spot")]
         )
         self.dmx_mappings["spot"][1].dimming(
-            self.channels[0][self.channel_names.index("spot_front")]
+            self.channels[0][self.channel_names.index("spot_1")]
         )
         self.dmx_mappings["spot"][2].dimming(
-            self.channels[0][self.channel_names.index("spot_rear")]
+            self.channels[0][self.channel_names.index("spot_2")]
         )
 
         # washes

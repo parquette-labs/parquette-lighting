@@ -365,7 +365,7 @@ def run(
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/spots_lights",
-                ["tung_spot", "spot_front", "spot_rear"],
+                ["tung_spot", "spot_1", "spot_2"],
                 mixer,
             )
         ],
