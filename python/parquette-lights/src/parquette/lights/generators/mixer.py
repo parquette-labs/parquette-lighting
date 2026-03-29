@@ -30,6 +30,7 @@ class Mixer(object):
         history_len: float,
     ) -> None:
         self.mode = "MONO"
+        self.wash_mode = "MONO"
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
@@ -296,12 +297,7 @@ class Mixer(object):
         self.dmx_mappings["ceil"][2].dimming(
             self.channels[0][self.channel_names.index("ceil_3")]
         )
-
-        if self.mode == "MONO":
-            for group, fixtures in self.dmx_mappings.items():
-                if group in ("left", "right", "front"):
-                    for fixture in fixtures:
-                        fixture.dimming(self.channels[0][0])
+        if self.wash_mode == "MONO":
             # washes
             self.dmx_mappings["wash"][0].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
@@ -327,17 +323,7 @@ class Mixer(object):
             self.dmx_mappings["wash"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
-
-        elif self.mode == "PENTA":
-            for i, (fixture_l, fixture_r) in enumerate(
-                zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
-            ):
-                fixture_l.dimming(self.channels[0][i + 1])
-                fixture_r.dimming(self.channels[0][i + 1])
-
-            self.dmx_mappings["front"][0].dimming(self.channels[0][0])
-            self.dmx_mappings["front"][1].dimming(self.channels[0][0])
-
+        elif self.wash_mode == "UNIQUE":
             # washes
             self.dmx_mappings["wash"][0].dimming(
                 self.channels[0][self.channel_names.index("wash_1")]
@@ -363,31 +349,7 @@ class Mixer(object):
             self.dmx_mappings["wash"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
-
-        elif self.mode in ("FWD", "BACK"):
-            fixture_zip = list(
-                zip(
-                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
-                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
-                )
-            )
-            if self.mode == "BACK":
-                fixture_zip = list(reversed(fixture_zip))
-            for i, (fixture_l, fixture_r) in enumerate(fixture_zip):
-                stutter_index = int(
-                    constrain(
-                        self.stutter_period * i / 10,
-                        0,
-                        len(self.channels) - 1,
-                    )
-                )
-                fixture_l.dimming(
-                    int(constrain(self.channels[stutter_index][0], 0, 255))
-                )
-                fixture_r.dimming(
-                    int(constrain(self.channels[stutter_index][1], 0, 255))
-                )
-
+        elif self.wash_mode in ("FWD", "BACK"):
             wash_zip = list(
                 zip(
                     (
@@ -403,7 +365,7 @@ class Mixer(object):
                 )
             )
 
-            if self.mode == "BACK":
+            if self.wash_mode == "BACK":
                 wash_zip = list(reversed(wash_zip))
 
             for i, (fixture_l, fixture_r) in enumerate(wash_zip):
@@ -443,6 +405,46 @@ class Mixer(object):
             self.dmx_mappings["wash"][7].dimming(
                 self.channels[0][self.channel_names.index("wash_8")]
             )
+
+        if self.mode == "MONO":
+            for group, fixtures in self.dmx_mappings.items():
+                if group in ("left", "right", "front"):
+                    for fixture in fixtures:
+                        fixture.dimming(self.channels[0][0])
+
+        elif self.mode == "PENTA":
+            for i, (fixture_l, fixture_r) in enumerate(
+                zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
+            ):
+                fixture_l.dimming(self.channels[0][i + 1])
+                fixture_r.dimming(self.channels[0][i + 1])
+
+            self.dmx_mappings["front"][0].dimming(self.channels[0][0])
+            self.dmx_mappings["front"][1].dimming(self.channels[0][0])
+
+        elif self.mode in ("FWD", "BACK"):
+            fixture_zip = list(
+                zip(
+                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
+                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
+                )
+            )
+            if self.mode == "BACK":
+                fixture_zip = list(reversed(fixture_zip))
+            for i, (fixture_l, fixture_r) in enumerate(fixture_zip):
+                stutter_index = int(
+                    constrain(
+                        self.stutter_period * i / 10,
+                        0,
+                        len(self.channels) - 1,
+                    )
+                )
+                fixture_l.dimming(
+                    int(constrain(self.channels[stutter_index][0], 0, 255))
+                )
+                fixture_r.dimming(
+                    int(constrain(self.channels[stutter_index][1], 0, 255))
+                )
 
         elif self.mode == "ZIG":
             interleaved_fixtures = [

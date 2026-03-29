@@ -275,6 +275,12 @@ def run(
         ],
         "strobes": [],
         "washes": [
+            OSCParam(
+                osc,
+                "/wash_mode_switch",
+                lambda: mixer.wash_mode,
+                lambda _, args: OSCParam.obj_param_setter(args, "wash_mode", [mixer]),
+            ),
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/washes",
