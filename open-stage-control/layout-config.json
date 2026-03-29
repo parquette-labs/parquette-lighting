@@ -8362,6 +8362,7 @@
             "values": {
               "Static": "Static",
               "Wave": "Wave",
+              "BPM Slider": "BPM Slider",
               "FFT Mono": "FFT Mono",
               "Disco": "Disco",
               "Off": "Off"
