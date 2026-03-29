@@ -388,17 +388,19 @@ class Mixer(object):
                     int(constrain(self.channels[stutter_index][1], 0, 255))
                 )
 
-            wash_zip = zip(
-                (
-                    self.dmx_mappings["wash"][0],
-                    self.dmx_mappings["wash"][2],
-                    self.dmx_mappings["wash"][4],
-                ),
-                (
-                    self.dmx_mappings["wash"][1],
-                    self.dmx_mappings["wash"][3],
-                    self.dmx_mappings["wash"][5],
-                ),
+            wash_zip = list(
+                zip(
+                    (
+                        self.dmx_mappings["wash"][0],
+                        self.dmx_mappings["wash"][2],
+                        self.dmx_mappings["wash"][4],
+                    ),
+                    (
+                        self.dmx_mappings["wash"][1],
+                        self.dmx_mappings["wash"][3],
+                        self.dmx_mappings["wash"][5],
+                    ),
+                )
             )
 
             if self.mode == "BACK":
