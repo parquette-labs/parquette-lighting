@@ -110,6 +110,7 @@ class Mixer(object):
         ]
 
         self.stutter_period = 500
+        self.stutter_period_wash = 500
 
         self.reds_master = 1
         self.spots_master = 1
@@ -371,7 +372,7 @@ class Mixer(object):
             for i, (fixture_l, fixture_r) in enumerate(wash_zip):
                 stutter_index = int(
                     constrain(
-                        self.stutter_period * i / 10,
+                        self.stutter_period_wash * i / 10,
                         0,
                         len(self.channels) - 1,
                     )

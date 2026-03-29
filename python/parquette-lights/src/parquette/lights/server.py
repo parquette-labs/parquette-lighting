@@ -155,6 +155,14 @@ def run(
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
     )
+    wave4 = WaveGenerator(
+        name="sin_wash",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
 
     sq1 = WaveGenerator(
         name="sq_1",
@@ -225,6 +233,7 @@ def run(
         wave1,
         wave2,
         wave3,
+        wave4,
         sq1,
         sq2,
         sq3,
@@ -347,6 +356,26 @@ def run(
             ),
         ],
         "washes": [
+            OSCParam(
+                osc,
+                "/amp_wash",
+                lambda: noise1.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [wave4]),
+            ),
+            OSCParam(
+                osc,
+                "/period_wash",
+                lambda: noise1.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [wave4]),
+            ),
+            OSCParam(
+                osc,
+                "/stutter_period_wash",
+                lambda: mixer.stutter_period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "stutter_period_wash", [mixer]
+                ),
+            ),
             OSCParam(
                 osc,
                 "/wash_mode_switch",
