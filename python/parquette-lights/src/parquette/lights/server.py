@@ -274,28 +274,7 @@ def run(
             )
         ],
         "strobes": [],
-        "washes": [
-            OSCParam(
-                osc,
-                "/wash_mode_switch",
-                lambda: mixer.wash_mode,
-                lambda _, args: OSCParam.obj_param_setter(args, "wash_mode", [mixer]),
-            ),
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/washes",
-                [
-                    "wash_1",
-                    "wash_2",
-                    "wash_3",
-                    "wash_4",
-                    "wash_5",
-                    "wash_6",
-                    "wash_7",
-                    "wash_8",
-                ],
-                mixer,
-            ),
+        "washes_color": [
             OSCParam(
                 osc,
                 "/wash_r",
@@ -365,6 +344,29 @@ def run(
                         washceilr,
                     ],
                 ),
+            ),
+        ],
+        "washes": [
+            OSCParam(
+                osc,
+                "/wash_mode_switch",
+                lambda: mixer.wash_mode,
+                lambda _, args: OSCParam.obj_param_setter(args, "wash_mode", [mixer]),
+            ),
+            SignalPatchParam(
+                osc,
+                "/signal_patchbay/washes",
+                [
+                    "wash_1",
+                    "wash_2",
+                    "wash_3",
+                    "wash_4",
+                    "wash_5",
+                    "wash_6",
+                    "wash_7",
+                    "wash_8",
+                ],
+                mixer,
             ),
         ],
         "spots_light": [
