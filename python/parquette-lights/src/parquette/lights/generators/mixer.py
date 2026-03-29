@@ -395,8 +395,8 @@ class Mixer(object):
                     self.dmx_mappings["wash"][4],
                 ),
                 (
-                    self.dmx_mappings["wash"][2],
-                    self.dmx_mappings["wash"][4],
+                    self.dmx_mappings["wash"][1],
+                    self.dmx_mappings["wash"][3],
                     self.dmx_mappings["wash"][5],
                 ),
             )
