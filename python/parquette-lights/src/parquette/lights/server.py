@@ -371,7 +371,7 @@ def run(
             OSCParam(
                 osc,
                 "/stutter_period_wash",
-                lambda: mixer.stutter_period,
+                lambda: mixer.stutter_period_wash,
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "stutter_period_wash", [mixer]
                 ),
