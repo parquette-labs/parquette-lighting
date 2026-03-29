@@ -273,32 +273,6 @@ class Mixer(object):
             self.channels[0][self.channel_names.index("spot_2")]
         )
 
-        # washes
-        self.dmx_mappings["wash"][0].dimming(
-            self.channels[0][self.channel_names.index("wash_1")]
-        )
-        self.dmx_mappings["wash"][1].dimming(
-            self.channels[0][self.channel_names.index("wash_2")]
-        )
-        self.dmx_mappings["wash"][2].dimming(
-            self.channels[0][self.channel_names.index("wash_3")]
-        )
-        self.dmx_mappings["wash"][3].dimming(
-            self.channels[0][self.channel_names.index("wash_4")]
-        )
-        self.dmx_mappings["wash"][4].dimming(
-            self.channels[0][self.channel_names.index("wash_5")]
-        )
-        self.dmx_mappings["wash"][5].dimming(
-            self.channels[0][self.channel_names.index("wash_6")]
-        )
-        self.dmx_mappings["wash"][6].dimming(
-            self.channels[0][self.channel_names.index("wash_7")]
-        )
-        self.dmx_mappings["wash"][7].dimming(
-            self.channels[0][self.channel_names.index("wash_8")]
-        )
-
         # booth
         self.dmx_mappings["under"][0].dimming(
             self.channels[0][self.channel_names.index("under_1")]
@@ -328,6 +302,31 @@ class Mixer(object):
                 if group in ("left", "right", "front"):
                     for fixture in fixtures:
                         fixture.dimming(self.channels[0][0])
+            # washes
+            self.dmx_mappings["wash"][0].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][1].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][2].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][3].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][4].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][5].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][6].dimming(
+                self.channels[0][self.channel_names.index("wash_7")]
+            )
+            self.dmx_mappings["wash"][7].dimming(
+                self.channels[0][self.channel_names.index("wash_8")]
+            )
 
         elif self.mode == "PENTA":
             for i, (fixture_l, fixture_r) in enumerate(
@@ -338,6 +337,32 @@ class Mixer(object):
 
             self.dmx_mappings["front"][0].dimming(self.channels[0][0])
             self.dmx_mappings["front"][1].dimming(self.channels[0][0])
+
+            # washes
+            self.dmx_mappings["wash"][0].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][1].dimming(
+                self.channels[0][self.channel_names.index("wash_2")]
+            )
+            self.dmx_mappings["wash"][2].dimming(
+                self.channels[0][self.channel_names.index("wash_3")]
+            )
+            self.dmx_mappings["wash"][3].dimming(
+                self.channels[0][self.channel_names.index("wash_4")]
+            )
+            self.dmx_mappings["wash"][4].dimming(
+                self.channels[0][self.channel_names.index("wash_5")]
+            )
+            self.dmx_mappings["wash"][5].dimming(
+                self.channels[0][self.channel_names.index("wash_6")]
+            )
+            self.dmx_mappings["wash"][6].dimming(
+                self.channels[0][self.channel_names.index("wash_7")]
+            )
+            self.dmx_mappings["wash"][7].dimming(
+                self.channels[0][self.channel_names.index("wash_8")]
+            )
 
         elif self.mode in ("FWD", "BACK"):
             fixture_zip = list(
