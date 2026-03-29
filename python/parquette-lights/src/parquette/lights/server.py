@@ -359,13 +359,13 @@ def run(
             OSCParam(
                 osc,
                 "/amp_wash",
-                lambda: noise1.amp,
+                lambda: wave4.amp,
                 lambda _, args: OSCParam.obj_param_setter(args, "amp", [wave4]),
             ),
             OSCParam(
                 osc,
                 "/period_wash",
-                lambda: noise1.period,
+                lambda: wave4.period,
                 lambda _, args: OSCParam.obj_param_setter(args, "period", [wave4]),
             ),
             OSCParam(
