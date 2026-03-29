@@ -80,13 +80,15 @@ class RGBLight(LightFixture):
         if not b is None:
             self.b_target = b
 
+        print(self.r_target, self.g_target, self.b_target)
+
     def dimming(self, val: DMXValue) -> None:
         self._dimming = val
 
         r = value_map(val, 0, 255, 0, self.r_target)
         g = value_map(val, 0, 255, 0, self.g_target)
         b = value_map(val, 0, 255, 0, self.b_target)
-        print(r, g, b)
+        # print(val, r, g, b)
         self.rgb(r, g, b)
 
     def rgb(self, r: DMXValue, g: DMXValue, b: DMXValue) -> None:
@@ -117,6 +119,8 @@ class RGBWLight(LightFixture):
         if not w is None:
             self.w_target = w
 
+        print(self.r_target, self.g_target, self.b_target, self.w_target)
+
     def dimming(self, val: DMXValue) -> None:
         self._dimming = val
 
@@ -124,7 +128,7 @@ class RGBWLight(LightFixture):
         g = value_map(val, 0, 255, 0, self.g_target)
         b = value_map(val, 0, 255, 0, self.b_target)
         w = value_map(val, 0, 255, 0, self.w_target)
-        print(r, g, b, w)
+        # print(val, r, g, b, w)
 
         self.rgbw(r, g, b, w)
 
