@@ -47,7 +47,16 @@ class Mixer(object):
                 "under_2",
             ],
             "spots_light": ["tung_spot", "spot_1", "spot_2"],
-            "washes": ["wash_1", "wash_2"],
+            "washes": [
+                "wash_1",
+                "wash_2",
+                "wash_3",
+                "wash_4",
+                "wash_5",
+                "wash_6",
+                "wash_7",
+                "wash_8",
+            ],
             "non-saved": ["sodium"],
         }
 
@@ -192,6 +201,12 @@ class Mixer(object):
                 "spot_2",
                 "wash_1",
                 "wash_2",
+                "wash_3",
+                "wash_4",
+                "wash_5",
+                "wash_6",
+                "wash_7",
+                "wash_8",
             ):
                 self.channels[0][i] = val * self.reds_master
 
@@ -212,7 +227,16 @@ class Mixer(object):
                 self.channels[0][i] = val * self.spots_master
 
         for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] in ("wash_1", "wash_2"):
+            if self.channel_names[i] in (
+                "wash_1",
+                "wash_2",
+                "wash_3",
+                "wash_4",
+                "wash_5",
+                "wash_6",
+                "wash_7",
+                "wash_8",
+            ):
                 self.channels[0][i] = val * self.washes_master
 
         for i, val in enumerate(self.channels[0]):
@@ -240,6 +264,24 @@ class Mixer(object):
         )
         self.dmx_mappings["wash"][1].dimming(
             self.channels[0][self.channel_names.index("wash_2")]
+        )
+        self.dmx_mappings["wash"][2].dimming(
+            self.channels[0][self.channel_names.index("wash_3")]
+        )
+        self.dmx_mappings["wash"][3].dimming(
+            self.channels[0][self.channel_names.index("wash_4")]
+        )
+        self.dmx_mappings["wash"][4].dimming(
+            self.channels[0][self.channel_names.index("wash_5")]
+        )
+        self.dmx_mappings["wash"][5].dimming(
+            self.channels[0][self.channel_names.index("wash_6")]
+        )
+        self.dmx_mappings["wash"][6].dimming(
+            self.channels[0][self.channel_names.index("wash_7")]
+        )
+        self.dmx_mappings["wash"][7].dimming(
+            self.channels[0][self.channel_names.index("wash_8")]
         )
 
         # booth
