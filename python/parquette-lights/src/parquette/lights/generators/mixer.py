@@ -387,6 +387,61 @@ class Mixer(object):
                 fixture_r.dimming(
                     int(constrain(self.channels[stutter_index][1], 0, 255))
                 )
+
+            wash_zip = zip(
+                (
+                    self.dmx_mappings["washes"][0],
+                    self.dmx_mappings["washes"][2],
+                    self.dmx_mappings["washes"][4],
+                ),
+                (
+                    self.dmx_mappings["washes"][2],
+                    self.dmx_mappings["washes"][4],
+                    self.dmx_mappings["washes"][5],
+                ),
+            )
+
+            if self.mode == "BACK":
+                wash_zip = list(reversed(wash_zip))
+
+            for i, (fixture_l, fixture_r) in enumerate(wash_zip):
+                stutter_index = int(
+                    constrain(
+                        self.stutter_period * i / 10,
+                        0,
+                        len(self.channels) - 1,
+                    )
+                )
+                fixture_l.dimming(
+                    int(
+                        constrain(
+                            self.channels[stutter_index][
+                                self.channel_names.index("wash_1")
+                            ],
+                            0,
+                            255,
+                        )
+                    )
+                )
+                fixture_r.dimming(
+                    int(
+                        constrain(
+                            self.channels[stutter_index][
+                                self.channel_names.index("wash_2")
+                            ],
+                            0,
+                            255,
+                        )
+                    )
+                )
+
+            self.dmx_mappings["wash"][6].dimming(
+                self.channels[0][self.channel_names.index("wash_7")]
+            )
+            self.dmx_mappings["wash"][7].dimming(
+                self.channels[0][self.channel_names.index("wash_8")]
+            )
+
         elif self.mode == "ZIG":
             interleaved_fixtures = [
                 val
@@ -406,6 +461,32 @@ class Mixer(object):
                     )
                 )
                 fixture.dimming(int(constrain(self.channels[stutter_index][0], 0, 255)))
+
+            # washes
+            self.dmx_mappings["wash"][0].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][1].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][2].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][3].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][4].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][5].dimming(
+                self.channels[0][self.channel_names.index("wash_1")]
+            )
+            self.dmx_mappings["wash"][6].dimming(
+                self.channels[0][self.channel_names.index("wash_7")]
+            )
+            self.dmx_mappings["wash"][7].dimming(
+                self.channels[0][self.channel_names.index("wash_8")]
+            )
 
     def updateDMX(self) -> None:
         self.dmx.submit()
