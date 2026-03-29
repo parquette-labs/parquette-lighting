@@ -103,7 +103,6 @@ class OSCParam(object):
 
     @classmethod
     def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:
-        print(field, value)
         for obj in objs:
             # TODO I assume this is hacky and can be nicer
             try:
