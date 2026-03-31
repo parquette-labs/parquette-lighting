@@ -7464,6 +7464,7 @@
               "Waves": "Waves",
               "FFT Only": "FFT Only",
               "Disco": "Disco",
+              "Class": "Class",
               "Static": "Static",
               "Off": "Off"
             }
@@ -7656,6 +7657,7 @@
             "values": {
               "Waves": "Waves",
               "Disco": "Disco",
+              "Class": "Class",
               "Static": "Static",
               "Off": "Off"
             }
@@ -7704,6 +7706,7 @@
             "values": {
               "Waves": "Waves",
               "Static": "Static",
+              "Class": "Class",
               "Off": "Off"
             }
           },
@@ -8066,6 +8069,7 @@
               "Teal Prisim": "Teal Prisim",
               "Orange": "Orange",
               "Orange Prisim": "Orange Prisim",
+              "Class": "Class",
               "Off": "Off"
             }
           },
@@ -8121,7 +8125,8 @@
               "Plants": "Plants",
               "Install Above Booth": "Install Above Booth",
               "Live": "Live",
-              "Linear": "Linear"
+              "Linear": "Linear",
+              "Class": "Class"
             }
           },
           {
@@ -8436,6 +8441,7 @@
               "BPM Slider": "BPM Slider",
               "FFT Mono": "FFT Mono",
               "Disco": "Disco",
+              "Class": "Class",
               "Static": "Static",
               "Off": "Off"
             }
@@ -8621,6 +8627,7 @@
               "Teal": "Teal",
               "White": "White",
               "Static": "Static",
+              "Class": "Class",
               "Off": "Off"
             }
           },
@@ -9226,6 +9233,54 @@
             "bypass": true,
             "onCreate": "",
             "onValue": ""
+          },
+          {
+            "type": "button",
+            "top": 760,
+            "left": 250,
+            "lock": false,
+            "id": "class",
+            "visible": true,
+            "interaction": true,
+            "comments": "",
+            "width": 120,
+            "height": "auto",
+            "expand": false,
+            "colorText": "auto",
+            "colorWidget": "auto",
+            "colorStroke": "auto",
+            "colorFill": "auto",
+            "alphaStroke": "auto",
+            "alphaFillOff": "auto",
+            "alphaFillOn": "auto",
+            "lineWidth": "auto",
+            "borderRadius": "auto",
+            "padding": "auto",
+            "html": "",
+            "css": "",
+            "colorTextOn": "auto",
+            "label": "Class",
+            "vertical": false,
+            "wrap": false,
+            "on": "Black",
+            "off": 0,
+            "mode": "tap",
+            "doubleTap": false,
+            "decoupled": false,
+            "value": "",
+            "default": "",
+            "linkId": "",
+            "address": "auto",
+            "preArgs": "",
+            "typeTags": "",
+            "decimals": 2,
+            "target": "",
+            "ignoreDefaults": false,
+            "bypass": false,
+            "onCreate": "",
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           }
         ],
         "tabs": [],

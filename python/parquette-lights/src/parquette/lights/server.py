@@ -693,8 +693,20 @@ def run(
 
         mixer.setChannelLevel("sodium", 255)
 
+    def class_lights():
+        presets.select_all("Class")
+
+        mixer.reds_master = 0.8
+        mixer.spots_master = 0.3
+        mixer.washes_master = 0.25
+        mixer.booth_master = 0
+        mixer.plants_master = 0.5
+
+        mixer.setChannelLevel("sodium", 0)
+
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
+    osc.dispatcher.map("/class", lambda addr, args: class_lights())
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
         "/impulse_punch",
