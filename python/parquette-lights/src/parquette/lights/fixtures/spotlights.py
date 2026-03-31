@@ -413,7 +413,7 @@ class YRXY200Spot(Spot):
     def reset(self, reset: bool) -> None:
         value = YRXY200Spot.YRXY200Reset.NONE
         if reset:
-            value = YRXY200Spot.YRXY200Reset.XY_AXIS
+            value = YRXY200Spot.YRXY200Reset.LAMPS
 
         self.dmx.set_channel(
             self.addr + YRXY200Spot.YRXY200Channel.RESET.value, value.value
