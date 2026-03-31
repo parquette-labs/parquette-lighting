@@ -108,3 +108,4 @@
 	* Wave generators should be able to switch shapes without rewiring in the patchbay? Or general rethink of the patchbay
 	* Can I move the mapping definitions for output mix into the front end fully?
 	* Auto load channel and generator names from the front end or scrupting to sync between front and backend
+	* It would be cool to have some smoothing or softening for hits, e.g. BPM or FFT, so it feels more organic and less sharp. In particular for example the BPM blip wash mode could be softer
