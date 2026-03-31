@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.8",
+  "version": "1.30.2",
   "type": "session",
   "content": {
     "type": "root",
@@ -155,7 +155,9 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "dropdown",
@@ -242,7 +244,9 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -647,7 +651,9 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -975,7 +981,9 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1021,7 +1029,9 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -1366,7 +1376,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "dropdown",
@@ -1453,7 +1465,9 @@
             "off": 0,
             "mode": "tap",
             "doubleTap": false,
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1499,7 +1513,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -1590,7 +1606,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "fader",
@@ -1776,7 +1794,9 @@
                 "on": 1,
                 "off": 0,
                 "mode": "tap",
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "dropdown",
@@ -1863,7 +1883,9 @@
                 "on": 1,
                 "off": 0,
                 "mode": "tap",
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "textarea",
@@ -2268,7 +2290,9 @@
                 "on": 1,
                 "off": 0,
                 "mode": "tap",
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "textarea",
@@ -2596,7 +2620,9 @@
                 "on": 1,
                 "off": 0,
                 "mode": "tap",
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "button",
@@ -2642,7 +2668,9 @@
                 "on": 1,
                 "off": 0,
                 "mode": "tap",
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "textarea",
@@ -2987,7 +3015,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "dropdown",
@@ -3074,7 +3104,9 @@
                 "off": 0,
                 "mode": "tap",
                 "doubleTap": false,
-                "decoupled": false
+                "decoupled": false,
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "button",
@@ -3120,7 +3152,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "switch",
@@ -3212,7 +3246,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -3352,7 +3388,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               }
             ],
             "tabs": [],
@@ -3365,7 +3403,8 @@
             "ignoreTabs": false,
             "label": "FFT and DMX Setup",
             "popupLabel": "auto",
-            "popupPadding": "auto"
+            "popupPadding": "auto",
+            "click": false
           }
         ],
         "tabs": [],
@@ -3378,7 +3417,8 @@
         "ignoreTabs": false,
         "label": "FFT and DMX Setup",
         "popupLabel": "auto",
-        "popupPadding": "auto"
+        "popupPadding": "auto",
+        "click": false
       },
       {
         "type": "button",
@@ -3424,7 +3464,9 @@
         "on": 1,
         "off": 0,
         "mode": "tap",
-        "decoupled": false
+        "decoupled": false,
+        "click": false,
+        "onTouch": ""
       },
       {
         "type": "modal",
@@ -5132,7 +5174,8 @@
             }
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "click": false
       },
       {
         "type": "modal",
@@ -7159,7 +7202,8 @@
             "onValue": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "click": false
       },
       {
         "type": "modal",
@@ -7261,10 +7305,13 @@
             "on": 1,
             "off": 0,
             "mode": "momentary",
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "click": false
       },
       {
         "type": "modal",
@@ -7366,7 +7413,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -7463,7 +7512,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -7509,7 +7560,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -7555,7 +7608,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -7807,7 +7862,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -7853,7 +7910,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -7899,7 +7958,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -7945,7 +8006,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -8105,7 +8168,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -8151,7 +8216,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -8197,7 +8264,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -8243,7 +8312,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -8361,11 +8432,11 @@
             "wrap": false,
             "mode": "tap",
             "values": {
-              "Static": "Static",
               "Wave": "Wave",
               "BPM Slider": "BPM Slider",
               "FFT Mono": "FFT Mono",
               "Disco": "Disco",
+              "Static": "Static",
               "Off": "Off"
             }
           },
@@ -8413,7 +8484,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -8459,7 +8532,9 @@
             "off": 0,
             "mode": "push",
             "doubleTap": false,
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -8544,7 +8619,9 @@
               "Orange": "Orange",
               "Purple": "Purple",
               "Teal": "Teal",
-              "White": "White"
+              "White": "White",
+              "Static": "Static",
+              "Off": "Off"
             }
           },
           {
@@ -8628,7 +8705,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -8674,7 +8753,9 @@
             "off": 0,
             "mode": "push",
             "doubleTap": false,
-            "decoupled": false
+            "decoupled": false,
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "fader",
@@ -9147,7 +9228,8 @@
             "onValue": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "click": false
       },
       {
         "type": "modal",
@@ -9770,7 +9852,8 @@
             "origin": "auto"
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "click": false
       },
       {
         "type": "modal",
@@ -10023,7 +10106,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -10197,7 +10282,9 @@
                 "onValue": "",
                 "onTouch": "",
                 "stepsX": false,
-                "stepsY": false
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               }
             ],
             "tabs": []
@@ -10539,7 +10626,9 @@
                 "ignoreDefaults": false,
                 "bypass": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -10655,7 +10744,9 @@
                 "onValue": "",
                 "onTouch": "",
                 "stepsX": false,
-                "stepsY": false
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               },
               {
                 "type": "switch",
@@ -10971,7 +11062,9 @@
                     "ignoreDefaults": false,
                     "bypass": false,
                     "onCreate": "",
-                    "onValue": ""
+                    "onValue": "",
+                    "click": false,
+                    "onTouch": ""
                   },
                   {
                     "type": "fader",
@@ -11087,7 +11180,9 @@
                     "onValue": "",
                     "onTouch": "",
                     "stepsX": false,
-                    "stepsY": false
+                    "stepsY": false,
+                    "clipX": "",
+                    "clipY": ""
                   },
                   {
                     "type": "switch",
@@ -11253,7 +11348,9 @@
             "ignoreDefaults": false,
             "bypass": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           }
         ],
         "tabs": [],
@@ -11266,7 +11363,8 @@
         "ignoreTabs": false,
         "label": "Spot Lights",
         "popupLabel": "auto",
-        "popupPadding": "auto"
+        "popupPadding": "auto",
+        "click": false
       }
     ],
     "tabs": []
