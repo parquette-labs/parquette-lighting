@@ -40,7 +40,17 @@ class PresetManager(object):
         self.load()
 
     def all_categories(self) -> Set[str]:
-        all_categories = set(["reds", "plants", "booth", "washes", "spots_light"])
+        all_categories = set(
+            [
+                "reds",
+                "plants",
+                "booth",
+                "washes",
+                "spots_light",
+                "spots_position",
+                "washes_color",
+            ]
+        )
 
         for key in self.current_presets:
             all_categories.add(key)
