@@ -52,6 +52,10 @@ class Spot(LightFixture):
             self.x(x & 0xFF)
             self.y_fine(y & 0xFF)
 
+    def xy_fine(self, x: DMXValue, y: DMXValue) -> None:
+        self.x_fine(x)
+        self.y_fine(y)
+
     def get_x(self) -> DMXValue:
         return self._x
 
