@@ -686,7 +686,7 @@ def run(
         presets.house_lights()
 
         mixer.reds_master = 1
-        mixer.spots_master = 1
+        mixer.spots_master = 0
         mixer.washes_master = 1
         mixer.booth_master = 1
         mixer.plants_master = 1
