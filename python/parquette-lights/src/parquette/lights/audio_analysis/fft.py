@@ -209,9 +209,7 @@ class FFTManager(object):
                 continue
 
             fft_data = self.forward()
-
-            if counter % 200 == 0:
-                self.beat_calc()
+            self.beat_calc()
 
             if fft_data is None:
                 time.sleep(0.1)
