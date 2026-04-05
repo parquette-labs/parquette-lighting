@@ -65,7 +65,7 @@
 
 ## Notes/Ideas/TODOs
 * Some kind of visualizer to test in realtime without lights
-* One send FFT visualization when needed, wasting compute
+* One send FFT visualization when needed, wasting compute -> fixed but needs timeout
 * Presets, automations and controls
 	* Interpolate between presets when you switch over
 	* Slider smoothing
@@ -80,7 +80,6 @@
 	* FWD/BACK memory slice needs the memory slices to be log spaced or similar, e.g. more slices at the short time scale and fewer slices at the long timescale
 	* Bug with adjusting the period of osciallators causing jump
 * Bugs
-	* Preset synth patch load is broken
 	* Preset overwritting may have bugs
 	* Improve threading issues, can we run faster
 	* Timing / race condition with the threading causing punch issues and latency issues
