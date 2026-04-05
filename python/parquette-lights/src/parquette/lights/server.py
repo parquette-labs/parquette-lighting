@@ -45,6 +45,12 @@ from .preset_manager import PresetManager
     type=str,
     help="file to store and load presets from",
 )
+@click.option(
+    "--beat-window",
+    default=10.0,
+    type=float,
+    help="beat tracking audio window length in seconds",
+)
 # pylint: disable-next=too-many-positional-arguments
 def run(
     local_ip: str,
@@ -58,6 +64,7 @@ def run(
     enable_save_clear: bool,
     entec_auto: str,
     presets_file: str,
+    beat_window: float,
 ) -> None:
     print("Setup", flush=True)
 
@@ -127,8 +134,14 @@ def run(
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
 
-    audio_capture = AudioCapture(osc)
-    fft_manager = FFTManager(osc, audio_capture)
+    audio_capture = AudioCapture(osc, beat_window_secs=beat_window)
+    fft_manager = FFTManager(
+        osc,
+        audio_capture,
+        energy_threshold=100.0,
+        confidence_threshold=0.4,
+        tempo_alpha=0.25,
+    )
 
     initialAmp: float = 200
     initialPeriod: int = 3500

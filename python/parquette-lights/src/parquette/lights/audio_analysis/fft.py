@@ -26,10 +26,22 @@ class FFTManager(object):
     downstream: List[FFTGenerator] = []
     weighting = None
 
-    def __init__(self, osc: OSCManager, audio_cap: AudioCapture) -> None:
+    def __init__(
+        self,
+        osc: OSCManager,
+        audio_cap: AudioCapture,
+        energy_threshold: float = 100.0,
+        confidence_threshold: float = 0.4,
+        tempo_alpha: float = 0.25,
+    ) -> None:
         self.osc = osc
         self.audio_cap = audio_cap
         self.n_mels = self.audio_cap.chunk // 8
+
+        self.energy_threshold = energy_threshold
+        self.confidence_threshold = confidence_threshold
+        self.tempo_alpha = tempo_alpha
+        self.bpm_confidence = 0.0
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
         self.send_fft_debug_data = False
@@ -77,27 +89,61 @@ class FFTManager(object):
         if not self.audio_ready():
             return
 
-        end_ts = self.audio_cap.window_ts[-1]
+        win = self.audio_cap.window
+        win_ts = self.audio_cap.window_ts
+        end_ts = win_ts[-1]
         window_len = (
             self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
         )
         start_ts = end_ts - window_len
 
-        full_data = np.concatenate(self.audio_cap.window)
+        full_data = np.concatenate(win)
+
+        rms = float(np.sqrt(np.mean(full_data ** 2)))
+        self.uidb["audio_rms"] = rms
+
+        if rms < self.energy_threshold:
+            self.bpm.bpm_valid = False
+            return
 
         reported_tempo, beats = beat_track(
             y=full_data,
             sr=self.audio_cap.rate,
             units="time",
             start_bpm=130,
-            tightness=800,
+            tightness=200,
         )
         self.uidb["reported_tempo"] = reported_tempo
 
-        self.bpm.bpm = reported_tempo
+        # np.diff computes pairwise differences between consecutive beat times,
+        # giving the inter-beat intervals (IBIs) in seconds.
+        ibis = np.diff(beats)
+        if len(ibis) >= 2:
+            # Coefficient of variation = std / mean.
+            # For perfectly metronomic beats all IBIs are equal → std=0 → cv=0 → confidence=1.
+            # For irregular/noisy beats IBIs vary widely → cv grows → confidence→0.
+            cv = np.std(ibis) / np.mean(ibis)
+            self.bpm_confidence = float(np.clip(1.0 - cv, 0.0, 1.0))
+        else:
+            # Not enough beats to measure regularity; treat as no confidence.
+            self.bpm_confidence = 0.0
+        self.uidb["bpm_confidence"] = self.bpm_confidence
+
+        self.bpm.bpm_valid = self.bpm_confidence >= self.confidence_threshold
+
+        if self.bpm.bpm > 0:
+            self.bpm.bpm = self.tempo_alpha * float(reported_tempo) + (1 - self.tempo_alpha) * self.bpm.bpm
+        else:
+            self.bpm.bpm = float(reported_tempo)  # cold start: take first reading directly
 
         if len(beats) > 0:
-            self.bpm.set_offset_time((start_ts + beats[0]) * 1000)
+            period_ms = 1000 * 60 / float(reported_tempo)
+            # Project each beat's absolute time (ms) into [0, period_ms) and average.
+            # Since beats are equally spaced, all phases cluster together; averaging
+            # is more robust than anchoring to any single beat.
+            beat_phases = [(start_ts + float(b)) * 1000 % period_ms for b in beats]
+            avg_phase = float(np.mean(beat_phases))
+            self.bpm.set_offset_time(avg_phase)
 
     def forward(self) -> Optional[np.ndarray]:
         if not self.audio_ready():

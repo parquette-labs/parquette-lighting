@@ -7,6 +7,7 @@ class BPMGenerator(Generator):
     offset_time: float
     manual_offset: float
     bpm_mult: float
+    bpm_valid: bool
 
     def __init__(
         self,
@@ -25,17 +26,20 @@ class BPMGenerator(Generator):
         self.duty = duty
         self.bpm_mult = 1
         self.manual_offset = 0
+        self.bpm_valid = False
 
-    def set_offset_time(self, new_offset):
+    def set_offset_time(self, new_offset: float) -> None:
         try:
             period = 1000 * 60 / (self.bpm)
             mod_old_offset = self.offset_time % period
-            mod_new_offset = self.offset_time % new_offset
+            mod_new_offset = new_offset % period
             self.offset_time = 1 / 3 * mod_new_offset + 2 / 3 * mod_old_offset
         except ZeroDivisionError:
             pass
 
     def value(self, millis: float) -> float:
+        if not self.bpm_valid:
+            return self.offset
         try:
             ellapsed: float = millis - self.offset_time - self.manual_offset
             period = 1000 * 60 / (self.bpm * self.bpm_mult)

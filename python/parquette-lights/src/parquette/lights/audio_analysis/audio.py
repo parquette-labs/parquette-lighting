@@ -22,11 +22,12 @@ class AudioCapture(object):
     window_ts: List[float] = []
 
     def __init__(
-        self, osc: OSCManager, chunk: int = 512, window_len: int = 250
+        self, osc: OSCManager, chunk: int = 512, beat_window_secs: float = 10.0
     ) -> None:
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
-        self.window_len = window_len
+        self.beat_window_secs = beat_window_secs
+        self.window_len = 250  # fallback until audio is configured and rate is known
 
         self.uidb = UIDebugFrame(osc, "/audio_debug_frame")
 
@@ -66,6 +67,7 @@ class AudioCapture(object):
             port_info = self.paudio.get_device_info_by_index(port)
 
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
+            self.window_len = int(self.beat_window_secs * self.rate / self.chunk)
 
             self.stream = self.paudio.open(
                 format=pyaudio.paInt16,
@@ -99,15 +101,15 @@ class AudioCapture(object):
                 waveData = struct.unpack("%dh" % (self.chunk), data)
                 indata = np.array(waveData).astype(float)
 
+                ts = time.time()
                 if len(self.window) < self.window_len:
-                    self.window.append(indata)
-                    self.window_ts.append(time.time())
+                    # Build new list and atomically replace the reference so readers
+                    # always see a consistent, fully-formed window.
+                    self.window = self.window + [indata]
+                    self.window_ts = self.window_ts + [ts]
                 else:
-                    self.window[0:-1] = self.window[1:]
-                    self.window[-1] = indata
-
-                    self.window_ts[0:-1] = self.window_ts[1:]
-                    self.window_ts[-1] = time.time()
+                    self.window = self.window[1:] + [indata]
+                    self.window_ts = self.window_ts[1:] + [ts]
 
             except struct.error as e:
                 print("Malformed struct", e, flush=True)
