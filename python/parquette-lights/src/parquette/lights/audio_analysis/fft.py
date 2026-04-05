@@ -32,9 +32,17 @@ class FFTManager(object):
         self.n_mels = self.audio_cap.chunk // 8
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
+        self.send_fft_debug_data = False
 
         self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
         self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
+        self.osc.dispatcher.map(
+            "/set_fft_viz",
+            lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
+        )
+
+    def enable_fft_debug_data(self, enable: bool) -> None:
+        self.send_fft_debug_data = enable
 
     def setup_fft(self) -> None:
         if self.audio_cap is None or self.audio_cap.stream is None:
@@ -52,7 +60,8 @@ class FFTManager(object):
                 d.set_subdivisions_and_memory(self.n_mels, d.memory_length)
 
             self.uidb["mels"] = self.n_mels
-            self.uidb.update_ui()
+            if self.send_fft_debug_data:
+                self.uidb.update_ui()
         except SerialException as e:
             print(e, flush=True)
             self.stop_fft()
@@ -135,14 +144,15 @@ class FFTManager(object):
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
 
-            self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
-            self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
+            if self.send_fft_debug_data:
+                self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
+                self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
 
             self.uidb["fft_max"] = max(fft_data)
             self.uidb["fft_min"] = min(fft_data)
 
             downsampled = 1
-            if not fft_data is None:
+            if self.send_fft_debug_data and fft_data is not None:
                 banded = []
                 for i in range(len(fft_data) // downsampled):
                     summation = 0
@@ -160,7 +170,7 @@ class FFTManager(object):
             )
 
             counter += 1
-            if counter % 100 == 0:
+            if counter % 100 == 0 and self.send_fft_debug_data:
                 self.uidb.update_ui()
 
             if 0.01 - compute_time > 0:
