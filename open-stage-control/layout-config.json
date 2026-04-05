@@ -95,7 +95,7 @@
         "preArgs": "",
         "target": "",
         "onCreate": "",
-        "onValue": "send('/set_fft_viz', value)",
+        "onValue": "clearInterval(window._fftVizHb); send('/set_fft_viz', value); if (value) { window._fftVizHb = setInterval(function() { send('/set_fft_viz', 1) }, 1000) }",
         "typeTags": "",
         "decimals": 2,
         "ignoreDefaults": false,

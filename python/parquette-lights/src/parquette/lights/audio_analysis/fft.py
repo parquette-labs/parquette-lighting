@@ -33,6 +33,8 @@ class FFTManager(object):
         energy_threshold: float = 100.0,
         confidence_threshold: float = 0.4,
         tempo_alpha: float = 0.25,
+        debug_timeout: int = 30,
+        rms_window_secs: float = 1.0,
     ) -> None:
         self.osc = osc
         self.audio_cap = audio_cap
@@ -41,10 +43,13 @@ class FFTManager(object):
         self.energy_threshold = energy_threshold
         self.confidence_threshold = confidence_threshold
         self.tempo_alpha = tempo_alpha
+        self.rms_window_secs = rms_window_secs
         self.bpm_confidence = 0.0
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
         self.send_fft_debug_data = False
+        self.send_fft_debug_timeout: float = 0.0
+        self.debug_timeout = debug_timeout
 
         self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
         self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
@@ -55,6 +60,7 @@ class FFTManager(object):
 
     def enable_fft_debug_data(self, enable: bool) -> None:
         self.send_fft_debug_data = enable
+        self.send_fft_debug_timeout = time.time()
 
     def setup_fft(self) -> None:
         if self.audio_cap is None or self.audio_cap.stream is None:
@@ -99,11 +105,22 @@ class FFTManager(object):
 
         full_data = np.concatenate(win)
 
-        rms = float(np.sqrt(np.mean(full_data ** 2)))
-        self.uidb["audio_rms"] = rms
+        # Compute RMS over a short recent window only, so the energy gate responds
+        # quickly to silence rather than averaging over the full beat-tracking window.
+        n_rms_chunks = max(1, int(self.rms_window_secs * self.audio_cap.rate / self.audio_cap.chunk))
+        rms_data = np.concatenate(win[-n_rms_chunks:])
+        rms = float(np.sqrt(np.mean(rms_data ** 2)))
+
+        self.uidb["audio_rms"] = "{rms:.2} {sign} {thres:.2}".format(
+            rms=rms,
+            sign="<" if rms < self.energy_threshold else ">",
+            thres=self.energy_threshold,
+        )
 
         if rms < self.energy_threshold:
             self.bpm.bpm_valid = False
+            self.uidb["reported_tempo"] = "n/a"
+            self.uidb["bpm_confidence"] = "n/a"
             return
 
         reported_tempo, beats = beat_track(
@@ -127,14 +144,23 @@ class FFTManager(object):
         else:
             # Not enough beats to measure regularity; treat as no confidence.
             self.bpm_confidence = 0.0
-        self.uidb["bpm_confidence"] = self.bpm_confidence
 
         self.bpm.bpm_valid = self.bpm_confidence >= self.confidence_threshold
+        self.uidb["bpm_confidence"] = "{bpm:.2} {sign} {thres:.2}".format(
+            bpm=self.bpm_confidence,
+            sign=">" if self.bpm.bpm_valid else "<",
+            thres=self.confidence_threshold,
+        )
 
         if self.bpm.bpm > 0:
-            self.bpm.bpm = self.tempo_alpha * float(reported_tempo) + (1 - self.tempo_alpha) * self.bpm.bpm
+            self.bpm.bpm = (
+                self.tempo_alpha * float(reported_tempo)
+                + (1 - self.tempo_alpha) * self.bpm.bpm
+            )
         else:
-            self.bpm.bpm = float(reported_tempo)  # cold start: take first reading directly
+            self.bpm.bpm = float(
+                reported_tempo
+            )  # cold start: take first reading directly
 
         if len(beats) > 0:
             period_ms = 1000 * 60 / float(reported_tempo)
@@ -189,6 +215,12 @@ class FFTManager(object):
 
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
+
+            if (
+                self.send_fft_debug_data
+                and time.time() - self.send_fft_debug_timeout > self.debug_timeout
+            ):
+                self.send_fft_debug_data = False
 
             if self.send_fft_debug_data:
                 self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())

@@ -46,10 +46,16 @@ from .preset_manager import PresetManager
     help="file to store and load presets from",
 )
 @click.option(
-    "--beat-window",
+    "--audio-window",
     default=10.0,
     type=float,
-    help="beat tracking audio window length in seconds",
+    help="audio tracking audio window length in seconds (used for BPM)",
+)
+@click.option(
+    "--rms-window",
+    default=1.0,
+    type=float,
+    help="window length in seconds used for RMS energy gating of BPM",
 )
 # pylint: disable-next=too-many-positional-arguments
 def run(
@@ -64,7 +70,8 @@ def run(
     enable_save_clear: bool,
     entec_auto: str,
     presets_file: str,
-    beat_window: float,
+    audio_window: float,
+    rms_window: float,
 ) -> None:
     print("Setup", flush=True)
 
@@ -134,13 +141,14 @@ def run(
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
 
-    audio_capture = AudioCapture(osc, beat_window_secs=beat_window)
+    audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     fft_manager = FFTManager(
         osc,
         audio_capture,
         energy_threshold=100.0,
         confidence_threshold=0.4,
         tempo_alpha=0.25,
+        rms_window_secs=rms_window,
     )
 
     initialAmp: float = 200

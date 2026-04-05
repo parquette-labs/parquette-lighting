@@ -22,11 +22,11 @@ class AudioCapture(object):
     window_ts: List[float] = []
 
     def __init__(
-        self, osc: OSCManager, chunk: int = 512, beat_window_secs: float = 10.0
+        self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 10.0
     ) -> None:
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
-        self.beat_window_secs = beat_window_secs
+        self.audio_window_secs = audio_window_secs
         self.window_len = 250  # fallback until audio is configured and rate is known
 
         self.uidb = UIDebugFrame(osc, "/audio_debug_frame")
@@ -67,7 +67,7 @@ class AudioCapture(object):
             port_info = self.paudio.get_device_info_by_index(port)
 
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
-            self.window_len = int(self.beat_window_secs * self.rate / self.chunk)
+            self.window_len = int(self.audio_window_secs * self.rate / self.chunk)
 
             self.stream = self.paudio.open(
                 format=pyaudio.paInt16,
