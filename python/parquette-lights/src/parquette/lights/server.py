@@ -53,7 +53,7 @@ from .preset_manager import PresetManager
 )
 @click.option(
     "--rms-window",
-    default=1.0,
+    default=0.5,
     type=float,
     help="window length in seconds used for RMS energy gating of BPM",
 )

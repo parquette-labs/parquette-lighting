@@ -107,9 +107,15 @@ class FFTManager(object):
 
         # Compute RMS over a short recent window only, so the energy gate responds
         # quickly to silence rather than averaging over the full beat-tracking window.
-        n_rms_chunks = max(1, int(self.rms_window_secs * self.audio_cap.rate / self.audio_cap.chunk))
+        n_rms_chunks = min(
+            len(win) - 1,
+            max(
+                1,
+                int(self.rms_window_secs * self.audio_cap.rate / self.audio_cap.chunk),
+            ),
+        )
         rms_data = np.concatenate(win[-n_rms_chunks:])
-        rms = float(np.sqrt(np.mean(rms_data ** 2)))
+        rms = float(np.sqrt(np.mean(rms_data**2)))
 
         self.uidb["audio_rms"] = "{rms:.2} {sign} {thres:.2}".format(
             rms=rms,
