@@ -28,15 +28,6 @@ class BPMGenerator(Generator):
         self.manual_offset = 0
         self.bpm_valid = False
 
-    def set_offset_time(self, new_offset: float) -> None:
-        try:
-            period = 1000 * 60 / (self.bpm)
-            mod_old_offset = self.offset_time % period
-            mod_new_offset = new_offset % period
-            self.offset_time = 1 / 3 * mod_new_offset + 2 / 3 * mod_old_offset
-        except ZeroDivisionError:
-            pass
-
     def value(self, millis: float) -> float:
         if not self.bpm_valid:
             return self.offset

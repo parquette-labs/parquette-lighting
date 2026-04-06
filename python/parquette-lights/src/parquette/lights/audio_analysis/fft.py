@@ -30,9 +30,10 @@ class FFTManager(object):
         self,
         osc: OSCManager,
         audio_cap: AudioCapture,
+        *,
         energy_threshold: float = 100.0,
         confidence_threshold: float = 0.4,
-        tempo_alpha: float = 0.25,
+        tempo_alpha: float = 0.1,
         debug_timeout: int = 30,
         rms_window_secs: float = 1.0,
     ) -> None:
@@ -45,6 +46,13 @@ class FFTManager(object):
         self.tempo_alpha = tempo_alpha
         self.rms_window_secs = rms_window_secs
         self.bpm_confidence = 0.0
+
+        self.bpm_history: List[float] = []
+        self.offset_history: List[float] = []
+        self.bpm_history_len: int = (
+            600  # 1 min at 10 samples/sec (one sample per 100ms)
+        )
+        self.bpm_viz_counter: int = 0
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
         self.send_fft_debug_data = False
@@ -103,8 +111,6 @@ class FFTManager(object):
         )
         start_ts = end_ts - window_len
 
-        full_data = np.concatenate(win)
-
         # Compute RMS over a short recent window only, so the energy gate responds
         # quickly to silence rather than averaging over the full beat-tracking window.
         n_rms_chunks = min(
@@ -130,7 +136,7 @@ class FFTManager(object):
             return
 
         reported_tempo, beats = beat_track(
-            y=full_data,
+            y=np.concatenate(win),
             sr=self.audio_cap.rate,
             units="time",
             start_bpm=130,
@@ -175,7 +181,10 @@ class FFTManager(object):
             # is more robust than anchoring to any single beat.
             beat_phases = [(start_ts + float(b)) * 1000 % period_ms for b in beats]
             avg_phase = float(np.mean(beat_phases))
-            self.bpm.set_offset_time(avg_phase)
+            self.bpm.offset_time = (
+                self.tempo_alpha * avg_phase
+                + (1 - self.tempo_alpha) * self.bpm.offset_time
+            )
 
     def forward(self) -> Optional[np.ndarray]:
         if not self.audio_ready():
@@ -250,6 +259,22 @@ class FFTManager(object):
             self.uidb["fft_avg_time"] = (
                 self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
             )
+
+            self.bpm_viz_counter += 1
+            if self.bpm_viz_counter >= 10:  # every ~100ms
+                self.bpm_viz_counter = 0
+
+                self.bpm_history.append(self.bpm.bpm)
+                if len(self.bpm_history) > self.bpm_history_len:
+                    self.bpm_history = self.bpm_history[-self.bpm_history_len :]
+
+                self.offset_history.append(self.bpm.offset_time)
+                if len(self.offset_history) > self.bpm_history_len:
+                    self.offset_history = self.offset_history[-self.bpm_history_len :]
+
+                if self.send_fft_debug_data:
+                    self.osc.send_osc("/bpm_history_viz", self.bpm_history)
+                    self.osc.send_osc("/bpm_offset_viz", self.offset_history)
 
             counter += 1
             if counter % 100 == 0 and self.send_fft_debug_data:

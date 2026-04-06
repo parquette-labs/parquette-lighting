@@ -65,7 +65,6 @@
 
 ## Notes/Ideas/TODOs
 * Some kind of visualizer to test in realtime without lights
-* One send FFT visualization when needed, wasting compute -> fixed but needs timeout
 * Presets, automations and controls
 	* Interpolate between presets when you switch over
 	* Slider smoothing
@@ -87,9 +86,7 @@
 * Light perception
 	* Overall and per light brightness perception map
 * BPM detection
-	* BPM confidence, auto disables BPM driven effects
-	* Show BPM and BPM confidence
-	* Improve BPM smoother
+	* BPM phase calc is still very dubious
 	* Way to connect BPM to the other effects
 * FFT 
 	* Time averaging of FFT to substract and do bg removal on the FFT
