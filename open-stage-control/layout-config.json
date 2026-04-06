@@ -318,7 +318,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 2000
+              "max": 1
             },
             "logScale": true,
             "sensitivity": 1,
@@ -461,8 +461,8 @@
                   "max": 22000
                 },
                 "rangeY": {
-                  "min": 1000000,
-                  "max": 100000000
+                  "min": 0,
+                  "max": 1
                 },
                 "logScaleX": true,
                 "logScaleY": false,
@@ -870,7 +870,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 2000
+              "max": 1
             },
             "logScale": true,
             "sensitivity": 1,
@@ -1093,7 +1093,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 8
+              "max": 255
             },
             "logScale": true,
             "sensitivity": 1,
@@ -1150,7 +1150,7 @@
             "doubleTap": false,
             "range": {
               "min": 0,
-              "max": 1
+              "max": 255
             },
             "logScale": true,
             "sensitivity": 1,
@@ -1453,7 +1453,7 @@
           },
           {
             "type": "button",
-            "top": 1740,
+            "top": 1250,
             "left": 10,
             "lock": false,
             "id": "save_preset/audio",
@@ -1499,7 +1499,7 @@
           },
           {
             "type": "switch",
-            "top": 1680,
+            "top": 1190,
             "left": 10,
             "lock": false,
             "id": "preset_selector/audio",
@@ -1544,7 +1544,7 @@
           },
           {
             "type": "button",
-            "top": 1740,
+            "top": 1250,
             "left": 160,
             "lock": false,
             "id": "clear_preset/audio",
@@ -1684,7 +1684,7 @@
           },
           {
             "type": "button",
-            "top": 1740,
+            "top": 1250,
             "left": 390,
             "lock": false,
             "id": "enable_save",

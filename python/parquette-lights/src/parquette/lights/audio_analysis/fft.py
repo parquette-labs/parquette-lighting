@@ -24,6 +24,13 @@ from ..util.math import fold_tempo, fold_tempo_for_stability
 from .audio import AudioCapture
 
 
+# Empirical reference for mapping the RMS-power-normalized mel spectrum into [0, 1].
+# After dividing the mel power by current_rms**2 the bin scale is loudness-invariant
+# but still depends on mel filter shape and A-weighting; tune by watching fft_max in
+# the debug viz against typical material and adjusting until peaks sit near 1.0.
+MEL_NORM_REF = 1.0
+
+
 class FFTManager(object):
     bpm: BPMGenerator
     fft_thread: Optional[Thread] = None
@@ -271,7 +278,12 @@ class FFTManager(object):
             n_mels=self.n_mels,
         )
 
-        return fftData[:, 0] * self.weighting
+        # Loudness-invariant: mel bins are |STFT|² so they scale with rms²;
+        # divide by rms² to remove input-loudness dependence, then by an empirical
+        # reference and clip to [0, 1] for downstream consumers.
+        weighted = fftData[:, 0] * self.weighting
+        normalized = weighted / (self.current_rms ** 2 + 1e-12)
+        return np.clip(normalized / MEL_NORM_REF, 0.0, 1.0)
 
     def _run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
@@ -296,8 +308,10 @@ class FFTManager(object):
             win = list(self.audio_cap.window)
             win_ts = list(self.audio_cap.window_ts)  # C1: snapshot to avoid race
 
-            fft_data = self.forward(win[-1])
+            # _update_rms must run before forward() so forward() can divide by
+            # the current (smoothed) rms² to make the mel output loudness-invariant.
             self._update_rms(win)
+            fft_data = self.forward(win[-1])
 
             now = time.monotonic()
             if now - self._last_beat_track_time >= 0.2:
@@ -309,8 +323,6 @@ class FFTManager(object):
 
             if fft_data is None:
                 continue
-
-            fft_data = fft_data.clip(0, np.inf)
 
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
