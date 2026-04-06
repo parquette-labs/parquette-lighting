@@ -282,8 +282,8 @@ class FFTManager(object):
         # divide by rms² to remove input-loudness dependence, then by an empirical
         # reference and clip to [0, 1] for downstream consumers.
         weighted = fftData[:, 0] * self.weighting
-        normalized = weighted / (self.current_rms ** 2 + 1e-12)
-        return np.clip(normalized / MEL_NORM_REF, 0.0, 1.0)
+        normalized = weighted / (self.current_rms**2 + 1e-12)
+        return normalized / MEL_NORM_REF
 
     def _run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
