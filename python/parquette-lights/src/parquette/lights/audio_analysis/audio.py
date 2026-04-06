@@ -1,9 +1,8 @@
 from typing import Optional, List, Mapping, cast
+from collections import deque
 
 import time
-import struct
-
-from threading import Thread
+from threading import Thread, Event
 
 import pyaudio
 import numpy as np
@@ -18,8 +17,8 @@ class AudioCapture(object):
     chunk: int
     audio_thread: Optional[Thread] = None
     audio_running: bool = False
-    window: List[np.ndarray] = []
-    window_ts: List[float] = []
+    window: deque
+    window_ts: deque
 
     def __init__(
         self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 10.0
@@ -28,6 +27,9 @@ class AudioCapture(object):
         self.chunk = chunk
         self.audio_window_secs = audio_window_secs
         self.window_len = 250  # fallback until audio is configured and rate is known
+        self.window = deque()
+        self.window_ts = deque()
+        self.new_chunk_event = Event()
 
         self.uidb = UIDebugFrame(osc, "/audio_debug_frame")
 
@@ -68,6 +70,8 @@ class AudioCapture(object):
 
             self.rate = int(cast(int, port_info["defaultSampleRate"]))
             self.window_len = int(self.audio_window_secs * self.rate / self.chunk)
+            self.window = deque(self.window, maxlen=self.window_len)
+            self.window_ts = deque(self.window_ts, maxlen=self.window_len)
 
             self.stream = self.paudio.open(
                 format=pyaudio.paInt16,
@@ -98,21 +102,15 @@ class AudioCapture(object):
                     return
 
                 data = self.stream.read(self.chunk, exception_on_overflow=False)
-                waveData = struct.unpack("%dh" % (self.chunk), data)
-                indata = np.array(waveData).astype(float)
+                indata = np.frombuffer(data, dtype=np.int16).astype(np.float32)
 
                 ts = time.time()
-                if len(self.window) < self.window_len:
-                    # Build new list and atomically replace the reference so readers
-                    # always see a consistent, fully-formed window.
-                    self.window = self.window + [indata]
-                    self.window_ts = self.window_ts + [ts]
-                else:
-                    self.window = self.window[1:] + [indata]
-                    self.window_ts = self.window_ts[1:] + [ts]
+                self.window.append(indata)
+                self.window_ts.append(ts)
+                self.new_chunk_event.set()
 
-            except struct.error as e:
-                print("Malformed struct", e, flush=True)
+            except ValueError as e:
+                print("Malformed audio buffer", e, flush=True)
             except OSError as e:
                 print("OSError your stream died", e, flush=True)
 
