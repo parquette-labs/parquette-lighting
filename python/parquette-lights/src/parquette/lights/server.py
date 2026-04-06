@@ -296,19 +296,6 @@ def run(
         name="impulse",
         amp=255,
         offset=0,
-        period=150,
-        echo=1,
-        echo_decay=1,
-        duty=0.58,
-    )
-
-    impulse_eye = ImpulseGenerator(
-        name="impulse_eye",
-        amp=255,
-        offset=0,
-        period=150,
-        echo=1,
-        echo_decay=1,
         duty=100,
     )
 
@@ -328,7 +315,6 @@ def run(
         sq2,
         sq3,
         impulse,
-        impulse_eye,
         fft1,
         fft2,
         bpm,
@@ -666,35 +652,9 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/impulse_period",
-                lambda: impulse.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [impulse]),
-            ),
-            OSCParam(
-                osc,
                 "/impulse_duty",
                 lambda: impulse.duty,
                 lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
-            ),
-            OSCParam(
-                osc,
-                "/impulse_amp_eye",
-                lambda: impulse_eye.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse_eye]),
-            ),
-            OSCParam(
-                osc,
-                "/impulse_period_eye",
-                lambda: impulse_eye.period,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "period", [impulse_eye]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/impulse_duty_eye",
-                lambda: impulse_eye.duty,
-                lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse_eye]),
             ),
         ]
     )
@@ -894,11 +854,6 @@ def run(
             spot.reset(reset)
 
     osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
-
-    osc.dispatcher.map(
-        "/eye_punch",
-        lambda addr, *args: impulse_eye.punch(),
-    )
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
