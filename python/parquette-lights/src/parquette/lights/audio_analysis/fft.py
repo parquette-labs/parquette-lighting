@@ -62,7 +62,7 @@ class FFTManager(object):
         self.raw_bpm_history: List[float] = []
         self.alignment_conf_history: List[float] = []
         self.stability_conf_history: List[float] = []
-        self.raw_bpm_history_len: int = 120  # 1 min at 500ms cadence
+        self.raw_bpm_metric_history_len: int = 120
         self.bpm_viz_counter: int = 0
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
@@ -161,13 +161,15 @@ class FFTManager(object):
             tightness=200,
         )
         beats = beat_frames * hop_length / sr  # seconds, for phase calc
-        reported_tempo = fold_tempo(reported_tempo)
+        reported_tempo = fold_tempo(float(reported_tempo))
         self.uidb["reported_tempo"] = reported_tempo
 
         # Track raw (unsmoothed) tempo for stability calculation
         self.raw_bpm_history.append(float(reported_tempo))
-        if len(self.raw_bpm_history) > self.raw_bpm_history_len:
-            self.raw_bpm_history = self.raw_bpm_history[-self.raw_bpm_history_len :]
+        if len(self.raw_bpm_history) > self.raw_bpm_metric_history_len:
+            self.raw_bpm_history = self.raw_bpm_history[
+                -self.raw_bpm_metric_history_len :
+            ]
 
         # Option A: onset alignment
         # Onset envelope is computed independently of beat_track's forced grid.
@@ -175,7 +177,7 @@ class FFTManager(object):
         # Ambient music: onset envelope flat relative to beats → ratio ≈ 1.
         oenv = onset_strength(y=y, sr=sr, hop_length=hop_length)
         valid_frames = beat_frames[beat_frames < len(oenv)]
-        if len(valid_frames) > 0:
+        if len(valid_frames) > 0 and len(beat_frames) > 6:
             alignment_ratio = float(np.mean(oenv[valid_frames])) / (
                 float(np.mean(oenv)) + 1e-6
             )
@@ -185,7 +187,6 @@ class FFTManager(object):
 
         # Option C: tempo stability
         # Arrhythmic music causes beat_track to report a different tempo each call.
-        # Use last 5 raw readings (~2.5s at 500ms cadence) — unsmoothed so variance
         # reflects actual detection instability, not EMA lag.
         # Fold by both 2x and 1.5x before computing variance so the tracker
         # alternating between T and 1.5T (or 2T/3) does not penalise stability.
@@ -199,15 +200,15 @@ class FFTManager(object):
             stability_conf = 0.0  # not enough history yet
 
         self.alignment_conf_history.append(alignment_conf)
-        if len(self.alignment_conf_history) > self.raw_bpm_history_len:
+        if len(self.alignment_conf_history) > self.raw_bpm_metric_history_len:
             self.alignment_conf_history = self.alignment_conf_history[
-                -self.raw_bpm_history_len :
+                -self.raw_bpm_metric_history_len :
             ]
 
         self.stability_conf_history.append(stability_conf)
-        if len(self.stability_conf_history) > self.raw_bpm_history_len:
+        if len(self.stability_conf_history) > self.raw_bpm_metric_history_len:
             self.stability_conf_history = self.stability_conf_history[
-                -self.raw_bpm_history_len :
+                -self.raw_bpm_metric_history_len :
             ]
 
         # Both must independently pass
