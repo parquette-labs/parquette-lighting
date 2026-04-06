@@ -245,8 +245,6 @@ class FFTManager(object):
                 self.tempo_alpha * float(reported_tempo)
                 + (1 - self.tempo_alpha) * self.bpm.bpm
             )
-        else:
-            self.bpm.bpm = float(reported_tempo)
 
         if len(beats) > 0:
             period_ms = 1000 * 60 / float(reported_tempo)
