@@ -118,6 +118,24 @@ class Mixer(object):
         self.booth_master = 1
         self.plants_master = 1
 
+        # History buffers for FFT generator outputs, sampled once per
+        # runChannelMix tick. Only populated and broadcast while the fft_dmx
+        # modal heartbeats /set_fft_viz, to avoid wasting compute otherwise.
+        self.fft_history_len = 200
+        self.fft_gen_history: Dict[str, List[float]] = {
+            "fft_1": [0.0] * self.fft_history_len,
+            "fft_2": [0.0] * self.fft_history_len,
+        }
+        self._fft_viz_until: float = 0.0
+
+    def set_fft_viz(self, enable: bool) -> None:
+        # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
+        # by ~2s, matching the existing FFTManager debug-data convention.
+        self._fft_viz_until = time.time() + 2.0 if enable else 0.0
+
+    def _fft_viz_active(self) -> bool:
+        return time.time() < self._fft_viz_until
+
     def setChannelLevel(self, chan_name: str, level: float):
         self.channel_offsets[self.channel_names.index(chan_name)] = level
 
@@ -262,6 +280,17 @@ class Mixer(object):
                 "under_2",
             ):
                 self.channels[0][i] = val * self.booth_master
+
+        # Sample fft generator outputs into the rolling history buffer when
+        # the fft_dmx modal is open (heartbeat-driven). Skipped otherwise so
+        # we don't pay the per-tick cost.
+        if self._fft_viz_active():
+            for name, hist in self.fft_gen_history.items():
+                gen = next((g for g in self.generators if g.name == name), None)
+                if gen is None:
+                    continue
+                hist[1:] = hist[0:-1]
+                hist[0] = gen.value(ts)
 
     def runOutputMix(self) -> None:
         # spots
@@ -500,6 +529,14 @@ class Mixer(object):
             self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))
         ]
         self.osc.send_osc("/viz_output_history", viz_history)
+
+        if self._fft_viz_active():
+            self.osc.send_osc(
+                "/fftgen_1_history", list(self.fft_gen_history["fft_1"])
+            )
+            self.osc.send_osc(
+                "/fftgen_2_history", list(self.fft_gen_history["fft_2"])
+            )
 
     def updateDMX(self) -> None:
         self.dmx.submit()

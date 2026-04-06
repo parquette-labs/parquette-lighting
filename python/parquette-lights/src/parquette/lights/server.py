@@ -854,6 +854,9 @@ def run(
 
         mixer.setChannelLevel("sodium", 0)
 
+    osc.dispatcher.map(
+        "/set_fft_viz", lambda addr, *args: mixer.set_fft_viz(bool(args[0]))
+    )
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
     osc.dispatcher.map("/class", lambda addr, args: class_lights())
