@@ -12,10 +12,12 @@ from librosa import (
 )  # pylint: disable=no-name-in-module
 from librosa.feature import melspectrogram  # pylint: disable=no-name-in-module
 from librosa.beat import beat_track
+from librosa.onset import onset_strength
 import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
 from ..osc import OSCManager, UIDebugFrame
+from ..util.math import fold_tempo
 from .audio import AudioCapture
 
 
@@ -56,6 +58,11 @@ class FFTManager(object):
         self.bpm_history_len: int = (
             600  # 1 min at 10 samples/sec (one sample per 100ms)
         )
+        # Raw (unsmoothed) histories updated at 500ms cadence (beat_track rate)
+        self.raw_bpm_history: List[float] = []
+        self.alignment_conf_history: List[float] = []
+        self.stability_conf_history: List[float] = []
+        self.raw_bpm_history_len: int = 120  # 1 min at 500ms cadence
         self.bpm_viz_counter: int = 0
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
@@ -123,14 +130,16 @@ class FFTManager(object):
             thres=self.energy_threshold,
         )
 
-        if self.current_rms < self.energy_threshold:
+        if self.current_rms >= self.energy_threshold:
+            self.bpm.rms_valid = True
+        else:
             self.bpm.rms_valid = False
             self.bpm_confidence = 0.0
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_confidence"] = "n/a"
 
     def _run_beat_track(self, win: List[np.ndarray]) -> None:
-        if self.bpm.rms_valid:
+        if not self.bpm.rms_valid:
             return
 
         win_ts = self.audio_cap.window_ts
@@ -140,25 +149,69 @@ class FFTManager(object):
         )
         start_ts = end_ts - window_len
 
-        reported_tempo, beats = beat_track(
-            y=np.concatenate(win),
-            sr=self.audio_cap.rate,
-            units="time",
+        y = np.concatenate(win)
+        sr = self.audio_cap.rate
+        hop_length = 512  # librosa default
+
+        reported_tempo, beat_frames = beat_track(
+            y=y,
+            sr=sr,
+            units="frames",
             start_bpm=130,
             tightness=200,
         )
+        beats = beat_frames * hop_length / sr  # seconds, for phase calc
         self.uidb["reported_tempo"] = reported_tempo
 
-        ibis = np.diff(beats)
-        if len(ibis) >= 2:
-            cv = np.std(ibis) / np.mean(ibis)
-            self.bpm_confidence = (
-                self.tempo_alpha * float(np.clip(1.0 - cv, 0.0, 1.0))
-                + (1 - self.tempo_alpha) * self.bpm_confidence
-            )
-        else:
-            self.bpm_confidence = 0.0
+        # Track raw (unsmoothed) tempo for stability calculation
+        self.raw_bpm_history.append(float(reported_tempo))
+        if len(self.raw_bpm_history) > self.raw_bpm_history_len:
+            self.raw_bpm_history = self.raw_bpm_history[-self.raw_bpm_history_len :]
 
+        # Option A: onset alignment
+        # Onset envelope is computed independently of beat_track's forced grid.
+        # Structured music: strong onsets at beat positions → ratio >> 1.
+        # Ambient music: onset envelope flat relative to beats → ratio ≈ 1.
+        oenv = onset_strength(y=y, sr=sr, hop_length=hop_length)
+        valid_frames = beat_frames[beat_frames < len(oenv)]
+        if len(valid_frames) > 0:
+            alignment_ratio = float(np.mean(oenv[valid_frames])) / (
+                float(np.mean(oenv)) + 1e-6
+            )
+            alignment_conf = float(np.clip((alignment_ratio - 1.0) / 3.0, 0.0, 1.0))
+        else:
+            alignment_conf = 0.0
+
+        # Option C: tempo stability
+        # Arrhythmic music causes beat_track to report a different tempo each call.
+        # Use last 5 raw readings (~2.5s at 500ms cadence) — unsmoothed so variance
+        # reflects actual detection instability, not EMA lag.
+        # Fold each reading into the same octave as the current smoothed BPM before
+        # computing variance, so 2x/0.5x detection errors don't incorrectly penalise
+        # stable music (e.g. beat_track alternating between 64 and 128 BPM).
+        reference = self.bpm.bpm if self.bpm.bpm > 0 else float(reported_tempo)
+        recent_raw = self.raw_bpm_history[-5:]
+        if len(recent_raw) >= 3:
+            folded = [fold_tempo(b, reference) for b in recent_raw]
+            tempo_cv = float(np.std(folded) / (np.mean(folded) + 1e-6))
+            stability_conf = float(np.clip(1.0 - tempo_cv * 5.0, 0.0, 1.0))
+        else:
+            stability_conf = 0.0  # not enough history yet
+
+        self.alignment_conf_history.append(alignment_conf)
+        if len(self.alignment_conf_history) > self.raw_bpm_history_len:
+            self.alignment_conf_history = self.alignment_conf_history[
+                -self.raw_bpm_history_len :
+            ]
+
+        self.stability_conf_history.append(stability_conf)
+        if len(self.stability_conf_history) > self.raw_bpm_history_len:
+            self.stability_conf_history = self.stability_conf_history[
+                -self.raw_bpm_history_len :
+            ]
+
+        # Both must independently pass
+        self.bpm_confidence = min(alignment_conf, stability_conf)
         self.bpm.bpm_valid = self.bpm_confidence >= self.confidence_threshold
         self.uidb["bpm_confidence"] = "{bpm:.2} {sign} {thres:.2}".format(
             bpm=self.bpm_confidence,
@@ -293,6 +346,13 @@ class FFTManager(object):
                     self.osc.send_osc("/rms_history_viz", self.rms_history)
                     self.osc.send_osc(
                         "/confidence_history_viz", self.confidence_history
+                    )
+                    self.osc.send_osc("/raw_bpm_history_viz", self.raw_bpm_history)
+                    self.osc.send_osc(
+                        "/alignment_conf_viz", self.alignment_conf_history
+                    )
+                    self.osc.send_osc(
+                        "/stability_conf_viz", self.stability_conf_history
                     )
 
             counter += 1

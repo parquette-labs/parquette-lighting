@@ -150,7 +150,7 @@ def run(
         osc,
         audio_capture,
         energy_threshold=100.0,
-        confidence_threshold=0.4,
+        confidence_threshold=0.75,
         tempo_alpha=0.25,
         rms_window_secs=rms_window,
     )
