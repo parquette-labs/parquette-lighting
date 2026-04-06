@@ -166,6 +166,8 @@ class FFTManager(object):
         if not self.bpm.rms_valid:
             return
 
+        compute_start_time = time.monotonic()
+
         end_ts = win_ts[-1]
         window_len = (
             self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
@@ -177,9 +179,10 @@ class FFTManager(object):
         hop_length = 512  # librosa default
 
         # Compute onset envelope once; reuse for both beat_track and alignment score
-        oenv = onset_strength(y=y, sr=sr, hop_length=hop_length)
+        oenv = onset_strength(y=y, sr=sr, aggregate=np.median)
         reported_tempo, beat_frames = beat_track(
-            onset_envelope=oenv,
+            y=y,
+            # onset_envelope=oenv,
             sr=sr,
             units="frames",
             start_bpm=130,
@@ -197,6 +200,7 @@ class FFTManager(object):
         # Structured music: strong onsets at beat positions → ratio >> 1.
         # Ambient music: onset envelope flat relative to beats → ratio ≈ 1.
         valid_frames = beat_frames[beat_frames < len(oenv)]
+        self.uidb["len_beat_frames"] = len(beat_frames)
         if len(valid_frames) > 0 and len(beat_frames) > 6:
             alignment_ratio = float(np.mean(oenv[valid_frames])) / (
                 float(np.mean(oenv)) + 1e-6
@@ -247,6 +251,12 @@ class FFTManager(object):
                 + (1 - self.tempo_alpha) * self.bpm.offset_time
             )
 
+        compute_time = time.monotonic() - compute_start_time
+
+        self.uidb["beat_avg_time"] = (
+            self.uidb["beat_avg_time"] * 0.9 + compute_time * 1000 * 0.1
+        )
+
     def forward(self, chunk: np.ndarray) -> Optional[np.ndarray]:
         if not self.audio_ready():
             return None
@@ -266,6 +276,7 @@ class FFTManager(object):
 
     def _run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
+        self.uidb["beat_avg_time"] = 0
 
         while self.fft_running:
             # Block until the audio thread delivers a new chunk (or timeout to check
@@ -290,7 +301,7 @@ class FFTManager(object):
             self._update_rms(win)
 
             now = time.monotonic()
-            if now - self._last_beat_track_time >= 0.5:
+            if now - self._last_beat_track_time >= 0.2:
                 if self._beat_future is None or self._beat_future.done():
                     self._last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
