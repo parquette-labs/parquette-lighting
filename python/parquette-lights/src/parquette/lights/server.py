@@ -266,7 +266,7 @@ def run(
         phase=476,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=150,
+        duty=0.3,
     )
 
     sq3 = WaveGenerator(
@@ -276,7 +276,7 @@ def run(
         phase=335,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=150,
+        duty=0.41,
     )
 
     wave3 = WaveGenerator(
@@ -294,7 +294,7 @@ def run(
         period=150,
         echo=1,
         echo_decay=1,
-        duty=100,
+        duty=0.58,
     )
 
     impulse_eye = ImpulseGenerator(
@@ -359,7 +359,10 @@ def run(
         ],
         "plants": [
             SignalPatchParam(
-                osc, "/signal_patchbay/plants", ["ceil_1", "ceil_2", "ceil_3", "viz"], mixer
+                osc,
+                "/signal_patchbay/plants",
+                ["ceil_1", "ceil_2", "ceil_3", "viz"],
+                mixer,
             )
         ],
         "booth": [

@@ -1,4 +1,5 @@
 import math
+import time
 from enum import Enum, auto
 
 from .generator import Generator
@@ -6,6 +7,23 @@ from ..util.math import value_map
 
 
 class WaveGenerator(Generator):
+    # period is a property so we can re-anchor self.phase whenever the period
+    # changes, keeping the current cycle position continuous instead of jumping.
+    @property
+    def period(self) -> float:
+        return self._period
+
+    @period.setter
+    def period(self, new_period: float) -> None:
+        old_period = getattr(self, "_period", None)
+        if old_period and old_period > 0 and new_period and new_period > 0:
+            millis = time.time() * 1000
+            new_offset = Generator.reanchor_offset(
+                millis, old_period, new_period, -self.phase
+            )
+            self.phase = -new_offset
+        self._period = new_period
+
     class Shape(Enum):
         TRIANGLE = auto()
         SQUARE = auto()
@@ -50,7 +68,7 @@ class WaveGenerator(Generator):
                 )
         elif self.shape == WaveGenerator.Shape.SQUARE:
             modtime = (millis + self.phase) % self.period
-            if ((self.duty is not None) and (modtime < self.duty)) or (
+            if ((self.duty is not None) and (modtime < self.period * self.duty)) or (
                 (self.duty is None) and (modtime < (self.period / 2))
             ):
                 return self.offset + self.amp

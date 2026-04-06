@@ -496,8 +496,9 @@ class Mixer(object):
         # Virtual viz output: forward to frontend over OSC for synth visualization,
         # not bound to any DMX fixture.
         viz_ix = self.channel_names.index("viz")
-        self.osc.send_osc("/viz_output", self.channels[0][viz_ix])
-        viz_history = [self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))]
+        viz_history = [
+            self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))
+        ]
         self.osc.send_osc("/viz_output_history", viz_history)
 
     def updateDMX(self) -> None:

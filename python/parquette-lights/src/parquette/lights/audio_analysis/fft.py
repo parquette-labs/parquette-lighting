@@ -246,15 +246,6 @@ class FFTManager(object):
                 + (1 - self.tempo_alpha) * self.bpm.bpm
             )
 
-        if len(beats) > 0:
-            period_ms = 1000 * 60 / float(reported_tempo)
-            beat_phases = [(start_ts + float(b)) * 1000 % period_ms for b in beats]
-            avg_phase = float(np.mean(beat_phases))
-            # self.bpm.offset_time = (
-            #     self.tempo_alpha * avg_phase
-            #     + (1 - self.tempo_alpha) * self.bpm.offset_time
-            # )
-
         compute_time = time.monotonic() - compute_start_time
 
         self.uidb["beat_avg_time"] = (
@@ -265,7 +256,6 @@ class FFTManager(object):
         if not self.audio_ready():
             return None
 
-        # C3: pass power spectrum (|STFT|²) — melspectrogram(S=) expects power, not complex
         stft_mag = np.abs(stft(y=chunk, n_fft=self.audio_cap.chunk, center=False))
         fftData = melspectrogram(
             y=chunk,

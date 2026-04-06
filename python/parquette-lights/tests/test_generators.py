@@ -49,7 +49,6 @@ def test_wave_sq():
         offset=0.5,
         phase=247,
         period=1000,
-        duty=500,
         shape=WaveGenerator.Shape.SQUARE,
     )
     assert wg.name == "sq1"
