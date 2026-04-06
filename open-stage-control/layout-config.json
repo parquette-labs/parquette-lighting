@@ -5117,7 +5117,8 @@
               "chan_2",
               "chan_3",
               "chan_4",
-              "chan_5"
+              "chan_5",
+              "viz"
             ],
             "exclusive": false
           },
@@ -5713,7 +5714,8 @@
             "outputs": [
               "ceil_1",
               "ceil_2",
-              "ceil_3"
+              "ceil_3",
+              "viz"
             ],
             "exclusive": false
           },
@@ -5770,7 +5772,8 @@
             ],
             "outputs": [
               "under_1",
-              "under_2"
+              "under_2",
+              "viz"
             ],
             "exclusive": false
           },
@@ -5829,7 +5832,8 @@
               "tung_spot",
               "spot_1",
               "spot_2",
-              "spot_3"
+              "spot_3",
+              "viz"
             ],
             "exclusive": false
           },
@@ -5893,9 +5897,105 @@
               "wash_5",
               "wash_6",
               "wash_7",
-              "wash_8"
+              "wash_8",
+              "viz"
             ],
             "exclusive": false
+          },
+          {
+            "type": "fader",
+            "id": "viz_output_meter",
+            "address": "/viz_output",
+            "top": 1261,
+            "left": 620,
+            "width": 60,
+            "height": 190,
+            "visible": true,
+            "interaction": false,
+            "lock": false,
+            "comments": "",
+            "expand": false,
+            "colorText": "auto",
+            "colorWidget": "auto",
+            "colorStroke": "auto",
+            "colorFill": "auto",
+            "alphaStroke": "auto",
+            "alphaFillOff": "auto",
+            "alphaFillOn": "auto",
+            "lineWidth": "auto",
+            "borderRadius": "auto",
+            "padding": "auto",
+            "html": "",
+            "css": "",
+            "label": "viz",
+            "horizontal": false,
+            "alignRight": false,
+            "snap": false,
+            "spring": false,
+            "doubleTap": false,
+            "range": {
+              "min": 0,
+              "max": 255
+            },
+            "origin": "auto",
+            "value": "",
+            "default": "",
+            "linkId": "",
+            "preArgs": "",
+            "typeTags": "",
+            "decimals": 2,
+            "target": "",
+            "ignoreDefaults": false,
+            "bypass": false,
+            "onCreate": "",
+            "onValue": ""
+          },
+          {
+            "type": "plot",
+            "id": "viz_output_history",
+            "address": "/viz_output_history",
+            "top": 1261,
+            "left": 690,
+            "width": 440,
+            "height": 190,
+            "visible": true,
+            "interaction": false,
+            "lock": false,
+            "comments": "",
+            "expand": false,
+            "colorText": "auto",
+            "colorWidget": "auto",
+            "colorStroke": "auto",
+            "colorFill": "auto",
+            "alphaStroke": "auto",
+            "alphaFillOff": 0,
+            "alphaFillOn": 0,
+            "lineWidth": "auto",
+            "borderRadius": "auto",
+            "padding": "auto",
+            "html": "",
+            "css": "",
+            "value": "",
+            "default": "",
+            "linkId": "",
+            "preArgs": "",
+            "target": "",
+            "onCreate": "",
+            "onValue": "",
+            "pips": true,
+            "rangeX": {
+              "min": 0,
+              "max": 200
+            },
+            "rangeY": {
+              "min": 0,
+              "max": 255
+            },
+            "logScaleX": false,
+            "logScaleY": false,
+            "dots": false,
+            "bars": false,
+            "origin": "auto"
           },
           {
             "type": "switch",

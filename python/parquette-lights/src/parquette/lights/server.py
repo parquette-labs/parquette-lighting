@@ -353,18 +353,18 @@ def run(
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/reds",
-                ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5"],
+                ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5", "viz"],
                 mixer,
             )
         ],
         "plants": [
             SignalPatchParam(
-                osc, "/signal_patchbay/plants", ["ceil_1", "ceil_2", "ceil_3"], mixer
+                osc, "/signal_patchbay/plants", ["ceil_1", "ceil_2", "ceil_3", "viz"], mixer
             )
         ],
         "booth": [
             SignalPatchParam(
-                osc, "/signal_patchbay/booth", ["under_1", "under_2"], mixer
+                osc, "/signal_patchbay/booth", ["under_1", "under_2", "viz"], mixer
             )
         ],
         "strobes": [],
@@ -479,6 +479,7 @@ def run(
                     "wash_6",
                     "wash_7",
                     "wash_8",
+                    "viz",
                 ],
                 mixer,
             ),
@@ -487,7 +488,7 @@ def run(
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/spots_lights",
-                ["tung_spot", "spot_1", "spot_2"],
+                ["tung_spot", "spot_1", "spot_2", "viz"],
                 mixer,
             )
         ],
