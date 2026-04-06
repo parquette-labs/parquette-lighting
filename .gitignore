@@ -4,3 +4,4 @@
 dist
 .python-version
 open-stage-control/server.config
+.claude
