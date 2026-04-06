@@ -127,6 +127,7 @@ class Mixer(object):
             "fft_2": [0.0] * self.fft_history_len,
         }
         self._fft_viz_until: float = 0.0
+        self._viz_output_until: float = 0.0
 
     def set_fft_viz(self, enable: bool) -> None:
         # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
@@ -135,6 +136,14 @@ class Mixer(object):
 
     def _fft_viz_active(self) -> bool:
         return time.time() < self._fft_viz_until
+
+    def set_viz_output(self, enable: bool) -> None:
+        # Heartbeat-driven gate for /viz_output_history broadcasts so we only
+        # pay the per-tick cost while the synth controls modal is open.
+        self._viz_output_until = time.time() + 2.0 if enable else 0.0
+
+    def _viz_output_active(self) -> bool:
+        return time.time() < self._viz_output_until
 
     def setChannelLevel(self, chan_name: str, level: float):
         self.channel_offsets[self.channel_names.index(chan_name)] = level
@@ -524,11 +533,12 @@ class Mixer(object):
 
         # Virtual viz output: forward to frontend over OSC for synth visualization,
         # not bound to any DMX fixture.
-        viz_ix = self.channel_names.index("viz")
-        viz_history = [
-            self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))
-        ]
-        self.osc.send_osc("/viz_output_history", viz_history)
+        if self._viz_output_active():
+            viz_ix = self.channel_names.index("viz")
+            viz_history = [
+                self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))
+            ]
+            self.osc.send_osc("/viz_output_history", viz_history)
 
         if self._fft_viz_active():
             self.osc.send_osc(

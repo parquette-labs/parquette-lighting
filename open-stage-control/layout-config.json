@@ -4587,7 +4587,7 @@
         "ignoreDefaults": false,
         "bypass": true,
         "onCreate": "",
-        "onValue": "",
+        "onValue": "clearInterval(window._vizOutputHb); send('/set_viz_output', value); if (value) { window._vizOutputHb = setInterval(function() { send('/set_viz_output', 1) }, 1000) }",
         "popupWidth": "100%",
         "popupHeight": "100%",
         "popupLeft": "auto",
