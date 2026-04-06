@@ -1,35 +1,51 @@
 import threading
 import time
-from typing import cast, List, Optional
+from typing import cast, List, Optional, Tuple
 
 from enum import Enum
 
 
 from ..util.math import constrain, value_map
+from ..util.aiming import (
+    AimingConfig,
+    pantilt_to_xyz,
+    xyz_to_pantilt,
+)
 from .basics import LightFixture
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
 
 
 class Spot(LightFixture):
-    x_channel: DMXControlChannel
-    y_channel: DMXControlChannel
-    x_fine_channel: DMXControlChannel
-    y_fine_channel: DMXControlChannel
-    xy_speed_channel: DMXControlChannel
+    pan_channel: DMXControlChannel
+    tilt_channel: DMXControlChannel
+    pan_fine_channel: DMXControlChannel
+    tilt_fine_channel: DMXControlChannel
+    movement_speed_channel: DMXControlChannel
     dimming_channel: DMXControlChannel
     strobe_channel: DMXControlChannel
     color_channel: DMXControlChannel
     pattern_channel: DMXControlChannel
     prisim_channel: DMXControlChannel
 
+    # Subclasses must override these to enable aim_at / get_aim. Pan and
+    # tilt are expressed in physical degrees of yoke travel; *_center is the
+    # angle at which the beam points along the fixture's forward axis (+Z
+    # in the default aiming convention -- see util/aiming.py).
+    pan_range_deg: Optional[Tuple[float, float]] = None
+    tilt_range_deg: Optional[Tuple[float, float]] = None
+    pan_center_deg: Optional[float] = None
+    tilt_center_deg: Optional[float] = None
+
+    aiming_cfg: AimingConfig
+
     def __init__(self, dmx: DMXManager, *, addr: int, num_chans: int = 1):
         super().__init__(dmx, addr=addr, num_chans=num_chans)
 
-        self._x: DMXValue = 0
-        self._y: DMXValue = 0
-        self._x_fine: DMXValue = 0
-        self._y_fine: DMXValue = 0
-        self._xy_speed: DMXValue = 0
+        self._pan: DMXValue = 0
+        self._tilt: DMXValue = 0
+        self._pan_fine: DMXValue = 0
+        self._tilt_fine: DMXValue = 0
+        self._movement_speed: DMXValue = 0
         self._dimming: DMXValue = 0
 
         self.strobe_enabled: bool = False
@@ -49,45 +65,157 @@ class Spot(LightFixture):
         self.color_swap_mechanical_time: float = 0.0
         self.color_swap_fade_cancel: threading.Event = threading.Event()
 
-    def xy(self, x: int, y: int, fine=False) -> None:
+    def pantilt(self, pan: int, tilt: int, fine=False) -> None:
         if not fine:
-            self.x(x)
-            self.y(y)
+            self.pan(pan)
+            self.tilt(tilt)
         else:
-            self.x((x & 0xFF00) >> 8)
-            self.x_fine((x & 0xFF00) >> 8)
-            self.x(x & 0xFF)
-            self.y_fine(y & 0xFF)
+            self.pan((pan & 0xFF00) >> 8)
+            self.pan_fine(pan & 0xFF)
 
-    def xy_fine(self, x: DMXValue, y: DMXValue) -> None:
-        self.x_fine(x)
-        self.y_fine(y)
+            self.tilt((tilt & 0xFF00) >> 8)
+            self.tilt_fine(tilt & 0xFF)
 
-    def get_x(self) -> DMXValue:
-        return self._x
+    def pantilt_fine(self, pan: DMXValue, tilt: DMXValue) -> None:
+        self.pan_fine(pan)
+        self.tilt_fine(tilt)
 
-    def get_y(self) -> DMXValue:
-        return self._y
+    def get_pan(self) -> DMXValue:
+        return self._pan
 
-    def x(self, val: DMXValue) -> None:
-        self._x = cast(DMXValue, self.x_channel.map(val))
-        self.dmx.set_channel(self.addr + self.x_channel.offset, self._x)
+    def get_tilt(self) -> DMXValue:
+        return self._tilt
 
-    def x_fine(self, val: DMXValue) -> None:
-        self._x_fine = cast(DMXValue, self.x_fine_channel.map(val))
-        self.dmx.set_channel(self.addr + self.x_fine_channel.offset, self._x_fine)
+    def pan(self, val: DMXValue) -> None:
+        self._pan = cast(DMXValue, self.pan_channel.map(val))
+        self.dmx.set_channel(self.addr + self.pan_channel.offset, self._pan)
 
-    def y(self, val: DMXValue) -> None:
-        self._y = cast(DMXValue, self.y_channel.map(val))
-        self.dmx.set_channel(self.addr + self.y_channel.offset, self._y)
+    def pan_fine(self, val: DMXValue) -> None:
+        self._pan_fine = cast(DMXValue, self.pan_fine_channel.map(val))
+        self.dmx.set_channel(self.addr + self.pan_fine_channel.offset, self._pan_fine)
 
-    def y_fine(self, val: DMXValue) -> None:
-        self._y_fine = cast(DMXValue, self.y_fine_channel.map(val))
-        self.dmx.set_channel(self.addr + self.y_fine_channel.offset, self._y_fine)
+    def tilt(self, val: DMXValue) -> None:
+        self._tilt = cast(DMXValue, self.tilt_channel.map(val))
+        self.dmx.set_channel(self.addr + self.tilt_channel.offset, self._tilt)
 
-    def xy_speed(self, val: DMXValue) -> None:
-        self._xy_speed = cast(DMXValue, self.xy_speed_channel.map(val))
-        self.dmx.set_channel(self.addr + self.xy_speed_channel.offset, self._xy_speed)
+    def tilt_fine(self, val: DMXValue) -> None:
+        self._tilt_fine = cast(DMXValue, self.tilt_fine_channel.map(val))
+        self.dmx.set_channel(self.addr + self.tilt_fine_channel.offset, self._tilt_fine)
+
+    def movement_speed(self, val: DMXValue) -> None:
+        self._movement_speed = cast(DMXValue, self.movement_speed_channel.map(val))
+        self.dmx.set_channel(
+            self.addr + self.movement_speed_channel.offset, self._movement_speed
+        )
+
+    def _pan_combined(self) -> int:
+        return (int(self._pan) << 8) | int(self._pan_fine)
+
+    def _tilt_combined(self) -> int:
+        return (int(self._tilt) << 8) | int(self._tilt_fine)
+
+    def get_aiming_cfg(self) -> AimingConfig:
+        if self.aiming_cfg is None:
+            raise NotImplementedError("No aiming config defined")
+        return self.aiming_cfg
+
+    def get_pan_deg(self) -> float:
+        return cast(
+            float,
+            value_map(
+                self._pan_combined(),
+                0,
+                65535,
+                self.get_aiming_cfg().pan_min_deg,
+                self.get_aiming_cfg().pan_max_deg,
+            ),
+        )
+
+    def get_tilt_deg(self) -> float:
+        return cast(
+            float,
+            value_map(
+                self._tilt_combined(),
+                0,
+                65535,
+                self.get_aiming_cfg().tilt_min_deg,
+                self.get_aiming_cfg().tilt_max_deg,
+            ),
+        )
+
+    def pan_deg(self, deg: float) -> None:
+        combined = int(
+            round(
+                cast(
+                    float,
+                    value_map(
+                        deg,
+                        self.get_aiming_cfg().pan_min_deg,
+                        self.get_aiming_cfg().pan_max_deg,
+                        0,
+                        65535,
+                        True,
+                    ),
+                )
+            )
+        )
+        coarse = (combined >> 8) & 0xFF
+        fine = combined & 0xFF
+        self.pan(coarse)
+        self.pan_fine(fine)
+
+    def tilt_deg(self, deg: float) -> None:
+        combined = int(
+            round(
+                cast(
+                    float,
+                    value_map(
+                        deg,
+                        self.get_aiming_cfg().tilt_min_deg,
+                        self.get_aiming_cfg().tilt_max_deg,
+                        0,
+                        65535,
+                        True,
+                    ),
+                )
+            )
+        )
+        coarse = (combined >> 8) & 0xFF
+        fine = combined & 0xFF
+        self.tilt(coarse)
+        self.tilt_fine(fine)
+
+    def aim_at(self, x: float, y: float, z: Optional[float] = None):
+        """Aim the beam at a unit-sphere point and return chosen (pan, tilt) deg.
+
+        If ``z`` is omitted, the front-hemisphere point with
+        ``z = sqrt(max(0, 1 - x^2 - y^2))`` is used. Raises ``ValueError`` if
+        no in-range solution exists.
+        """
+        if z is None:
+            z = (max(0.0, 1.0 - x * x - y * y)) ** 0.5
+        result = xyz_to_pantilt(
+            x,
+            y,
+            z,
+            self.get_aiming_cfg(),
+            current_pan_deg=self.get_pan_deg(),
+            current_tilt_deg=self.get_tilt_deg(),
+        )
+        if result is None:
+            raise ValueError(
+                f"Direction ({x}, {y}, {z}) is unreachable for {type(self).__name__}"
+            )
+        pan, tilt = result
+        self.pan_deg(pan)
+        self.tilt_deg(tilt)
+        print(x, y, z, pan, tilt)
+
+    def get_aim(self) -> Tuple[float, float, float]:
+        """Return the current beam direction as a unit (x, y, z)."""
+        return pantilt_to_xyz(
+            self.get_pan_deg(), self.get_tilt_deg(), self.get_aiming_cfg()
+        )
 
     def dimming(self, val: DMXValue) -> None:
         # Store the un-faded mapped value so callers (e.g. the mixer that
@@ -184,22 +312,22 @@ class Spot(LightFixture):
         # ---- mechanical settle ----
         elapsed = 0.0
         while elapsed < self.color_swap_mechanical_time:
-            if cancel.is_set():
+            if cancel_event.is_set():
                 return
             time.sleep(0.01)
             elapsed += 0.01
 
-        if cancel.is_set():
+        if cancel_event.is_set():
             return
 
         # ---- fade in ----
         step_time = 0.01
         steps_in = max(1, int(fade_time / step_time))
         for i in range(steps_in):
-            if cancel.is_set():
+            if cancel_event.is_set():
                 return
             self.color_swap_fade_multiplier = (i + 1) / steps_in
-            time.sleep(step_time_in)
+            time.sleep(step_time)
 
         self.color_swap_fade_multiplier = 1.0
 
@@ -245,6 +373,18 @@ class Spot(LightFixture):
 
 class YRXY200Spot(Spot):
     # https://yuerlighting.com/product/280w-rgbw-led-moving-head-light-200w-white-21x-smd-5050-rgb-540-pan-200-tilt-for-dj-shows-weddings-church-services-events/
+
+    # Geometric aiming. The center values place the beam along the +Z
+    # forward axis at mid-pan / mid-tilt; verify against the physical
+    # fixture (see plan: bench test) and adjust if the beam is offset.
+    aiming_cfg = AimingConfig(
+        pan_min_deg=0,
+        pan_max_deg=540,
+        tilt_min_deg=0,
+        tilt_max_deg=270,
+        pan_center_deg=540 / 2,
+        tilt_center_deg=270 / 2,
+    )
 
     class YRXY200Channel(Enum):
         X_AXIS = 0
@@ -338,11 +478,11 @@ class YRXY200Spot(Spot):
         # fade-in) or too slow (dead time at zero brightness).
         self.color_swap_mechanical_time = 0.3
 
-        self.x_channel = DMXControlChannel("x_channel", 0)
-        self.y_channel = DMXControlChannel("y_channel", 2)
-        self.x_fine_channel = DMXControlChannel("x_fine_channel", 1)
-        self.y_fine_channel = DMXControlChannel("y_fine_channel", 3)
-        self.xy_speed_channel = DMXControlChannel("xy_speed_channel", 4)
+        self.pan_channel = DMXControlChannel("pan_channel", 0)
+        self.tilt_channel = DMXControlChannel("tilt_channel", 2)
+        self.pan_fine_channel = DMXControlChannel("pan_fine_channel", 1)
+        self.tilt_fine_channel = DMXControlChannel("tilt_fine_channel", 3)
+        self.movement_speed_channel = DMXControlChannel("movement_speed_channel", 4)
         self.dimming_channel = DMXControlChannel("dimming_channel", 5)
         self.strobe_channel = DMXControlChannel(
             "strobe_channel",

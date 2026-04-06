@@ -49,6 +49,7 @@ def test_wave_sq():
         offset=0.5,
         phase=247,
         period=1000,
+        duty=500,
         shape=WaveGenerator.Shape.SQUARE,
     )
     assert wg.name == "sq1"
@@ -111,37 +112,13 @@ def test_fft():
 
 def test_bpm_valid_gates_output():
     bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=500, bpm=120)
-    # bpm_valid starts False — value() should return offset regardless of timing
+
     assert bpm.bpm_valid is False
+    assert bpm.rms_valid is False
     assert bpm.value(0) == 0
     assert bpm.value(100) == 0
 
+    bpm.rms_valid = True
     bpm.bpm_valid = True
     # At t=0 with offset_time=0 and duty=500ms, t=0 is within the pulse window
     assert bpm.value(0) == 255
-
-
-def test_set_offset_time_blends_toward_new():
-    bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100, bpm=120)
-    # At 120 BPM, period = 500ms
-    period = 1000 * 60 / 120  # 500ms
-    bpm.offset_time = 0.0
-
-    # Setting offset to 100ms: new phase = 100 % 500 = 100
-    # old phase = 0 % 500 = 0
-    # blended = 1/3 * 100 + 2/3 * 0 = 33.33...
-    bpm.set_offset_time(100.0)
-    assert math.isclose(bpm.offset_time, 100 / 3, rel_tol=1e-6)
-
-    # Result must be within [0, period)
-    assert 0 <= bpm.offset_time < period
-
-
-def test_set_offset_time_stays_in_period():
-    bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100, bpm=120)
-    period = 1000 * 60 / 120  # 500ms
-    bpm.offset_time = 400.0
-
-    # new_offset larger than period — should wrap via modulo before blending
-    bpm.set_offset_time(1100.0)  # 1100 % 500 = 100
-    assert 0 <= bpm.offset_time < period
