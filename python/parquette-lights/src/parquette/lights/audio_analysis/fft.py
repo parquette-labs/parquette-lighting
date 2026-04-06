@@ -17,7 +17,7 @@ import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
 from ..osc import OSCManager, UIDebugFrame
-from ..util.math import fold_tempo
+from ..util.math import fold_tempo, fold_tempo_for_stability
 from .audio import AudioCapture
 
 
@@ -161,6 +161,7 @@ class FFTManager(object):
             tightness=200,
         )
         beats = beat_frames * hop_length / sr  # seconds, for phase calc
+        reported_tempo = fold_tempo(reported_tempo)
         self.uidb["reported_tempo"] = reported_tempo
 
         # Track raw (unsmoothed) tempo for stability calculation
@@ -186,13 +187,12 @@ class FFTManager(object):
         # Arrhythmic music causes beat_track to report a different tempo each call.
         # Use last 5 raw readings (~2.5s at 500ms cadence) — unsmoothed so variance
         # reflects actual detection instability, not EMA lag.
-        # Fold each reading into the same octave as the current smoothed BPM before
-        # computing variance, so 2x/0.5x detection errors don't incorrectly penalise
-        # stable music (e.g. beat_track alternating between 64 and 128 BPM).
-        reference = self.bpm.bpm if self.bpm.bpm > 0 else float(reported_tempo)
+        # Fold by both 2x and 1.5x before computing variance so the tracker
+        # alternating between T and 1.5T (or 2T/3) does not penalise stability.
+        reference = self.bpm.bpm if self.bpm.bpm > 0 else 100.0
         recent_raw = self.raw_bpm_history[-5:]
         if len(recent_raw) >= 3:
-            folded = [fold_tempo(b, reference) for b in recent_raw]
+            folded = [fold_tempo_for_stability(b, reference) for b in recent_raw]
             tempo_cv = float(np.std(folded) / (np.mean(folded) + 1e-6))
             stability_conf = float(np.clip(1.0 - tempo_cv * 5.0, 0.0, 1.0))
         else:

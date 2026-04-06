@@ -19,24 +19,28 @@ def fold_tempo(bpm: float, reference: float = 100.0) -> float:
 
 
 def fold_tempo_for_stability(bpm: float, reference: float) -> float:
-    """Fold bpm for stability comparison, treating 2x, 0.5x, 1.5x, and 2/3x as equivalent.
+    """Fold bpm for stability comparison, treating 2x and 1.5x multiples as equivalent.
 
-    Maps bpm to the nearest musically equivalent value relative to reference
-    in log space. The allowed equivalences cover both octave (2x/0.5x) and
-    triplet/half-time (3/2 and 2/3) relationships so that a beat tracker
-    alternating between e.g. 100 BPM and 150 BPM does not penalise stability.
+    Steps reference up and down by both 2x and 1.5x to build a candidate set,
+    then returns bpm normalised relative to whichever candidate is closest in
+    log space. A beat tracker alternating between T and 1.5T (or 2T/3) will
+    produce near-zero variance after folding.
     """
     if reference <= 0 or bpm <= 0:
         return bpm
-    candidates = [
-        reference,
-        reference * 2.0,
-        reference / 2.0,
-        reference * 1.5,
-        reference * (2.0 / 3.0),
-    ]
-    log_bpm = math.log(bpm)
-    closest = min(candidates, key=lambda c: abs(math.log(c) - log_bpm))
+
+    candidates = []
+    for factor in (2.0, 1.5, 1.33):
+        r = reference
+        while r >= bpm / 3.0:
+            candidates.append(r)
+            r /= factor
+        r = reference * factor
+        while r <= bpm * 3.0:
+            candidates.append(r)
+            r *= factor
+
+    closest = min(candidates, key=lambda c: abs(c - bpm))
     return bpm * (reference / closest)
 
 
