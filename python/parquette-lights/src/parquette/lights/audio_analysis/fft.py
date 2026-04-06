@@ -145,7 +145,7 @@ class FFTManager(object):
             sr=self.audio_cap.rate,
             units="time",
             start_bpm=130,
-            tightness=10,
+            tightness=200,
         )
         self.uidb["reported_tempo"] = reported_tempo
 
