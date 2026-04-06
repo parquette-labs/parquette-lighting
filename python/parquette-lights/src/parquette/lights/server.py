@@ -635,6 +635,12 @@ def run(
             ),
             OSCParam(
                 osc,
+                "/bpm_lpf_alpha",
+                lambda: bpm.lpf_alpha,
+                lambda _, args: OSCParam.obj_param_setter(args, "lpf_alpha", [bpm]),
+            ),
+            OSCParam(
+                osc,
                 "/bpm_amp",
                 lambda: bpm.amp,
                 lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
