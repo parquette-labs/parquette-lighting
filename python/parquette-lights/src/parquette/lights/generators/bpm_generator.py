@@ -34,8 +34,11 @@ class BPMGenerator(Generator):
         self.rms_valid = False
         self.bpm_valid = False
 
+    def current_period(self) -> float:
+        return BPMGenerator.period_for(self.bpm, self.bpm_mult)
+
     @staticmethod
-    def _period_for(bpm: float, bpm_mult: float) -> float:
+    def period_for(bpm: float, bpm_mult: float) -> float:
         return 1000 * 60 / (bpm * bpm_mult)
 
     def _reanchor(self, old_period: float, new_period: float) -> None:
@@ -59,8 +62,8 @@ class BPMGenerator(Generator):
         old_bpm = self._bpm
         if old_bpm and old_bpm > 0 and new_bpm and new_bpm > 0 and self.bpm_mult > 0:
             self._reanchor(
-                self._period_for(old_bpm, self.bpm_mult),
-                self._period_for(new_bpm, self.bpm_mult),
+                self.period_for(old_bpm, self.bpm_mult),
+                self.period_for(new_bpm, self.bpm_mult),
             )
         self._bpm = new_bpm
 

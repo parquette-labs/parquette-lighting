@@ -1,7 +1,6 @@
 # Notes/Ideas/TODOs
 
 * Top
-	* BPM phase calc
 	* Button to set the periods of the waves same as BPM
 	* Add fog machine
 

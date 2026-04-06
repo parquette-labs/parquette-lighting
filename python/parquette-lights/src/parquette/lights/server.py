@@ -570,6 +570,17 @@ def run(
             ),
         ]
     )
+
+    def snap_handler():
+        if bpm.bpm > 0 and bpm.bpm_mult > 0:
+            period = bpm.current_period()
+            OSCParam.obj_param_setter(
+                period,
+                "period",
+                [noise1, noise2, wave1, wave2, wave3],
+            )
+            osc.send_osc("/period", period)
+
     exposed_params["reds"].extend(
         [
             OSCParam(
@@ -585,7 +596,7 @@ def run(
                 "/period",
                 lambda: noise1.period,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "period", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                    args, "period", [noise1, noise2, wave1, wave2, wave3]
                 ),
             ),
             OSCParam(
@@ -607,6 +618,9 @@ def run(
                 "/bpm_mult",
                 lambda: bpm.bpm_mult,
                 lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
+            ),
+            OSCParam(
+                osc, "/snap_period_to_bpm", lambda: 0, lambda _, args: snap_handler()
             ),
             OSCParam(
                 osc,
