@@ -1,3 +1,5 @@
+import threading
+import time
 from typing import cast, List, Optional
 
 from enum import Enum
@@ -42,6 +44,11 @@ class Spot(LightFixture):
         self.prisim_enabled: bool = False
         self.prisim_rotation: DMXValue = 0
 
+        self.color_swap_fade_multiplier: float = 1.0
+        self.color_swap_fade_time: float = -1.0
+        self.color_swap_mechanical_time: float = 0.0
+        self.color_swap_fade_cancel: threading.Event = threading.Event()
+
     def xy(self, x: int, y: int, fine=False) -> None:
         if not fine:
             self.x(x)
@@ -83,8 +90,14 @@ class Spot(LightFixture):
         self.dmx.set_channel(self.addr + self.xy_speed_channel.offset, self._xy_speed)
 
     def dimming(self, val: DMXValue) -> None:
+        # Store the un-faded mapped value so callers (e.g. the mixer that
+        # writes us every 10ms) see their requested level. The fade multiplier
+        # only scales what we actually push to DMX.
         self._dimming = cast(DMXValue, self.dimming_channel.map(val))
-        self.dmx.set_channel(self.addr + self.dimming_channel.offset, self._dimming)
+        self.dmx.set_channel(
+            self.addr + self.dimming_channel.offset,
+            int(self._dimming * self.color_swap_fade_multiplier),
+        )
 
     def strobe(self, enable: bool, rate: Optional[int] = None) -> None:
         self.strobe_enabled = enable
@@ -106,16 +119,92 @@ class Spot(LightFixture):
     def colors(self) -> List[str]:
         return self.color_channel.range_names()
 
-    def color(self, index: int) -> None:
-        self.color_index = int(constrain(index, 0, len(self.colors()) - 1))
+    def color(self, index: int, override_swap_fade: bool = False) -> None:
+        clamped = int(constrain(index, 0, len(self.colors()) - 1))
 
+        if override_swap_fade or self.color_swap_fade_time < 0:
+            self._color_direct(clamped)
+            return
+
+        self._start_color_swap_fade(clamped)
+
+    def _color_direct(self, index: int) -> None:
+        self.color_index = index
         self.dmx.set_channel(
             self.addr + self.color_channel.offset,
             self.color_channel.map(range_index=self.color_index),
         )
 
-    def white(self) -> None:
-        self.color(0)
+    def _start_color_swap_fade(self, color_index: int) -> None:
+        # Cancel any in-flight fade. The old thread checks the event on its
+        # next 10ms tick and bails out, leaving color_swap_fade_multiplier wherever it
+        # happens to be — the new thread picks up from there.
+        self.color_swap_fade_cancel.set()
+        self.color_swap_fade_cancel = threading.Event()
+
+        thread = threading.Thread(
+            target=self._color_fade_sequence,
+            args=(color_index, self.color_swap_fade_cancel),
+            daemon=True,
+        )
+        thread.start()
+
+    def _color_fade_sequence(
+        self, color_index: int, cancel_event: threading.Event
+    ) -> None:
+        fade_time = self.color_swap_fade_time
+        if fade_time <= 0:
+            self._color_direct(color_index)
+            self.color_swap_fade_multiplier = 1.0
+            return
+
+        # ---- fade out ----
+        # Scale duration to current multiplier so that interrupting a near-bright
+        # in-progress fade still feels snappy instead of taking the full fade_time.
+        start_mult = self.color_swap_fade_multiplier
+        if start_mult > 0.0:
+            step_time = 0.01  # 10ms
+            steps_out = max(1, int(fade_time / step_time * start_mult))
+            for i in range(steps_out):
+                if cancel_event.is_set():
+                    return
+                self.color_swap_fade_multiplier = start_mult * (
+                    1.0 - (i + 1) / steps_out
+                )
+                time.sleep(step_time)
+
+        if cancel_event.is_set():
+            return
+
+        self.color_swap_fade_multiplier = 0.0
+
+        # ---- swap color while dark ----
+        self._color_direct(color_index)
+
+        # ---- mechanical settle ----
+        elapsed = 0.0
+        while elapsed < self.color_swap_mechanical_time:
+            if cancel.is_set():
+                return
+            time.sleep(0.01)
+            elapsed += 0.01
+
+        if cancel.is_set():
+            return
+
+        # ---- fade in ----
+        step_time = 0.01
+        steps_in = max(1, int(fade_time / step_time))
+        for i in range(steps_in):
+            if cancel.is_set():
+                return
+            self.color_swap_fade_multiplier = (i + 1) / steps_in
+            time.sleep(step_time_in)
+
+        self.color_swap_fade_multiplier = 1.0
+
+    def white(self, override_swap_fade: bool = False) -> None:
+        self.color(0, override_swap_fade=override_swap_fade)
 
     def patterns(self) -> List[str]:
         return self.pattern_channel.range_names()
@@ -243,6 +332,11 @@ class YRXY200Spot(Spot):
 
     def __init__(self, dmx: DMXManager, addr: int):
         super().__init__(dmx=dmx, addr=addr, num_chans=15)
+
+        # Conservative default for the physical color wheel settle time. Tune
+        # against the fixture if it ends up too fast (visible color swap mid
+        # fade-in) or too slow (dead time at zero brightness).
+        self.color_swap_mechanical_time = 0.3
 
         self.x_channel = DMXControlChannel("x_channel", 0)
         self.y_channel = DMXControlChannel("y_channel", 2)

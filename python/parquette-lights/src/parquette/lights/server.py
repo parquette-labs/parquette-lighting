@@ -109,6 +109,12 @@ from .preset_manager import PresetManager
     type=float,
     help="Window length in seconds used for RMS energy gating of BPM",
 )
+@click.option(
+    "--spot-color-fade",
+    default=-1.0,
+    type=float,
+    help="Seconds for moving-head color change fade out/in (negative disables)",
+)
 # pylint: disable-next=too-many-positional-arguments
 def run(
     local_ip: str,
@@ -126,6 +132,7 @@ def run(
     presets_file: str,
     audio_window: float,
     rms_window: float,
+    spot_color_fade: float,
 ) -> None:
     print("Setup", flush=True)
 
@@ -168,6 +175,9 @@ def run(
     back_spot.y(0)
 
     spotlights: List[Spot] = [front_spot, back_spot]
+
+    for spot in spotlights:
+        spot.color_fade_time = spot_color_fade
 
     washfl = RGBLight(dmx, 104)
     washfl.rgb(0, 0, 0)
