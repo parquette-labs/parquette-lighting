@@ -6,6 +6,7 @@ import time
 import click
 
 from .fixtures import RGBWLight, RGBLight, YRXY200Spot, Spot
+from .fixtures.hazers import RadianceHazer
 
 from .generators import (
     FFTGenerator,
@@ -204,6 +205,10 @@ def run(
     washceilr.rgbw(0, 0, 0, 0)
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
+
+    hazer = RadianceHazer(dmx, addr=250)
+    hazer.output = 0
+    hazer.fan = 0
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     fft_manager = FFTManager(
@@ -497,6 +502,20 @@ def run(
         ],
         "spots_position": [],
         "audio": [],
+        "hazer": [
+            OSCParam(
+                osc,
+                "/hazer_output",
+                lambda: hazer.output,
+                lambda _, args: OSCParam.obj_param_setter(args, "output", [hazer]),
+            ),
+            OSCParam(
+                osc,
+                "/hazer_fan",
+                lambda: hazer.fan,
+                lambda _, args: OSCParam.obj_param_setter(args, "fan", [hazer]),
+            ),
+        ],
         "non-saved": [],
     }
 
