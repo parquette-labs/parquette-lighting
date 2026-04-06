@@ -250,10 +250,10 @@ class FFTManager(object):
             period_ms = 1000 * 60 / float(reported_tempo)
             beat_phases = [(start_ts + float(b)) * 1000 % period_ms for b in beats]
             avg_phase = float(np.mean(beat_phases))
-            self.bpm.offset_time = (
-                self.tempo_alpha * avg_phase
-                + (1 - self.tempo_alpha) * self.bpm.offset_time
-            )
+            # self.bpm.offset_time = (
+            #     self.tempo_alpha * avg_phase
+            #     + (1 - self.tempo_alpha) * self.bpm.offset_time
+            # )
 
         compute_time = time.monotonic() - compute_start_time
 
