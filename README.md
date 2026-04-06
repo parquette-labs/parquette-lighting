@@ -25,7 +25,7 @@
 	* Connect DMX Entec Pro to mac mini via USB
 	* Connect USB audio interface (or any audio input your computer detects), connect to line out from the DJ booth. There is currently a small amazon USB audio dongle that takes headphone jack input and an XLR to headphone adapter attached
 	* Connect DMX Entec Pro via DMX cable (need a 5 to 3 pin adapter) to the dimmer pack above the washroom
-	* TODO: Notes on the artnet setup alternative are missing
+	* You can also connect your DMX to an art net node and configure it via `--art-net-ip` and `--boot-art-net`
 * Software
 	* Boot computer, current mac mini is set to auto boot when it has power
 	* Connect via screen share
@@ -38,7 +38,7 @@
 	* Open terminal
 		* `cd ~/parquette/parquette-lighting/python/parquette-lights`
 		* `poetry run server`
-		* TODO notes on auto connect for DMX are missing
+		* You may want to auto connect to your DMX with `--entec-auto "/dev/tty.usbserial-EN264168"` or similar
 * Config
 	* Go to [http://192.168.1.245:8080](http://192.168.1.245:8080) in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"

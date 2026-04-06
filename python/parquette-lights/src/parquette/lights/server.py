@@ -25,39 +25,89 @@ from .preset_manager import PresetManager
 
 
 @click.command()
-@click.option("--local-ip", default="127.0.0.1", type=str, help="IP address")
-@click.option("--local-port", default=5005, type=int, help="port")
-@click.option("--target-ip", default="127.0.0.1", type=str, help="IP address")
-@click.option("--target-port", default=5006, type=int, help="port")
 @click.option(
-    "--art-net-ip", default="192.168.88.111", type=str, help="port for artnet node"
+    "--local-ip",
+    default="127.0.0.1",
+    type=str,
+    help="The local IP address to bind to, typically you should use 0.0.0.0 to have it be accessible on the LAN, default is 127.0.0.1",
 )
-@click.option("--debug", is_flag=True, default=False)
-@click.option("--debug-osc-in", is_flag=True, default=False)
-@click.option("--debug-osc-out", is_flag=True, default=False)
-@click.option("--boot-art-net", is_flag=True, default=False)
-@click.option("--art-net-auto", is_flag=True, default=False)
-@click.option("--enable-save-clear", is_flag=True, default=False)
 @click.option(
-    "--entec-auto", default=None, type=str, help="entec port"
+    "--local-port",
+    default=5005,
+    type=int,
+    help="The local port to listen for OSC commands on, default is 5005",
+)
+@click.option(
+    "--target-ip",
+    default="127.0.0.1",
+    type=str,
+    help="IP address of the open stage control instance, default is 127.0.0.1",
+)
+@click.option(
+    "--target-port",
+    default=5006,
+    type=int,
+    help="The port the open stage control instance is listening for OSC on",
+)
+@click.option(
+    "--art-net-ip",
+    default="192.168.88.111",
+    type=str,
+    help="The IP address for artnet node / device to send to",
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    default=False,
+    help="Print debut information excluding OSC traffic monitoring",
+)
+@click.option(
+    "--debug-osc-in", is_flag=True, default=False, help="Print inbound OSC messages"
+)
+@click.option(
+    "--debug-osc-out", is_flag=True, default=False, help="Print outbound OSC messages"
+)
+@click.option(
+    "--boot-art-net",
+    is_flag=True,
+    default=False,
+    help="Automatically launch the art-net connection on boot",
+)
+@click.option(
+    "--art-net-auto",
+    is_flag=True,
+    default=False,
+    help="Enable auto persisting data to the art net at 30hz, likely not needed",
+)
+@click.option(
+    "--enable-save-clear",
+    is_flag=True,
+    default=False,
+    help="Allow saving and clearing presets on boot",
+)
+@click.option(
+    "--entec-auto",
+    default=None,
+    type=str,
+    help="Auto connect to a given entec port on boot",
 )  # /dev/tty.usbserial-EN264168
 @click.option(
     "--presets-file",
     default="params.pickle",
     type=str,
-    help="file to store and load presets from",
+    help="File to store and load presets from",
 )
 @click.option(
     "--audio-window",
     default=10.0,
     type=float,
-    help="audio tracking audio window length in seconds (used for BPM)",
+    help="Audio tracking audio window length in seconds (used for BPM)",
 )
 @click.option(
     "--rms-window",
     default=0.5,
     type=float,
-    help="window length in seconds used for RMS energy gating of BPM",
+    help="Window length in seconds used for RMS energy gating of BPM",
 )
 # pylint: disable-next=too-many-positional-arguments
 def run(
