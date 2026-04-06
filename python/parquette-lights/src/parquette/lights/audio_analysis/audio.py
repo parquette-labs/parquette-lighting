@@ -1,4 +1,4 @@
-from typing import Optional, List, Mapping, cast
+from typing import Optional, Mapping, cast
 from collections import deque
 
 import time

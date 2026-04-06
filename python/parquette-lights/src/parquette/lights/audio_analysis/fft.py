@@ -1,6 +1,6 @@
 import math
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Optional, List
 
 from threading import Thread
@@ -87,7 +87,7 @@ class FFTManager(object):
         # C6: executor created once here; stop_fft waits for in-flight future but
         # does not shut down or recreate the executor
         self._beat_executor = ThreadPoolExecutor(max_workers=1)
-        self._beat_future = None
+        self._beat_future: Optional[Future] = None
 
         self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
         self.send_fft_debug_data = False

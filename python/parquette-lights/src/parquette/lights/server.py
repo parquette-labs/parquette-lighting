@@ -157,8 +157,8 @@ def run(
     front_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
     front_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
     front_spot.scene_speed(0)
-    front_spot.x(0)
-    front_spot.y(0)
+    front_spot.pan(0)
+    front_spot.tilt(0)
 
     back_spot = YRXY200Spot(dmx, addr=200)
     back_spot.dimming(255)
@@ -171,13 +171,13 @@ def run(
     back_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
     back_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
     back_spot.scene_speed(0)
-    back_spot.x(0)
-    back_spot.y(0)
+    back_spot.pan(0)
+    back_spot.tilt(0)
 
     spotlights: List[Spot] = [front_spot, back_spot]
 
     for spot in spotlights:
-        spot.color_fade_time = spot_color_fade
+        spot.color_swap_fade_time = spot_color_fade
 
     washfl = RGBLight(dmx, 104)
     washfl.rgb(0, 0, 0)
@@ -715,25 +715,29 @@ def run(
                 )
             )
 
-    def fix_xy_wedge(fixture, args, fine=False):
+    def fix_pantilt_wedge(fixture, args, fine=False):
+        # needed because of weirdness with arduino osc
         if fine:
             if len(args) == 1:
-                fixture.xy_fine(args[0][0], args[0][1])
+                fixture.pantilt_fine(args[0][0], args[0][1])
             else:
-                fixture.xy_fine(args[0], args[1])
+                fixture.pantilt_fine(args[0], args[1])
         else:
             if len(args) == 1:
-                fixture.xy(args[0][0], args[0][1])
+                fixture.pantilt(args[0][0], args[0][1])
             else:
-                fixture.xy(args[0], args[1])
+                fixture.pantilt(args[0], args[1])
 
+    # pylint: disable=protected-access
     for i, fixture in enumerate(spotlights):
         exposed_params["spots_position"].append(
             OSCParam(
                 osc,
                 "/spot_joystick_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._x, fixture._y],
-                lambda _, *args, fixture=fixture: fix_xy_wedge(fixture, args, False),
+                lambda fixture=fixture: [fixture._pan, fixture._tilt],
+                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
+                    fixture, args, False
+                ),
             )
         )
 
@@ -741,8 +745,19 @@ def run(
             OSCParam(
                 osc,
                 "/spot_joystick_fine_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._x, fixture._y],
-                lambda _, *args, fixture=fixture: fix_xy_wedge(fixture, args, True),
+                lambda fixture=fixture: [fixture._pan, fixture._tilt],
+                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
+                    fixture, args, True
+                ),
+            )
+        )
+
+        exposed_params["spots_position"].append(
+            OSCParam(
+                osc,
+                "/spot_joystick_xy_{}".format(i + 1),
+                lambda fixture=fixture: [0, 0],
+                lambda _, *args, fixture=fixture: fixture.aim_at(args[0], args[1], 1),
             )
         )
 
