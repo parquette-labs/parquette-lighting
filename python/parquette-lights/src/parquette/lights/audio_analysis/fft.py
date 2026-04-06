@@ -179,10 +179,9 @@ class FFTManager(object):
         hop_length = 512  # librosa default
 
         # Compute onset envelope once; reuse for both beat_track and alignment score
-        oenv = onset_strength(y=y, sr=sr, aggregate=np.median)
+        oenv = onset_strength(y=y, sr=sr)
         reported_tempo, beat_frames = beat_track(
-            y=y,
-            # onset_envelope=oenv,
+            onset_envelope=oenv,
             sr=sr,
             units="frames",
             start_bpm=130,
