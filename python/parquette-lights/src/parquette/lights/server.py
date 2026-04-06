@@ -521,6 +521,14 @@ def run(
             ),
             OSCParam(
                 osc,
+                "/fft_lpf_alpha",
+                lambda: fft1.lpf_alpha,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "lpf_alpha", [fft1, fft2]
+                ),
+            ),
+            OSCParam(
+                osc,
                 "/fft_threshold_1",
                 lambda: fft1.thres,
                 lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),

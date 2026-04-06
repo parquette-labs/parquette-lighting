@@ -17,7 +17,8 @@ class FFTGenerator(Generator):
         amp: float = 1,
         offset: float = 0.5,
         subdivisions: int = 0,
-        memory_length: int = 0
+        memory_length: int = 0,
+        lpf_alpha: float = 1.0,
     ):
         super().__init__(name=name, amp=amp, offset=offset, period=0, phase=0)
         self.set_subdivisions_and_memory(subdivisions, memory_length)
@@ -25,6 +26,9 @@ class FFTGenerator(Generator):
         self.thres = 0
         self.set_bounds(0, 1)
         self.fft_bounds = [0.0, 1.0]
+        # Single-pole EMA on value() output. 1.0 = no filtering.
+        self.lpf_alpha = lpf_alpha
+        self._lpf_state = offset
 
     def set_bounds(self, low, high):
         low = constrain(low, 0, 1)
@@ -89,6 +93,13 @@ class FFTGenerator(Generator):
             fft_sum += self.memory[best_index][i]
 
         if start_ix == end_ix:
-            return 0
+            raw = 0.0
+        else:
+            raw = fft_sum * self.amp / (end_ix - start_ix) + self.offset
 
-        return fft_sum * self.amp / (end_ix - start_ix) + self.offset
+        alpha = self.lpf_alpha
+        if alpha >= 1.0:
+            self._lpf_state = raw
+        else:
+            self._lpf_state = alpha * raw + (1.0 - alpha) * self._lpf_state
+        return self._lpf_state
