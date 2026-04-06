@@ -33,6 +33,8 @@ from .preset_manager import PresetManager
     "--art-net-ip", default="192.168.88.111", type=str, help="port for artnet node"
 )
 @click.option("--debug", is_flag=True, default=False)
+@click.option("--debug-osc-in", is_flag=True, default=False)
+@click.option("--debug-osc-out", is_flag=True, default=False)
 @click.option("--boot-art-net", is_flag=True, default=False)
 @click.option("--art-net-auto", is_flag=True, default=False)
 @click.option("--enable-save-clear", is_flag=True, default=False)
@@ -65,6 +67,8 @@ def run(
     target_port: int,
     art_net_ip: str,
     debug: bool,
+    debug_osc_in: bool,
+    debug_osc_out: bool,
     boot_art_net: bool,
     art_net_auto: bool,
     enable_save_clear: bool,
@@ -78,7 +82,7 @@ def run(
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
     osc.set_local(local_ip, local_port)
-    osc.set_debug(debug)
+    osc.set_debug(debug_osc_in, debug_osc_out)
     dmx = DMXManager(osc, art_net_ip)
     dmx.use_art_net = boot_art_net
     dmx.art_net_auto_send(art_net_auto)
@@ -475,6 +479,30 @@ def run(
                 "/manual_bpm_offset",
                 lambda: bpm.manual_offset,
                 lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_energy_threshold",
+                lambda: fft_manager.energy_threshold,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "energy_threshold", [fft_manager]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_confidence_threshold",
+                lambda: fft_manager.confidence_threshold,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "confidence_threshold", [fft_manager]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_tempo_alpha",
+                lambda: fft_manager.tempo_alpha,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "tempo_alpha", [fft_manager]
+                ),
             ),
         ]
     )

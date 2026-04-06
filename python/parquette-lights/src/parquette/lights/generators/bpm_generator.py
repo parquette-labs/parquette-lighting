@@ -26,10 +26,11 @@ class BPMGenerator(Generator):
         self.duty = duty
         self.bpm_mult = 1
         self.manual_offset = 0
+        self.rms_valid = False
         self.bpm_valid = False
 
     def value(self, millis: float) -> float:
-        if not self.bpm_valid:
+        if not self.bpm_valid or not self.rms_valid:
             return self.offset
         try:
             ellapsed: float = millis - self.offset_time - self.manual_offset

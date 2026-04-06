@@ -46,9 +46,13 @@ class FFTManager(object):
         self.tempo_alpha = tempo_alpha
         self.rms_window_secs = rms_window_secs
         self.bpm_confidence = 0.0
+        self.current_rms: float = 0.0
+        self._last_beat_track_time: float = 0.0
 
         self.bpm_history: List[float] = []
         self.offset_history: List[float] = []
+        self.rms_history: List[float] = []
+        self.confidence_history: List[float] = []
         self.bpm_history_len: int = (
             600  # 1 min at 10 samples/sec (one sample per 100ms)
         )
@@ -99,20 +103,10 @@ class FFTManager(object):
             or len(self.audio_cap.window) == 0
         )
 
-    def beat_calc(self):
+    def _update_rms(self, win: List[np.ndarray]) -> None:
         if not self.audio_ready():
             return
 
-        win = self.audio_cap.window
-        win_ts = self.audio_cap.window_ts
-        end_ts = win_ts[-1]
-        window_len = (
-            self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
-        )
-        start_ts = end_ts - window_len
-
-        # Compute RMS over a short recent window only, so the energy gate responds
-        # quickly to silence rather than averaging over the full beat-tracking window.
         n_rms_chunks = min(
             len(win) - 1,
             max(
@@ -121,40 +115,48 @@ class FFTManager(object):
             ),
         )
         rms_data = np.concatenate(win[-n_rms_chunks:])
-        rms = float(np.sqrt(np.mean(rms_data**2)))
+        self.current_rms = float(np.sqrt(np.mean(rms_data**2)))
 
         self.uidb["audio_rms"] = "{rms:.2} {sign} {thres:.2}".format(
-            rms=rms,
-            sign="<" if rms < self.energy_threshold else ">",
+            rms=self.current_rms,
+            sign="<" if self.current_rms < self.energy_threshold else ">",
             thres=self.energy_threshold,
         )
 
-        if rms < self.energy_threshold:
-            self.bpm.bpm_valid = False
+        if self.current_rms < self.energy_threshold:
+            self.bpm.rms_valid = False
+            self.bpm_confidence = 0.0
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_confidence"] = "n/a"
+
+    def _run_beat_track(self, win: List[np.ndarray]) -> None:
+        if self.bpm.rms_valid:
             return
+
+        win_ts = self.audio_cap.window_ts
+        end_ts = win_ts[-1]
+        window_len = (
+            self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
+        )
+        start_ts = end_ts - window_len
 
         reported_tempo, beats = beat_track(
             y=np.concatenate(win),
             sr=self.audio_cap.rate,
             units="time",
             start_bpm=130,
-            tightness=200,
+            tightness=10,
         )
         self.uidb["reported_tempo"] = reported_tempo
 
-        # np.diff computes pairwise differences between consecutive beat times,
-        # giving the inter-beat intervals (IBIs) in seconds.
         ibis = np.diff(beats)
         if len(ibis) >= 2:
-            # Coefficient of variation = std / mean.
-            # For perfectly metronomic beats all IBIs are equal → std=0 → cv=0 → confidence=1.
-            # For irregular/noisy beats IBIs vary widely → cv grows → confidence→0.
             cv = np.std(ibis) / np.mean(ibis)
-            self.bpm_confidence = float(np.clip(1.0 - cv, 0.0, 1.0))
+            self.bpm_confidence = (
+                self.tempo_alpha * float(np.clip(1.0 - cv, 0.0, 1.0))
+                + (1 - self.tempo_alpha) * self.bpm_confidence
+            )
         else:
-            # Not enough beats to measure regularity; treat as no confidence.
             self.bpm_confidence = 0.0
 
         self.bpm.bpm_valid = self.bpm_confidence >= self.confidence_threshold
@@ -170,15 +172,10 @@ class FFTManager(object):
                 + (1 - self.tempo_alpha) * self.bpm.bpm
             )
         else:
-            self.bpm.bpm = float(
-                reported_tempo
-            )  # cold start: take first reading directly
+            self.bpm.bpm = float(reported_tempo)
 
         if len(beats) > 0:
             period_ms = 1000 * 60 / float(reported_tempo)
-            # Project each beat's absolute time (ms) into [0, period_ms) and average.
-            # Since beats are equally spaced, all phases cluster together; averaging
-            # is more robust than anchoring to any single beat.
             beat_phases = [(start_ts + float(b)) * 1000 % period_ms for b in beats]
             avg_phase = float(np.mean(beat_phases))
             self.bpm.offset_time = (
@@ -217,8 +214,16 @@ class FFTManager(object):
                 time.sleep(0.1)
                 continue
 
+            # Single atomic read of the window for consistent state across both calls
+            win = self.audio_cap.window
+
             fft_data = self.forward()
-            self.beat_calc()
+            self._update_rms(win)
+
+            now = time.time()
+            if now - self._last_beat_track_time >= 0.5:
+                self._last_beat_track_time = now
+                self._run_beat_track(win)
 
             if fft_data is None:
                 time.sleep(0.1)
@@ -272,9 +277,23 @@ class FFTManager(object):
                 if len(self.offset_history) > self.bpm_history_len:
                     self.offset_history = self.offset_history[-self.bpm_history_len :]
 
+                self.rms_history.append(self.current_rms)
+                if len(self.rms_history) > self.bpm_history_len:
+                    self.rms_history = self.rms_history[-self.bpm_history_len :]
+
+                self.confidence_history.append(self.bpm_confidence)
+                if len(self.confidence_history) > self.bpm_history_len:
+                    self.confidence_history = self.confidence_history[
+                        -self.bpm_history_len :
+                    ]
+
                 if self.send_fft_debug_data:
                     self.osc.send_osc("/bpm_history_viz", self.bpm_history)
                     self.osc.send_osc("/bpm_offset_viz", self.offset_history)
+                    self.osc.send_osc("/rms_history_viz", self.rms_history)
+                    self.osc.send_osc(
+                        "/confidence_history_viz", self.confidence_history
+                    )
 
             counter += 1
             if counter % 100 == 0 and self.send_fft_debug_data:

@@ -14,13 +14,15 @@ class OSCManager(object):
     def __init__(self) -> None:
         self.dispatcher = Dispatcher()
 
-        self.debug = False
+        self.debug_osc_in = False
+        self.debug_osc_out = False
         self._debug_handler: Optional[Handler] = None
 
-    def set_debug(self, debug: bool) -> None:
-        self.debug = debug
+    def set_debug(self, debug_osc_in: bool, debug_osc_out: bool) -> None:
+        self.debug_osc_in = debug_osc_in
+        self.debug_osc_out = debug_osc_out
 
-        if debug:
+        if debug_osc_in:
             self._debug_handler = self.dispatcher.map(
                 "*", lambda addr, *args: self.print_osc(" in", addr, *args)
             )
@@ -39,7 +41,7 @@ class OSCManager(object):
         print(label, address, osc_arguments, flush=True)
 
     def send_osc(self, address: str, args: Any) -> None:
-        if self.debug:
+        if self.debug_osc_out:
             if self.client is None:
                 print("No UDP target, not sending", flush=True)
             else:
