@@ -13,9 +13,11 @@ from librosa import (
     mel_frequencies,  # pylint: disable=no-name-in-module
     db_to_amplitude,  # pylint: disable=no-name-in-module
 )  # pylint: disable=no-name-in-module
-from librosa.feature import melspectrogram  # pylint: disable=no-name-in-module
+from librosa import resample  # pylint: disable=no-name-in-module
+from librosa.feature import melspectrogram, spectral_flatness  # pylint: disable=no-name-in-module
 from librosa.beat import beat_track
-from librosa.onset import onset_strength
+from librosa.onset import onset_strength, onset_detect
+from librosa.effects import hpss
 import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
@@ -48,7 +50,9 @@ class FFTManager(object):
         tempo_alpha: float = 0.25,
         debug_timeout: int = 30,
         rms_window_secs: float = 1.0,
+        debug: bool = False,
     ) -> None:
+        self.debug = debug
         self.osc = osc
         self.audio_cap = audio_cap
         self.n_mels = self.audio_cap.chunk // 8
@@ -78,6 +82,16 @@ class FFTManager(object):
             maxlen=self.raw_bpm_metric_history_len
         )
         self.stability_conf_history: deque = deque(
+            maxlen=self.raw_bpm_metric_history_len
+        )
+        self.harmonic_percussive_history: deque = deque(
+            maxlen=self.raw_bpm_metric_history_len
+        )
+        self.spectral_flatness_history: deque = deque(
+            maxlen=self.raw_bpm_metric_history_len
+        )
+        self.business_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
+        self.regularity_history: deque = deque(
             maxlen=self.raw_bpm_metric_history_len
         )
 
@@ -187,6 +201,11 @@ class FFTManager(object):
 
         # Compute onset envelope once; reuse for both beat_track and alignment score
         oenv = onset_strength(y=y, sr=sr)
+        # Discrete onset frames, computed once and reused by the business /
+        # regularity metrics below.
+        onset_frames = onset_detect(
+            onset_envelope=oenv, sr=sr, hop_length=hop_length, units="frames"
+        )
         reported_tempo, beat_frames = beat_track(
             onset_envelope=oenv,
             sr=sr,
@@ -246,11 +265,117 @@ class FFTManager(object):
                 + (1 - self.tempo_alpha) * self.bpm.bpm
             )
 
+        # Audio character metrics — see _compute_* helpers below.
+        hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
+        flatness = self._compute_spectral_flatness(y)
+        business = self._compute_business(onset_frames, len(oenv), sr, hop_length)
+        regularity = self._compute_regularity(onset_frames, sr, hop_length)
+
+        self.harmonic_percussive_history.append(hp_ratio)
+        self.spectral_flatness_history.append(flatness)
+        self.business_history.append(business)
+        self.regularity_history.append(regularity)
+
+        self.uidb["harmonic_percussive"] = f"{hp_ratio:.2f}"
+        self.uidb["spectral_flatness"] = f"{flatness:.3f}"  # rescaled 0..1
+        self.uidb["business"] = f"{business:.2f}/s"
+        self.uidb["regularity"] = f"{regularity:.2f}"
+
+        if self.debug:
+            print(
+                f"[audio] hp={hp_ratio:.2f}  "
+                f"flat={flatness:.3f}  "
+                f"business={business:.2f}/s  "
+                f"regularity={regularity:.2f}",
+                flush=True,
+            )
+
         compute_time = time.monotonic() - compute_start_time
 
         self.uidb["beat_avg_time"] = (
             self.uidb["beat_avg_time"] * 0.9 + compute_time * 1000 * 0.1
         )
+
+    def _compute_harmonic_percussive_ratio(self, y: np.ndarray, sr: int) -> float:
+        """
+        >1 means percussive energy dominates (drums, beats),
+        <1 means harmonic / sustained energy dominates (pads, vocals, ambient).
+
+        Optimised for tick-rate compute budget:
+          - operate on the last ~2 s only (local character, not whole window),
+          - downsample to 8 kHz before HPSS (kicks/snares/hats are well below
+            4 kHz; HPSS cost scales linearly with sample count),
+          - use a smaller median kernel and STFT than librosa defaults.
+        """
+        tail_secs = 2.0
+        tail_samples = int(tail_secs * sr)
+        y_tail = y[-tail_samples:] if len(y) > tail_samples else y
+
+        target_sr = 8000
+        if sr > target_sr:
+            y_tail = resample(y_tail, orig_sr=sr, target_sr=target_sr)
+
+        y_h, y_p = hpss(y_tail, kernel_size=17, n_fft=1024)
+        rms_h = float(np.sqrt(np.mean(y_h * y_h)) + 1e-9)
+        rms_p = float(np.sqrt(np.mean(y_p * y_p)) + 1e-9)
+        return rms_p / rms_h
+
+    def _compute_spectral_flatness(self, y: np.ndarray) -> float:
+        """
+        Wiener entropy of the spectrum, mean over the analysis window, then
+        log-rescaled into a useful 0..1 range.
+
+        Raw librosa flatness is geometric / arithmetic mean of the power
+        spectrum and for real music sits in ~1e-4..1e-2 — almost flat to the
+        eye in linear space. We map log10(flatness) from [-4, 0] -> [0, 1]
+        so the result spans the perceptually interesting range:
+
+            ~0.0  perfectly tonal (sine, sustained chord)
+            ~0.5  typical mixed music
+            ~1.0  noise / dense percussion
+
+        Cheap (one STFT + a mean), so no windowing or downsampling needed.
+        """
+        sf = spectral_flatness(y=y)
+        if sf.size == 0:
+            return 0.0
+        raw = float(np.mean(sf))
+        if raw <= 0:
+            return 0.0
+        return float(np.clip((np.log10(raw) + 4.0) / 4.0, 0.0, 1.0))
+
+    def _compute_business(
+        self,
+        onset_frames: np.ndarray,
+        oenv_len: int,
+        sr: int,
+        hop_length: int,
+    ) -> float:
+        """Onsets per second over the analysis window."""
+        window_secs = (oenv_len * hop_length) / sr
+        if window_secs <= 0:
+            return 0.0
+        return float(len(onset_frames)) / window_secs
+
+    def _compute_regularity(
+        self, onset_frames: np.ndarray, sr: int, hop_length: int
+    ) -> float:
+        """
+        1.0 = perfectly periodic onsets, 0.0 = no perceivable regularity.
+        Uses exp(-CV) of inter-onset intervals so the result is bounded in [0, 1].
+        """
+        if len(onset_frames) < 4:
+            return 0.0
+        times = onset_frames * hop_length / sr
+        iois = np.diff(times)
+        iois = iois[iois > 0]
+        if len(iois) < 3:
+            return 0.0
+        mean_ioi = float(np.mean(iois))
+        if mean_ioi <= 0:
+            return 0.0
+        cv = float(np.std(iois) / mean_ioi)
+        return float(np.exp(-cv))
 
     def forward(self, chunk: np.ndarray) -> Optional[np.ndarray]:
         if not self.audio_ready():

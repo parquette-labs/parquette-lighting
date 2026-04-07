@@ -100,7 +100,7 @@ from .preset_manager import PresetManager
 )
 @click.option(
     "--audio-window",
-    default=10.0,
+    default=5.0,
     type=float,
     help="Audio tracking audio window length in seconds (used for BPM)",
 )
@@ -218,6 +218,7 @@ def run(
         confidence_threshold=0.5,
         tempo_alpha=0.25,
         rms_window_secs=rms_window,
+        debug=debug,
     )
 
     initialAmp: float = 200

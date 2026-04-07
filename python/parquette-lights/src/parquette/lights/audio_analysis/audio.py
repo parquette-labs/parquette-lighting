@@ -21,7 +21,7 @@ class AudioCapture(object):
     window_ts: deque
 
     def __init__(
-        self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 10.0
+        self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 5
     ) -> None:
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
