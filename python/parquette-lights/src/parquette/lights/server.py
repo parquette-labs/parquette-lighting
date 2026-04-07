@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from typing import List, Dict
 
 import sys
@@ -251,7 +252,7 @@ def run(
         offset=0,
         shape=WaveGenerator.Shape.SIN,
     )
-    wave4 = WaveGenerator(
+    sin_wash = WaveGenerator(
         name="sin_wash",
         amp=initialAmp,
         period=initialPeriod,
@@ -307,7 +308,7 @@ def run(
         sin_reds,
         sin_plants,
         sin_booth,
-        wave4,
+        sin_wash,
         sq1,
         sq2,
         sq3,
@@ -438,14 +439,14 @@ def run(
             OSCParam(
                 osc,
                 "/amp_wash",
-                lambda: wave4.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [wave4]),
+                lambda: sin_wash.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_wash]),
             ),
             OSCParam(
                 osc,
                 "/period_wash",
-                lambda: wave4.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [wave4]),
+                lambda: sin_wash.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_wash]),
             ),
             OSCParam(
                 osc,
@@ -605,11 +606,12 @@ def run(
         ]
     )
 
-    def make_snap_handler(gen, period_addr, bpm_gen):
+    def make_snap_handler(gens, period_addr, bpm_gen):
         def handler():
             if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:
                 period = bpm_gen.current_period()
-                gen.period = period
+                for gen in gens:
+                    gen.period = period
                 osc.send_osc(period_addr, period)
 
         return handler
@@ -653,7 +655,7 @@ def run(
                 "/snap_sin_red_to_bpm",
                 lambda: 0,
                 lambda _, args: make_snap_handler(
-                    sin_reds, "/sin_red_period", bpm_red
+                    [sin_reds], "/sin_red_period", bpm_red
                 )(),
             ),
             OSCParam(
@@ -666,9 +668,7 @@ def run(
                 osc,
                 "/bpm_red_lpf_alpha",
                 lambda: bpm_red.lpf_alpha,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "lpf_alpha", [bpm_red]
-                ),
+                lambda _, args: OSCParam.obj_param_setter(args, "lpf_alpha", [bpm_red]),
             ),
             OSCParam(
                 osc,
@@ -706,7 +706,7 @@ def run(
                 "/snap_sin_plants_to_bpm",
                 lambda: 0,
                 lambda _, args: make_snap_handler(
-                    sin_plants, "/sin_plants_period", bpm_red
+                    [sin_plants], "/sin_plants_period", bpm_red
                 )(),
             ),
             OSCParam(
@@ -727,16 +727,9 @@ def run(
                 osc,
                 "/snap_sq_to_bpm",
                 lambda: 0,
-                lambda _, args: (
-                    bpm_red.bpm > 0
-                    and bpm_red.bpm_mult > 0
-                    and (
-                        OSCParam.obj_param_setter(
-                            bpm_red.current_period(), "period", [sq1, sq2, sq3]
-                        ),
-                        osc.send_osc("/sq_period", bpm_red.current_period()),
-                    )
-                ),
+                lambda _, args: make_snap_handler(
+                    [sq1, sq2, sq2], "/sq_period", bpm_red
+                )(),
             ),
         ]
     )
@@ -760,7 +753,7 @@ def run(
                 "/snap_sin_booth_to_bpm",
                 lambda: 0,
                 lambda _, args: make_snap_handler(
-                    sin_booth, "/sin_booth_period", bpm_red
+                    [sin_booth], "/sin_booth_period", bpm_red
                 )(),
             ),
         ]
@@ -773,7 +766,7 @@ def run(
                 "/snap_sin_wash_to_bpm",
                 lambda: 0,
                 lambda _, args: make_snap_handler(
-                    wave4, "/period_wash", bpm_wash
+                    [sin_wash], "/period_wash", bpm_wash
                 )(),
             ),
             OSCParam(
@@ -800,9 +793,7 @@ def run(
                 osc,
                 "/bpm_wash_mult",
                 lambda: bpm_wash.bpm_mult,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "bpm_mult", [bpm_wash]
-                ),
+                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm_wash]),
             ),
             OSCParam(
                 osc,
