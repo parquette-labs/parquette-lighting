@@ -23,5 +23,10 @@
 * Generator modes vs patchbay
 	* Wave generators should be able to switch shapes without rewiring in the patchbay? Or general rethink of the patchbay
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
+
+# Feedback
+* Maybe we need softer strobes
+* An alternate dumb layout URL mode
+* Color wheels
 * Make text bigger
 * randomizer
