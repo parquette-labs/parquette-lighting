@@ -110,8 +110,14 @@ class FFTManager(object):
         )
 
     def enable_fft_debug_data(self, enable: bool) -> None:
-        self.send_fft_debug_data = enable
-        self.send_fft_debug_timeout = time.time()
+        # Multi-client safe: only "on" heartbeats extend the gate. If we
+        # honoured "off", a second UI tab whose active tab isn't FFT/DMX
+        # would override the first tab's heartbeat and freeze the plots.
+        # The existing debug_timeout check in _run_fwd auto-closes the gate
+        # ~debug_timeout seconds after the last "on" message.
+        if enable:
+            self.send_fft_debug_data = True
+            self.send_fft_debug_timeout = time.time()
 
     def setup_fft(self) -> None:
         if self.audio_cap is None or self.audio_cap.stream is None:

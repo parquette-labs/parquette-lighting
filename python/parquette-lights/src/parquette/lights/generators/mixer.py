@@ -131,16 +131,21 @@ class Mixer(object):
 
     def set_fft_viz(self, enable: bool) -> None:
         # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
-        # by ~2s, matching the existing FFTManager debug-data convention.
-        self._fft_viz_until = time.time() + 2.0 if enable else 0.0
+        # by ~2s. "off" messages are ignored on purpose — multiple UI clients
+        # may be connected, and one client sending 0 (because its active tab
+        # isn't FFT/DMX) must not yank the gate closed for another client
+        # that is on the FFT/DMX tab. The gate expires naturally ~2s after
+        # the last "on" heartbeat from any client.
+        if enable:
+            self._fft_viz_until = time.time() + 2.0
 
     def _fft_viz_active(self) -> bool:
         return time.time() < self._fft_viz_until
 
     def set_viz_output(self, enable: bool) -> None:
-        # Heartbeat-driven gate for /viz_output_history broadcasts so we only
-        # pay the per-tick cost while the synth controls modal is open.
-        self._viz_output_until = time.time() + 2.0 if enable else 0.0
+        # Same multi-client semantics as set_fft_viz above.
+        if enable:
+            self._viz_output_until = time.time() + 2.0
 
     def _viz_output_active(self) -> bool:
         return time.time() < self._viz_output_until
