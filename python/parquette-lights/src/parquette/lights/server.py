@@ -211,6 +211,7 @@ def run(
     hazer.fan = 0
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
+    audio_capture.dmx = dmx
     fft_manager = FFTManager(
         osc,
         audio_capture,
@@ -222,6 +223,7 @@ def run(
         min_business=0.5,
         min_regularity=0.4,
     )
+    fft_manager.dmx = dmx
 
     initialAmp: float = 200
     initialPeriod: int = 3500
@@ -603,6 +605,17 @@ def run(
         ]
     )
 
+    exposed_params["non-saved"].extend(
+        [
+            OSCParam(
+                osc,
+                "/dmx_passthrough",
+                lambda: dmx.passthrough,
+                lambda _, args: set_dmx_passthrough(args),
+            ),
+        ]
+    )
+
     def snap_handler():
         if bpm.bpm > 0 and bpm.bpm_mult > 0:
             period = bpm.current_period()
@@ -851,7 +864,21 @@ def run(
     #     presets.restore_lights()
     #     mixer.setChannelLevel("sodium", 0)
 
+    def set_dmx_passthrough(value) -> None:
+        if isinstance(value, (list, tuple)):
+            value = value[0] if value else 0
+        enabled = bool(value)
+        dmx.passthrough = enabled
+        if not enabled:
+            # Safety: ensure capture/FFT threads are running after we leave passthrough.
+            if audio_capture.audio_thread is None or not audio_capture.audio_running:
+                audio_capture.start_audio()
+            if fft_manager.fft_thread is None or not fft_manager.fft_running:
+                fft_manager.start_fft()
+
     def house_lights():
+        if dmx.passthrough:
+            set_dmx_passthrough(False)
         presets.house_lights()
 
         mixer.reds_master = 1
@@ -863,6 +890,8 @@ def run(
         mixer.setChannelLevel("sodium", 255)
 
     def class_lights():
+        if dmx.passthrough:
+            set_dmx_passthrough(False)
         presets.select_all("Class")
 
         mixer.reds_master = 0.8
@@ -903,9 +932,12 @@ def run(
     print("Start compute loop", flush=True)
     try:
         while True:
-            mixer.runChannelMix()
-            mixer.runOutputMix()
-            mixer.updateDMX()
+            if dmx.passthrough:
+                dmx.submit_passthrough()
+            else:
+                mixer.runChannelMix()
+                mixer.runOutputMix()
+                mixer.updateDMX()
             time.sleep(0.01)
 
     except KeyboardInterrupt:
