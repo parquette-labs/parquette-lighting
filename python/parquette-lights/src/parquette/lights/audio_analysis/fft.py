@@ -35,7 +35,7 @@ MEL_NORM_REF = 1.0
 
 
 class FFTManager(object):
-    bpm: BPMGenerator
+    bpms: List[BPMGenerator] = []
     fft_thread: Optional[Thread] = None
     fft_running: bool = False
     downstream: List[FFTGenerator] = []
@@ -169,15 +169,17 @@ class FFTManager(object):
         )
 
         if self.current_rms >= self.energy_threshold:
-            self.bpm.rms_valid = True
+            for b in self.bpms:
+                b.rms_valid = True
         else:
-            self.bpm.rms_valid = False
-            self.bpm.bpm_valid = False
+            for b in self.bpms:
+                b.rms_valid = False
+                b.bpm_valid = False
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_valid"] = "n/a"
 
     def _run_beat_track(self, win: List[np.ndarray]) -> None:
-        if not self.bpm.rms_valid:
+        if not self.bpms or not self.bpms[0].rms_valid:
             return
 
         compute_start_time = time.monotonic()
@@ -213,11 +215,12 @@ class FFTManager(object):
         # Raw (unsmoothed) tempo reports — debug readout only.
         self.raw_bpm_history.append(float(reported_tempo))
 
-        if self.bpm.bpm > 0:
-            self.bpm.bpm = (
-                self.tempo_alpha * float(reported_tempo)
-                + (1 - self.tempo_alpha) * self.bpm.bpm
-            )
+        for b in self.bpms:
+            if b.bpm > 0:
+                b.bpm = (
+                    self.tempo_alpha * float(reported_tempo)
+                    + (1 - self.tempo_alpha) * b.bpm
+                )
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
@@ -236,10 +239,13 @@ class FFTManager(object):
         # generator doesn't stutter on/off. Raw plots stay raw.
         recent_business = float(np.mean(list(self.business_history)[-3:]))
         recent_regularity = float(np.mean(list(self.regularity_history)[-3:]))
-        self.bpm.bpm_valid = (
+        bpm_valid_now = (
             recent_business >= self.min_business
             and recent_regularity >= self.min_regularity
         )
+        for b in self.bpms:
+            b.bpm_valid = bpm_valid_now
+
         self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs}".format(
             b=recent_business,
             bs="✓" if recent_business >= self.min_business else "✗",
@@ -430,7 +436,7 @@ class FFTManager(object):
             if now_viz - self._last_viz_time >= 0.1:
                 self._last_viz_time = now_viz
 
-                self.bpm_history.append(self.bpm.bpm)
+                self.bpm_history.append(self.bpms[0].bpm if self.bpms else 0.0)
                 self.rms_history.append(self.current_rms)
 
                 if self.send_fft_debug_data:

@@ -300,7 +300,8 @@ def run(
     fft1 = FFTGenerator(name="fft_1", amp=1, offset=0, subdivisions=1, memory_length=20)
     fft2 = FFTGenerator(name="fft_2", amp=1, offset=0, subdivisions=1, memory_length=20)
 
-    bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
+    bpm_red = BPMGenerator(name="bpm_red", amp=255, offset=0, duty=100)
+    bpm_wash = BPMGenerator(name="bpm_wash", amp=255, offset=0, duty=100)
 
     generators = [
         sin_reds,
@@ -313,11 +314,14 @@ def run(
         impulse,
         fft1,
         fft2,
-        bpm,
+        bpm_red,
+        bpm_wash,
     ]
 
     fft_manager.downstream = [fft1, fft2]
-    fft_manager.bpm = bpm
+    # FFTManager fans audio-driven tempo updates out to all bpms; per-gen
+    # user knobs (duty/amp/mult/manual_offset/lpf_alpha) stay independent.
+    fft_manager.bpms = [bpm_red, bpm_wash]
 
     mixer = Mixer(
         osc=osc,
@@ -549,12 +553,6 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/manual_bpm_offset",
-                lambda: bpm.manual_offset,
-                lambda _, args: OSCParam.obj_param_setter(args, "manual_offset", [bpm]),
-            ),
-            OSCParam(
-                osc,
                 "/bpm_energy_threshold",
                 lambda: fft_manager.energy_threshold,
                 lambda _, args: OSCParam.obj_param_setter(
@@ -607,10 +605,10 @@ def run(
         ]
     )
 
-    def make_snap_handler(gen, period_addr):
+    def make_snap_handler(gen, period_addr, bpm_gen):
         def handler():
-            if bpm.bpm > 0 and bpm.bpm_mult > 0:
-                period = bpm.current_period()
+            if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:
+                period = bpm_gen.current_period()
                 gen.period = period
                 osc.send_osc(period_addr, period)
 
@@ -646,33 +644,45 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/bpm_mult",
-                lambda: bpm.bpm_mult,
-                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
+                "/bpm_red_mult",
+                lambda: bpm_red.bpm_mult,
+                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm_red]),
             ),
             OSCParam(
                 osc,
                 "/snap_sin_red_to_bpm",
                 lambda: 0,
-                lambda _, args: make_snap_handler(sin_reds, "/sin_red_period")(),
+                lambda _, args: make_snap_handler(
+                    sin_reds, "/sin_red_period", bpm_red
+                )(),
             ),
             OSCParam(
                 osc,
-                "/bpm_duty",
-                lambda: bpm.duty,
-                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm]),
+                "/bpm_red_duty",
+                lambda: bpm_red.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm_red]),
             ),
             OSCParam(
                 osc,
-                "/bpm_lpf_alpha",
-                lambda: bpm.lpf_alpha,
-                lambda _, args: OSCParam.obj_param_setter(args, "lpf_alpha", [bpm]),
+                "/bpm_red_lpf_alpha",
+                lambda: bpm_red.lpf_alpha,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "lpf_alpha", [bpm_red]
+                ),
             ),
             OSCParam(
                 osc,
-                "/bpm_amp",
-                lambda: bpm.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
+                "/bpm_red_amp",
+                lambda: bpm_red.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm_red]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_red_manual_offset",
+                lambda: bpm_red.manual_offset,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "manual_offset", [bpm_red]
+                ),
             ),
         ]
     )
@@ -695,7 +705,9 @@ def run(
                 osc,
                 "/snap_sin_plants_to_bpm",
                 lambda: 0,
-                lambda _, args: make_snap_handler(sin_plants, "/sin_plants_period")(),
+                lambda _, args: make_snap_handler(
+                    sin_plants, "/sin_plants_period", bpm_red
+                )(),
             ),
             OSCParam(
                 osc,
@@ -716,13 +728,13 @@ def run(
                 "/snap_sq_to_bpm",
                 lambda: 0,
                 lambda _, args: (
-                    bpm.bpm > 0
-                    and bpm.bpm_mult > 0
+                    bpm_red.bpm > 0
+                    and bpm_red.bpm_mult > 0
                     and (
                         OSCParam.obj_param_setter(
-                            bpm.current_period(), "period", [sq1, sq2, sq3]
+                            bpm_red.current_period(), "period", [sq1, sq2, sq3]
                         ),
-                        osc.send_osc("/sq_period", bpm.current_period()),
+                        osc.send_osc("/sq_period", bpm_red.current_period()),
                     )
                 ),
             ),
@@ -747,7 +759,9 @@ def run(
                 osc,
                 "/snap_sin_booth_to_bpm",
                 lambda: 0,
-                lambda _, args: make_snap_handler(sin_booth, "/sin_booth_period")(),
+                lambda _, args: make_snap_handler(
+                    sin_booth, "/sin_booth_period", bpm_red
+                )(),
             ),
         ]
     )
@@ -758,7 +772,45 @@ def run(
                 osc,
                 "/snap_sin_wash_to_bpm",
                 lambda: 0,
-                lambda _, args: make_snap_handler(wave4, "/period_wash")(),
+                lambda _, args: make_snap_handler(
+                    wave4, "/period_wash", bpm_wash
+                )(),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_wash_amp",
+                lambda: bpm_wash.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm_wash]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_wash_duty",
+                lambda: bpm_wash.duty,
+                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm_wash]),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_wash_lpf_alpha",
+                lambda: bpm_wash.lpf_alpha,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "lpf_alpha", [bpm_wash]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_wash_mult",
+                lambda: bpm_wash.bpm_mult,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "bpm_mult", [bpm_wash]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_wash_manual_offset",
+                lambda: bpm_wash.manual_offset,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "manual_offset", [bpm_wash]
+                ),
             ),
         ]
     )
