@@ -9,6 +9,7 @@ import numpy as np
 from serial import SerialException
 
 from ..osc import OSCManager, UIDebugFrame
+from ..dmx import DMXManager
 
 
 class AudioCapture(object):
@@ -19,7 +20,7 @@ class AudioCapture(object):
     audio_running: bool = False
     window: deque
     window_ts: deque
-    dmx: object = None  # set by server.py; loop checks dmx.passthrough to skip work
+    dmx: DMXManager  # set by server.py; loop checks dmx.passthrough to skip work
 
     def __init__(
         self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 5

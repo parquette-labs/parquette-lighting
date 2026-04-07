@@ -541,12 +541,8 @@ class Mixer(object):
             self.osc.send_osc("/viz_output_history", viz_history)
 
         if self._fft_viz_active():
-            self.osc.send_osc(
-                "/fftgen_1_history", list(self.fft_gen_history["fft_1"])
-            )
-            self.osc.send_osc(
-                "/fftgen_2_history", list(self.fft_gen_history["fft_2"])
-            )
+            self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))
+            self.osc.send_osc("/fftgen_2_history", list(self.fft_gen_history["fft_2"]))
 
     def updateDMX(self) -> None:
         self.dmx.submit()

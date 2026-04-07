@@ -173,18 +173,11 @@ class FFTManager(object):
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_valid"] = "n/a"
 
-    # C1: win_ts snapshot passed in — no longer reads live audio_cap.window_ts deque
-    def _run_beat_track(self, win: List[np.ndarray], win_ts: List[float]) -> None:
+    def _run_beat_track(self, win: List[np.ndarray]) -> None:
         if not self.bpm.rms_valid:
             return
 
         compute_start_time = time.monotonic()
-
-        end_ts = win_ts[-1]
-        window_len = (
-            self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
-        )
-        start_ts = end_ts - window_len
 
         y = np.concatenate(win)
         sr = self.audio_cap.rate
@@ -203,14 +196,14 @@ class FFTManager(object):
             units="frames",
             # delta=0.5,
         )
-        reported_tempo, beat_frames = beat_track(
+        reported_tempo, _ = beat_track(
             onset_envelope=oenv,
             sr=sr,
             units="frames",
             start_bpm=130,
             tightness=200,
         )
-        beats = beat_frames * hop_length / sr  # seconds, for phase calc
+
         reported_tempo = fold_tempo(float(reported_tempo))
         self.uidb["reported_tempo"] = reported_tempo
 
@@ -226,7 +219,7 @@ class FFTManager(object):
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
         business, kept_onset_frames = self._compute_business(
-            onset_frames, oenv, len(oenv), sr, hop_length
+            onset_frames, oenv, sr, hop_length
         )
         regularity = self._compute_regularity(kept_onset_frames, sr, hop_length)
 
@@ -289,7 +282,6 @@ class FFTManager(object):
         self,
         onset_frames: np.ndarray,
         oenv: np.ndarray,
-        oenv_len: int,
         sr: int,
         hop_length: int,
     ):
@@ -301,6 +293,7 @@ class FFTManager(object):
         Returns (rate, kept_onset_frames) so downstream metrics (e.g.
         regularity) can consume the same filtered set.
         """
+        oenv_len = len(oenv)
         if len(onset_frames) > 0:
             magnitudes = oenv[onset_frames]
             onset_frames = onset_frames[magnitudes >= self.onset_envelope_floor]
@@ -372,7 +365,6 @@ class FFTManager(object):
             # Required for deque thread-safety and so the beat executor receives
             # a snapshot that won't be mutated while beat_track runs.
             win = list(self.audio_cap.window)
-            win_ts = list(self.audio_cap.window_ts)  # C1: snapshot to avoid race
 
             # _update_rms must run before forward() so forward() can divide by
             # the current (smoothed) rms² to make the mel output loudness-invariant.
@@ -384,7 +376,7 @@ class FFTManager(object):
                 if self._beat_future is None or self._beat_future.done():
                     self._last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
-                        self._run_beat_track, win, win_ts  # C1: pass snapshot
+                        self._run_beat_track, win
                     )
 
             if fft_data is None:

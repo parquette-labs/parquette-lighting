@@ -223,7 +223,6 @@ def run(
         min_business=0.5,
         min_regularity=0.4,
     )
-    fft_manager.dmx = dmx
 
     initialAmp: float = 200
     initialPeriod: int = 3500

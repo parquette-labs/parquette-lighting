@@ -154,13 +154,14 @@ class DMXManager(object):
     def read_input_universe(self) -> List[int]:
         if self.use_art_net:
             self._ensure_art_net_server()
-            buf = self.art_net_server.get_buffer(self.art_net_listener_id)
-            if buf is None or len(buf) == 0:
-                return [0] * self.universe_size
-            out = list(buf[: self.universe_size])
-            if len(out) < self.universe_size:
-                out.extend([0] * (self.universe_size - len(out)))
-            return out
+            if self.art_net_server is not None:
+                buf = self.art_net_server.get_buffer(self.art_net_listener_id)
+                if buf is None or len(buf) == 0:
+                    return [0] * self.universe_size
+                out = list(buf[: self.universe_size])
+                if len(out) < self.universe_size:
+                    out.extend([0] * (self.universe_size - len(out)))
+                return out
         if self.enttec_pro_controller is not None:
             try:
                 return [
@@ -169,6 +170,7 @@ class DMXManager(object):
                 ]
             except (SerialException, AttributeError) as e:
                 print("DMX input read failed:", e, flush=True)
+
         return [0] * self.universe_size
 
     def submit_passthrough(self) -> None:
@@ -214,10 +216,7 @@ class DMXManager(object):
         self.use_art_net = False
 
         if self.art_net_server is not None:
-            try:
-                self.art_net_server.del_listener(self.art_net_listener_id)
-            except Exception:
-                pass
+            del self.art_net_server
             self.art_net_server = None
             self.art_net_listener_id = None
 
