@@ -9,6 +9,7 @@
 # Notes/Ideas/TODOs
 
 * Need a working offset calculator for the BPM
+* Debug non sheds
 * Annotate FFT plots in the front end with key frequencies
 * Some type of sequencer source both for short, medium and long term scheduling. Perhaps a long term scheduler is different
 * Some kind of orchestrator based on the metrics of music type
