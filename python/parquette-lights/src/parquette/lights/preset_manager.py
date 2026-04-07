@@ -194,6 +194,8 @@ class PresetManager(object):
         for category, category_preset in self.current_presets.items():
             self.osc.send_osc("/preset_selector/{}".format(category), category_preset)
 
+        self.osc.send_osc("/enable_save", self.enable_save_clear)
+
     def select(self, category: str, category_preset: str, sync: bool = False) -> None:
         if not category in self.exposed_params:
             # there are no valid exposed params in this category to control
