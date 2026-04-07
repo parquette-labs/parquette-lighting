@@ -2853,7 +2853,8 @@
         "ignoreTabs": false,
         "label": "FFT and DMX Setup",
         "popupLabel": "auto",
-        "popupPadding": "auto"
+        "popupPadding": "auto",
+        "lazy": true
       },
       {
         "type": "button",
@@ -4658,7 +4659,8 @@
             }
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "modal",
@@ -8396,7 +8398,8 @@
             "tabsPosition": "top"
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "modal",
@@ -8501,7 +8504,8 @@
             "decoupled": false
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "modal",
@@ -10615,7 +10619,8 @@
             "onValue": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "modal",
@@ -11238,7 +11243,8 @@
             "origin": "auto"
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "modal",
@@ -12899,7 +12905,8 @@
         "ignoreTabs": false,
         "label": "Spot Lights",
         "popupLabel": "auto",
-        "popupPadding": "auto"
+        "popupPadding": "auto",
+        "lazy": true
       },
       {
         "type": "modal",
@@ -13146,7 +13153,8 @@
             "onValue": ""
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "lazy": true
       },
       {
         "type": "variable",
