@@ -227,8 +227,24 @@ def run(
     initialAmp: float = 200
     initialPeriod: int = 3500
 
-    wave1 = WaveGenerator(
-        name="sin",
+    sin_reds = WaveGenerator(
+        name="sin_red",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_plants = WaveGenerator(
+        name="sin_plants",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_booth = WaveGenerator(
+        name="sin_booth",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -287,7 +303,9 @@ def run(
     bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
 
     generators = [
-        wave1,
+        sin_reds,
+        sin_plants,
+        sin_booth,
         wave4,
         sq1,
         sq2,
@@ -589,33 +607,28 @@ def run(
         ]
     )
 
-    def snap_handler():
-        if bpm.bpm > 0 and bpm.bpm_mult > 0:
-            period = bpm.current_period()
-            OSCParam.obj_param_setter(
-                period,
-                "period",
-                [wave1],
-            )
-            osc.send_osc("/period", period)
+    def make_snap_handler(gen, period_addr):
+        def handler():
+            if bpm.bpm > 0 and bpm.bpm_mult > 0:
+                period = bpm.current_period()
+                gen.period = period
+                osc.send_osc(period_addr, period)
+
+        return handler
 
     exposed_params["reds"].extend(
         [
             OSCParam(
                 osc,
-                "/amp",
-                lambda: wave1.amp,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "amp", [wave1, sq1, sq2, sq3]
-                ),
+                "/sin_red_amp",
+                lambda: sin_reds.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_reds]),
             ),
             OSCParam(
                 osc,
-                "/period",
-                lambda: wave1.period,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "period", [wave1]
-                ),
+                "/sin_red_period",
+                lambda: sin_reds.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_reds]),
             ),
             OSCParam(
                 osc,
@@ -638,7 +651,10 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm]),
             ),
             OSCParam(
-                osc, "/snap_period_to_bpm", lambda: 0, lambda _, args: snap_handler()
+                osc,
+                "/snap_sin_red_to_bpm",
+                lambda: 0,
+                lambda _, args: make_snap_handler(sin_reds, "/sin_red_period")(),
             ),
             OSCParam(
                 osc,
@@ -657,6 +673,92 @@ def run(
                 "/bpm_amp",
                 lambda: bpm.amp,
                 lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm]),
+            ),
+        ]
+    )
+
+    exposed_params["plants"].extend(
+        [
+            OSCParam(
+                osc,
+                "/sin_plants_amp",
+                lambda: sin_plants.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_plants]),
+            ),
+            OSCParam(
+                osc,
+                "/sin_plants_period",
+                lambda: sin_plants.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_plants]),
+            ),
+            OSCParam(
+                osc,
+                "/snap_sin_plants_to_bpm",
+                lambda: 0,
+                lambda _, args: make_snap_handler(sin_plants, "/sin_plants_period")(),
+            ),
+            OSCParam(
+                osc,
+                "/sq_amp",
+                lambda: sq1.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sq1, sq2, sq3]),
+            ),
+            OSCParam(
+                osc,
+                "/sq_period",
+                lambda: sq1.period,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "period", [sq1, sq2, sq3]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/snap_sq_to_bpm",
+                lambda: 0,
+                lambda _, args: (
+                    bpm.bpm > 0
+                    and bpm.bpm_mult > 0
+                    and (
+                        OSCParam.obj_param_setter(
+                            bpm.current_period(), "period", [sq1, sq2, sq3]
+                        ),
+                        osc.send_osc("/sq_period", bpm.current_period()),
+                    )
+                ),
+            ),
+        ]
+    )
+
+    exposed_params["booth"].extend(
+        [
+            OSCParam(
+                osc,
+                "/sin_booth_amp",
+                lambda: sin_booth.amp,
+                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_booth]),
+            ),
+            OSCParam(
+                osc,
+                "/sin_booth_period",
+                lambda: sin_booth.period,
+                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_booth]),
+            ),
+            OSCParam(
+                osc,
+                "/snap_sin_booth_to_bpm",
+                lambda: 0,
+                lambda _, args: make_snap_handler(sin_booth, "/sin_booth_period")(),
+            ),
+        ]
+    )
+
+    exposed_params["washes"].extend(
+        [
+            OSCParam(
+                osc,
+                "/snap_sin_wash_to_bpm",
+                lambda: 0,
+                lambda _, args: make_snap_handler(wave4, "/period_wash")(),
             ),
         ]
     )
