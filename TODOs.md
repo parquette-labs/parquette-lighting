@@ -27,6 +27,8 @@
 	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
 * Move controls for synths next to patch bays
 * Trigger the next beat impulse (or all synths with the next time step)
+* Restore the BPM phase from before?
+* Joystick saving doesn't work
 
 # Feedback
 * Maybe we need softer strobes
