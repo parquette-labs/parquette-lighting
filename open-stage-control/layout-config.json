@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.29.5",
+  "version": "1.30.2",
   "type": "session",
   "content": {
     "type": "root",
@@ -154,7 +154,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -252,7 +254,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -298,7 +302,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -344,7 +350,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -598,7 +606,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -644,7 +654,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -690,7 +702,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -736,7 +750,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -898,7 +914,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -944,7 +962,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -990,7 +1010,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1036,7 +1058,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -1207,7 +1231,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1253,7 +1279,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -1425,7 +1453,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1471,7 +1501,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -1564,7 +1596,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -1610,7 +1644,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "fader",
@@ -2126,7 +2162,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -2857,7 +2895,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           }
         ],
         "tabs": [],
@@ -3081,7 +3121,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -3253,7 +3295,11 @@
                 "ignoreDefaults": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               },
               {
                 "type": "xy",
@@ -3310,7 +3356,11 @@
                 "ignoreDefaults": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               },
               {
                 "type": "xy",
@@ -3367,7 +3417,11 @@
                 "ignoreDefaults": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               }
             ],
             "tabs": [],
@@ -3709,7 +3763,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -3823,7 +3879,11 @@
                 "ignoreDefaults": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               },
               {
                 "type": "switch",
@@ -3994,7 +4054,11 @@
                 "ignoreDefaults": false,
                 "onCreate": "",
                 "onValue": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false,
+                "clipX": "",
+                "clipY": ""
               }
             ],
             "tabs": [],
@@ -4171,7 +4235,9 @@
                     "target": "",
                     "ignoreDefaults": false,
                     "onCreate": "",
-                    "onValue": ""
+                    "onValue": "",
+                    "click": false,
+                    "onTouch": ""
                   },
                   {
                     "type": "fader",
@@ -4285,7 +4351,11 @@
                     "ignoreDefaults": false,
                     "onCreate": "",
                     "onValue": "",
-                    "onTouch": ""
+                    "onTouch": "",
+                    "stepsX": false,
+                    "stepsY": false,
+                    "clipX": "",
+                    "clipY": ""
                   },
                   {
                     "type": "switch",
@@ -4501,7 +4571,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           }
         ],
         "tabs": [],
@@ -6298,7 +6370,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               }
             ],
             "tabs": [],
@@ -6619,7 +6693,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "textarea",
@@ -7084,7 +7160,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               },
               {
                 "type": "fader",
@@ -7318,7 +7396,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               }
             ],
             "tabs": [],
@@ -7640,7 +7720,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onValue": ""
+                "onValue": "",
+                "click": false,
+                "onTouch": ""
               }
             ],
             "tabs": [],
@@ -9828,7 +9910,14 @@
             "widgetType": "fader",
             "quantity": 8,
             "props": {
-              "label": "#{$}"
+              "label": "#{$+1}",
+              "address": "/chan_levels/wash_#{$+1}",
+              "range": {
+                "min": 0,
+                "max": 255
+              },
+              "value": 0,
+              "snap": true
             },
             "lock": false,
             "visible": true,
@@ -10000,7 +10089,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -10046,7 +10137,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "dropdown",
@@ -10133,7 +10226,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -10397,7 +10492,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               },
               {
                 "type": "multixy",
@@ -10460,7 +10557,9 @@
                 "target": "",
                 "ignoreDefaults": false,
                 "onCreate": "",
-                "onTouch": ""
+                "onTouch": "",
+                "stepsX": false,
+                "stepsY": false
               }
             ],
             "tabs": [],
@@ -10534,7 +10633,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -10956,7 +11057,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -11002,7 +11105,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "textarea",
@@ -11441,7 +11546,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "dropdown",
@@ -11528,7 +11635,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -11574,7 +11683,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "switch",
@@ -11665,7 +11776,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "button",
@@ -11711,7 +11824,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           },
           {
             "type": "plot",
@@ -12731,7 +12846,9 @@
             "target": "",
             "ignoreDefaults": false,
             "onCreate": "",
-            "onValue": ""
+            "onValue": "",
+            "click": false,
+            "onTouch": ""
           }
         ],
         "tabs": [],
