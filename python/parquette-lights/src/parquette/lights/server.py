@@ -215,6 +215,7 @@ def run(
     fft_manager = FFTManager(
         osc,
         audio_capture,
+        dmx,
         energy_threshold=100.0,
         tempo_alpha=0.25,
         rms_window_secs=rms_window,

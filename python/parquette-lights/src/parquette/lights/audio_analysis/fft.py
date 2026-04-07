@@ -22,6 +22,7 @@ import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
 from ..osc import OSCManager, UIDebugFrame
+from ..dmx import DMXManager
 from ..util.math import fold_tempo
 from .audio import AudioCapture
 
@@ -44,6 +45,7 @@ class FFTManager(object):
         self,
         osc: OSCManager,
         audio_cap: AudioCapture,
+        dmx: DMXManager,
         *,
         energy_threshold: float = 100.0,
         tempo_alpha: float = 0.25,
@@ -60,6 +62,7 @@ class FFTManager(object):
         self.min_regularity = min_regularity
         self.osc = osc
         self.audio_cap = audio_cap
+        self.dmx = dmx
         self.n_mels = self.audio_cap.chunk // 8
 
         self.energy_threshold = energy_threshold
@@ -355,6 +358,13 @@ class FFTManager(object):
             if not self.audio_cap.new_chunk_event.wait(timeout=0.1):
                 continue
             self.audio_cap.new_chunk_event.clear()
+
+            # When DMX passthrough is on, dmx is being driven externally
+            # and nothing the FFT analyser computes (rms, mel forward,
+            # beat tracking, viz sends) has any downstream effect. Skip the
+            # whole iteration to free CPU for the passthrough listener.
+            if self.dmx.passthrough:
+                continue
 
             compute_start_time = time.monotonic()
 
