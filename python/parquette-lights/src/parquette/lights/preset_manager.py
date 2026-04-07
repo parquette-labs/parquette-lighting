@@ -45,10 +45,11 @@ class PresetManager(object):
                 "reds",
                 "plants",
                 "booth",
-                "washes",
                 "spots_light",
                 "spots_position",
+                "washes",
                 "washes_color",
+                "hazer",
             ]
         )
 
@@ -58,23 +59,38 @@ class PresetManager(object):
         return all_categories
 
     def select_all(self, category_preset: str) -> None:
-        if all((category_preset == preset for preset in self.current_presets.values())):
+        # Early-out only if we already have a known selection for every
+        # category and they all match the target. With empty current_presets
+        # (fresh launch, nothing selected yet) `all(...)` over an empty
+        # iterable is True and would wrongly skip the call, so the shortcut
+        # buttons (all_black / house_lights / class_lights) did nothing
+        # until the user manually picked a preset first.
+        if self.current_presets and all(
+            category_preset == preset for preset in self.current_presets.values()
+        ):
             return
 
         self.prev_current_presets = copy(self.current_presets)
 
         for cat in self.all_categories():
-            self.select(cat, category_preset)
+            # If this category doesn't define the requested preset (e.g.
+            # "Static" or "Class"), fall back to "Off" so the channel goes
+            # dark instead of holding its previous state.
+            if (
+                cat in self.stored_presets
+                and category_preset in self.stored_presets[cat]
+            ):
+                self.select(cat, category_preset, sync=False)
+            else:
+                self.select(cat, "Off", sync=False)
+
+        self.sync()
 
     def all_black(self) -> None:
         self.select_all("Off")
 
     def house_lights(self) -> None:
         self.select_all("Static")
-
-    def restore_lights(self) -> None:
-        for cat, cat_preset in self.prev_current_presets.items():
-            self.select(cat, cat_preset)
 
     def set_enable_save_clear(self, enable: bool) -> None:
         self.enable_save_clear = enable
@@ -178,7 +194,7 @@ class PresetManager(object):
         for category, category_preset in self.current_presets.items():
             self.osc.send_osc("/preset_selector/{}".format(category), category_preset)
 
-    def select(self, category: str, category_preset: str) -> None:
+    def select(self, category: str, category_preset: str, sync: bool = False) -> None:
         if not category in self.exposed_params:
             # there are no valid exposed params in this category to control
             print(
@@ -203,3 +219,6 @@ class PresetManager(object):
             for param in self.exposed_params[category]:
                 if param.addr == addr:
                     param.load(addr, value)
+
+        if sync:
+            self.sync()
