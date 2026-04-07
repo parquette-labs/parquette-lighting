@@ -44,5 +44,6 @@ pylint = "pylint --rcfile=./pylintrc -f colorized ./src/"
 mypy = "mypy ."
 black = "black ./"
 pytest = "pytest"
+strip-osc-layout = "python scripts/strip_layout_defaults.py"
 check.sequence = ["black", "pylint", "mypy"]
 check.ignore_fail = "return_non_zero"
