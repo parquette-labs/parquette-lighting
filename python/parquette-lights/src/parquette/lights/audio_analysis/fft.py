@@ -37,6 +37,7 @@ class FFTManager(object):
     fft_running: bool = False
     downstream: List[FFTGenerator] = []
     weighting = None
+    dmx: object = None  # set by server.py; loop checks dmx.passthrough to skip work
 
     def __init__(
         self,
@@ -135,24 +136,29 @@ class FFTManager(object):
         )
 
     def _update_rms(self, win: List[np.ndarray]) -> None:
-        if not self.audio_ready():
+        if not self.audio_ready() or not win or self.audio_cap.chunk <= 0:
+            return
+        last = win[-1]
+        if last is None or len(last) == 0:
             return
 
-        n_rms_chunks = min(
-            len(win) - 1,
-            max(
-                1,
-                int(self.rms_window_secs * self.audio_cap.rate / self.audio_cap.chunk),
-            ),
+        # n_rms_chunks must be at least 1 — len(win) - 1 can be 0 on the very
+        # first chunk, which would otherwise truncate _rms_ss to 0 and divide
+        # by zero below.
+        target_chunks = max(
+            1,
+            int(self.rms_window_secs * self.audio_cap.rate / self.audio_cap.chunk),
         )
+        n_rms_chunks = max(1, min(len(win), target_chunks))
 
         # Incremental sum-of-squares: push new chunk, trim to window, no concatenation
-        self._rms_ss.append(float(np.dot(win[-1], win[-1])))
+        self._rms_ss.append(float(np.dot(last, last)))
         while len(self._rms_ss) > n_rms_chunks:
             self._rms_ss.popleft()
-        self.current_rms = math.sqrt(
-            sum(self._rms_ss) / (len(self._rms_ss) * self.audio_cap.chunk)
-        )
+        denom = len(self._rms_ss) * self.audio_cap.chunk
+        if denom <= 0:
+            return
+        self.current_rms = math.sqrt(sum(self._rms_ss) / denom)
 
         self.uidb["audio_rms"] = "{rms:.2} {sign} {thres:.2}".format(
             rms=self.current_rms,
@@ -172,30 +178,53 @@ class FFTManager(object):
     def _run_beat_track(self, win: List[np.ndarray], win_ts: List[float]) -> None:
         if not self.bpm.rms_valid:
             return
+        if not win or not win_ts:
+            return
+
+        sr = self.audio_cap.rate
+        if not sr or sr <= 0 or self.audio_cap.chunk <= 0:
+            return
 
         compute_start_time = time.monotonic()
 
         end_ts = win_ts[-1]
-        window_len = (
-            self.audio_cap.chunk * self.audio_cap.window_len / self.audio_cap.rate
-        )
+        window_len = self.audio_cap.chunk * self.audio_cap.window_len / sr
         start_ts = end_ts - window_len
 
-        y = np.concatenate(win)
-        sr = self.audio_cap.rate
+        try:
+            y = np.concatenate(win)
+        except ValueError:
+            return
+        if y.size == 0:
+            return
+
         hop_length = 512  # librosa default
 
-        # Compute onset envelope once; reuse for both beat_track and alignment score
-        oenv = onset_strength(y=y, sr=sr)
-        reported_tempo, beat_frames = beat_track(
-            onset_envelope=oenv,
-            sr=sr,
-            units="frames",
-            start_bpm=130,
-            tightness=200,
-        )
+        # Compute onset envelope once; reuse for both beat_track and alignment score.
+        # Wrap librosa calls in try/except — onset_strength/beat_track can raise
+        # ValueError or trigger divide-by-zero in librosa.convert when fed
+        # silence or very short signals.
+        try:
+            oenv = onset_strength(y=y, sr=sr)
+            if oenv is None or len(oenv) == 0:
+                return
+            reported_tempo, beat_frames = beat_track(
+                onset_envelope=oenv,
+                sr=sr,
+                units="frames",
+                start_bpm=130,
+                tightness=200,
+            )
+        except (ValueError, ZeroDivisionError, FloatingPointError) as e:
+            print("beat_track skipped:", e, flush=True)
+            return
+
+        reported_tempo_f = float(reported_tempo)
+        if not math.isfinite(reported_tempo_f) or reported_tempo_f <= 0:
+            return
+
         beats = beat_frames * hop_length / sr  # seconds, for phase calc
-        reported_tempo = fold_tempo(float(reported_tempo))
+        reported_tempo = fold_tempo(reported_tempo_f)
         self.uidb["reported_tempo"] = reported_tempo
 
         # Track raw (unsmoothed) tempo for stability calculation
@@ -255,16 +284,27 @@ class FFTManager(object):
     def forward(self, chunk: np.ndarray) -> Optional[np.ndarray]:
         if not self.audio_ready():
             return None
+        if self.weighting is None:
+            return None
+        if chunk is None or len(chunk) < self.audio_cap.chunk:
+            return None
 
-        stft_mag = np.abs(stft(y=chunk, n_fft=self.audio_cap.chunk, center=False))
-        fftData = melspectrogram(
-            y=chunk,
-            S=stft_mag**2,
-            sr=self.audio_cap.rate,
-            n_fft=self.audio_cap.chunk,
-            center=False,
-            n_mels=self.n_mels,
-        )
+        try:
+            stft_mag = np.abs(stft(y=chunk, n_fft=self.audio_cap.chunk, center=False))
+            fftData = melspectrogram(
+                y=chunk,
+                S=stft_mag**2,
+                sr=self.audio_cap.rate,
+                n_fft=self.audio_cap.chunk,
+                center=False,
+                n_mels=self.n_mels,
+            )
+        except (ValueError, ZeroDivisionError, FloatingPointError) as e:
+            print("fft forward skipped:", e, flush=True)
+            return None
+
+        if fftData.size == 0 or fftData.shape[0] != len(self.weighting):
+            return None
 
         # Loudness-invariant: mel bins are |STFT|² so they scale with rms²;
         # divide by rms² to remove input-loudness dependence, then by an empirical
@@ -278,101 +318,113 @@ class FFTManager(object):
         self.uidb["beat_avg_time"] = 0
 
         while self.fft_running:
-            # Block until the audio thread delivers a new chunk (or timeout to check
-            # fft_running). This synchronises naturally to the audio hardware rate
-            # (~86 Hz at chunk=512/44100 Hz) with no sleep jitter.
-            if not self.audio_cap.new_chunk_event.wait(timeout=0.1):
-                continue
-            self.audio_cap.new_chunk_event.clear()
+            try:
+                self._run_fwd_iter()
+            except (ValueError, ZeroDivisionError, FloatingPointError, IndexError) as e:
+                print("FFT loop iteration skipped:", e, flush=True)
 
-            compute_start_time = time.monotonic()
+    def _run_fwd_iter(self) -> None:
+        # Block until the audio thread delivers a new chunk (or timeout to check
+        # fft_running). This synchronises naturally to the audio hardware rate
+        # (~86 Hz at chunk=512/44100 Hz) with no sleep jitter.
+        if not self.audio_cap.new_chunk_event.wait(timeout=0.1):
+            return
+        self.audio_cap.new_chunk_event.clear()
 
-            if not self.audio_ready():
-                continue
+        # Skip all expensive FFT/beat work while DMX passthrough is active.
+        if self.dmx is not None and self.dmx.passthrough:
+            return
 
-            # Stable shallow copy of the window and timestamps for this iteration.
-            # Required for deque thread-safety and so the beat executor receives
-            # a snapshot that won't be mutated while beat_track runs.
-            win = list(self.audio_cap.window)
-            win_ts = list(self.audio_cap.window_ts)  # C1: snapshot to avoid race
+        compute_start_time = time.monotonic()
 
-            # _update_rms must run before forward() so forward() can divide by
-            # the current (smoothed) rms² to make the mel output loudness-invariant.
-            self._update_rms(win)
-            fft_data = self.forward(win[-1])
+        if not self.audio_ready():
+            return
 
-            now = time.monotonic()
-            if now - self._last_beat_track_time >= 0.2:
-                if self._beat_future is None or self._beat_future.done():
-                    self._last_beat_track_time = now
-                    self._beat_future = self._beat_executor.submit(
-                        self._run_beat_track, win, win_ts  # C1: pass snapshot
-                    )
+        # Stable shallow copy of the window and timestamps for this iteration.
+        # Required for deque thread-safety and so the beat executor receives
+        # a snapshot that won't be mutated while beat_track runs.
+        win = list(self.audio_cap.window)
+        win_ts = list(self.audio_cap.window_ts)  # C1: snapshot to avoid race
+        if not win or not win_ts:
+            return
 
-            if fft_data is None:
-                continue
+        # _update_rms must run before forward() so forward() can divide by
+        # the current (smoothed) rms² to make the mel output loudness-invariant.
+        self._update_rms(win)
+        fft_data = self.forward(win[-1])
 
-            for d in self.downstream:
-                d.forward(fft_data, time.time() * 1000)
+        now = time.monotonic()
+        if now - self._last_beat_track_time >= 0.2:
+            if self._beat_future is None or self._beat_future.done():
+                self._last_beat_track_time = now
+                self._beat_future = self._beat_executor.submit(
+                    self._run_beat_track, win, win_ts  # C1: pass snapshot
+                )
 
-            if (
-                self.send_fft_debug_data
-                and time.time() - self.send_fft_debug_timeout > self.debug_timeout
-            ):
-                self.send_fft_debug_data = False
+        if fft_data is None:
+            return
+
+        for d in self.downstream:
+            d.forward(fft_data, time.time() * 1000)
+
+        if (
+            self.send_fft_debug_data
+            and time.time() - self.send_fft_debug_timeout > self.debug_timeout
+        ):
+            self.send_fft_debug_data = False
+
+        if self.send_fft_debug_data:
+            self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
+            self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
+
+        self.uidb["fft_max"] = max(fft_data)
+        self.uidb["fft_min"] = min(fft_data)
+
+        # C4: cap OSC payload at 64 bins; use direct tolist() when no downsampling
+        if self.send_fft_debug_data:
+            max_bins = 64
+            downsampled = max(1, len(fft_data) // max_bins)
+            if downsampled == 1:
+                self.osc.send_osc("/fft_viz", fft_data.tolist())
+            else:
+                n = (len(fft_data) // downsampled) * downsampled
+                banded = fft_data[:n].reshape(-1, downsampled).sum(axis=1).tolist()
+                self.osc.send_osc("/fft_viz", banded)
+
+        compute_time = time.monotonic() - compute_start_time
+
+        self.uidb["fft_avg_time"] = (
+            self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
+        )
+
+        # Wall-clock viz timer: fires every 100ms regardless of audio hardware rate
+        now_viz = time.monotonic()
+        if now_viz - self._last_viz_time >= 0.1:
+            self._last_viz_time = now_viz
+
+            self.bpm_history.append(self.bpm.bpm)
+            self.offset_history.append(self.bpm.offset_time)
+            self.rms_history.append(self.current_rms)
+            self.confidence_history.append(self.bpm_confidence)
 
             if self.send_fft_debug_data:
-                self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
-                self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
-
-            self.uidb["fft_max"] = max(fft_data)
-            self.uidb["fft_min"] = min(fft_data)
-
-            # C4: cap OSC payload at 64 bins; use direct tolist() when no downsampling
-            if self.send_fft_debug_data:
-                max_bins = 64
-                downsampled = max(1, len(fft_data) // max_bins)
-                if downsampled == 1:
-                    self.osc.send_osc("/fft_viz", fft_data.tolist())
-                else:
-                    n = (len(fft_data) // downsampled) * downsampled
-                    banded = fft_data[:n].reshape(-1, downsampled).sum(axis=1).tolist()
-                    self.osc.send_osc("/fft_viz", banded)
-
-            compute_time = time.monotonic() - compute_start_time
-
-            self.uidb["fft_avg_time"] = (
-                self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
-            )
-
-            # Wall-clock viz timer: fires every 100ms regardless of audio hardware rate
-            now_viz = time.monotonic()
-            if now_viz - self._last_viz_time >= 0.1:
-                self._last_viz_time = now_viz
-
-                self.bpm_history.append(self.bpm.bpm)
-                self.offset_history.append(self.bpm.offset_time)
-                self.rms_history.append(self.current_rms)
-                self.confidence_history.append(self.bpm_confidence)
-
-                if self.send_fft_debug_data:
-                    self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
-                    self.osc.send_osc("/bpm_offset_viz", list(self.offset_history))
-                    self.osc.send_osc("/rms_history_viz", list(self.rms_history))
-                    self.osc.send_osc(
-                        "/confidence_history_viz", list(self.confidence_history)
-                    )
-                    self.osc.send_osc(
-                        "/raw_bpm_history_viz", list(self.raw_bpm_history)
-                    )
-                    self.osc.send_osc(
-                        "/alignment_conf_viz", list(self.alignment_conf_history)
-                    )
-                    self.osc.send_osc(
-                        "/stability_conf_viz", list(self.stability_conf_history)
-                    )
-                    # C5: uidb update consolidated into wall-clock block; counter removed
-                    self.uidb.update_ui()
+                self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
+                self.osc.send_osc("/bpm_offset_viz", list(self.offset_history))
+                self.osc.send_osc("/rms_history_viz", list(self.rms_history))
+                self.osc.send_osc(
+                    "/confidence_history_viz", list(self.confidence_history)
+                )
+                self.osc.send_osc(
+                    "/raw_bpm_history_viz", list(self.raw_bpm_history)
+                )
+                self.osc.send_osc(
+                    "/alignment_conf_viz", list(self.alignment_conf_history)
+                )
+                self.osc.send_osc(
+                    "/stability_conf_viz", list(self.stability_conf_history)
+                )
+                # C5: uidb update consolidated into wall-clock block; counter removed
+                self.uidb.update_ui()
 
     def start_fft(self) -> None:
         if self.fft_thread is not None:

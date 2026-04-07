@@ -1,7 +1,7 @@
 from typing import List, Union, Optional
 
 from DMXEnttecPro import Controller as EnttecProController  # type: ignore[import-untyped]
-from stupidArtnet import StupidArtnet  # type: ignore[import-untyped]
+from stupidArtnet import StupidArtnet, StupidArtnetServer  # type: ignore[import-untyped]
 
 from serial import SerialException
 import serial.tools.list_ports as slp
@@ -86,7 +86,10 @@ class DMXControlChannel(object):
 class DMXManager(object):
     enttec_pro_controller: EnttecProController = None
     art_net_controller: StupidArtnet = None
+    art_net_server: Optional[StupidArtnetServer] = None
+    art_net_listener_id: Optional[int] = None
     use_art_net: bool = False
+    passthrough: bool = False
 
     def __init__(
         self, osc: OSCManager, art_net_ip: str, universe_size: int = 256
@@ -141,6 +144,37 @@ class DMXManager(object):
                 print(e, flush=True)
                 self.close()
 
+    def _ensure_art_net_server(self) -> None:
+        if self.art_net_server is None:
+            self.art_net_server = StupidArtnetServer()
+            self.art_net_listener_id = self.art_net_server.register_listener(
+                universe=0, sub=0, net=0, callback_function=None
+            )
+
+    def read_input_universe(self) -> List[int]:
+        if self.use_art_net:
+            self._ensure_art_net_server()
+            buf = self.art_net_server.get_buffer(self.art_net_listener_id)
+            if buf is None or len(buf) == 0:
+                return [0] * self.universe_size
+            out = list(buf[: self.universe_size])
+            if len(out) < self.universe_size:
+                out.extend([0] * (self.universe_size - len(out)))
+            return out
+        if self.enttec_pro_controller is not None:
+            try:
+                return [
+                    int(self.enttec_pro_controller.get_channel(i + 1))
+                    for i in range(self.universe_size)
+                ]
+            except (SerialException, AttributeError) as e:
+                print("DMX input read failed:", e, flush=True)
+        return [0] * self.universe_size
+
+    def submit_passthrough(self) -> None:
+        self.chans = self.read_input_universe()
+        self.submit()
+
     def art_net_auto_send(self, auto):
         if auto:
             self.art_net_controller.start()
@@ -178,6 +212,14 @@ class DMXManager(object):
 
     def close(self, deselect=True) -> None:
         self.use_art_net = False
+
+        if self.art_net_server is not None:
+            try:
+                self.art_net_server.del_listener(self.art_net_listener_id)
+            except Exception:
+                pass
+            self.art_net_server = None
+            self.art_net_listener_id = None
 
         if not self.enttec_pro_controller is None:
             try:

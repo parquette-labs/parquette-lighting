@@ -19,6 +19,7 @@ class AudioCapture(object):
     audio_running: bool = False
     window: deque
     window_ts: deque
+    dmx: object = None  # set by server.py; loop checks dmx.passthrough to skip work
 
     def __init__(
         self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 10.0
@@ -102,6 +103,12 @@ class AudioCapture(object):
                     return
 
                 data = self.stream.read(self.chunk, exception_on_overflow=False)
+
+                # In DMX passthrough mode we still drain the audio stream (so it
+                # doesn't overflow) but discard samples and skip downstream FFT work.
+                if self.dmx is not None and self.dmx.passthrough:
+                    continue
+
                 indata = np.frombuffer(data, dtype=np.int16).astype(np.float32)
 
                 ts = time.time()
