@@ -12,7 +12,6 @@ from .generators import (
     FFTGenerator,
     WaveGenerator,
     ImpulseGenerator,
-    NoiseGenerator,
     BPMGenerator,
     Mixer,
     SignalPatchParam,
@@ -228,12 +227,6 @@ def run(
     initialAmp: float = 200
     initialPeriod: int = 3500
 
-    noise1 = NoiseGenerator(
-        name="noise_1", amp=initialAmp, offset=0, period=initialPeriod
-    )
-    noise2 = NoiseGenerator(
-        name="noise_2", amp=initialAmp, offset=0, period=initialPeriod
-    )
     wave1 = WaveGenerator(
         name="sin",
         amp=initialAmp,
@@ -241,14 +234,6 @@ def run(
         phase=0,
         offset=0,
         shape=WaveGenerator.Shape.SIN,
-    )
-    wave2 = WaveGenerator(
-        name="square",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SQUARE,
     )
     wave4 = WaveGenerator(
         name="sin_wash",
@@ -289,14 +274,6 @@ def run(
         duty=0.41,
     )
 
-    wave3 = WaveGenerator(
-        name="triangle",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.TRIANGLE,
-    )
     impulse = ImpulseGenerator(
         name="impulse",
         amp=255,
@@ -310,11 +287,7 @@ def run(
     bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=100)
 
     generators = [
-        noise1,
-        noise2,
         wave1,
-        wave2,
-        wave3,
         wave4,
         sq1,
         sq2,
@@ -622,7 +595,7 @@ def run(
             OSCParam.obj_param_setter(
                 period,
                 "period",
-                [noise1, noise2, wave1, wave2, wave3],
+                [wave1],
             )
             osc.send_osc("/period", period)
 
@@ -631,17 +604,17 @@ def run(
             OSCParam(
                 osc,
                 "/amp",
-                lambda: noise1.amp,
+                lambda: wave1.amp,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "amp", [noise1, noise2, wave1, wave2, wave3, sq1, sq2, sq3]
+                    args, "amp", [wave1, sq1, sq2, sq3]
                 ),
             ),
             OSCParam(
                 osc,
                 "/period",
-                lambda: noise1.period,
+                lambda: wave1.period,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "period", [noise1, noise2, wave1, wave2, wave3]
+                    args, "period", [wave1]
                 ),
             ),
             OSCParam(
