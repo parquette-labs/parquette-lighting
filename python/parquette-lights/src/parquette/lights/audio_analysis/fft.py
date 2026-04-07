@@ -222,6 +222,15 @@ class FFTManager(object):
                     + (1 - self.tempo_alpha) * b.bpm
                 )
 
+        # Force all BPM generators to share the same internal offset_time so
+        # they can never drift apart from independent reanchors. manual_offset
+        # stays per-generator (that's the user-facing phase knob). We take the
+        # first generator's offset_time as the canonical anchor.
+        if self.bpms:
+            anchor = self.bpms[0].offset_time
+            for b in self.bpms[1:]:
+                b.offset_time = anchor
+
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
         business, kept_onset_frames = self._compute_business(
