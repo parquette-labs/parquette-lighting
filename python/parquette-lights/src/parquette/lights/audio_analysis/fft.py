@@ -14,10 +14,7 @@ from librosa import (
     db_to_amplitude,  # pylint: disable=no-name-in-module
 )  # pylint: disable=no-name-in-module
 from librosa import resample  # pylint: disable=no-name-in-module
-from librosa.feature import (
-    melspectrogram,
-    spectral_flatness,
-)  # pylint: disable=no-name-in-module
+from librosa.feature import melspectrogram  # pylint: disable=no-name-in-module
 from librosa.beat import beat_track
 from librosa.onset import onset_strength, onset_detect
 from librosa.effects import hpss
@@ -78,7 +75,6 @@ class FFTManager(object):
 
         # C2: all history buffers as deques — O(1) append/eviction, no list copies
         self.bpm_history: deque = deque(maxlen=self.bpm_history_len)
-        self.offset_history: deque = deque(maxlen=self.bpm_history_len)
         self.rms_history: deque = deque(maxlen=self.bpm_history_len)
         self.confidence_history: deque = deque(maxlen=self.bpm_history_len)
         # Raw (unsmoothed) histories updated at 500ms cadence (beat_track rate)
@@ -90,9 +86,6 @@ class FFTManager(object):
             maxlen=self.raw_bpm_metric_history_len
         )
         self.harmonic_percussive_history: deque = deque(
-            maxlen=self.raw_bpm_metric_history_len
-        )
-        self.spectral_flatness_history: deque = deque(
             maxlen=self.raw_bpm_metric_history_len
         )
         self.business_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
@@ -276,30 +269,18 @@ class FFTManager(object):
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
-        flatness = self._compute_spectral_flatness(y)
         business, kept_onset_frames = self._compute_business(
             onset_frames, oenv, len(oenv), sr, hop_length
         )
         regularity = self._compute_regularity(kept_onset_frames, sr, hop_length)
 
         self.harmonic_percussive_history.append(hp_ratio)
-        self.spectral_flatness_history.append(flatness)
         self.business_history.append(business)
         self.regularity_history.append(regularity)
 
         self.uidb["harmonic_percussive"] = f"{hp_ratio:.2f}"
-        self.uidb["spectral_flatness"] = f"{flatness:.3f}"  # rescaled 0..1
         self.uidb["business"] = f"{business:.2f}/s"
         self.uidb["regularity"] = f"{regularity:.2f}"
-
-        if self.debug:
-            print(
-                f"[audio] hp={hp_ratio:.2f}  "
-                f"flat={flatness:.3f}  "
-                f"business={business:.2f}/s  "
-                f"regularity={regularity:.2f}",
-                flush=True,
-            )
 
         compute_time = time.monotonic() - compute_start_time
 
@@ -330,30 +311,6 @@ class FFTManager(object):
         rms_h = float(np.sqrt(np.mean(y_h * y_h)) + 1e-9)
         rms_p = float(np.sqrt(np.mean(y_p * y_p)) + 1e-9)
         return rms_p / rms_h
-
-    def _compute_spectral_flatness(self, y: np.ndarray) -> float:
-        """
-        Wiener entropy of the spectrum, mean over the analysis window, then
-        log-rescaled into a useful 0..1 range.
-
-        Raw librosa flatness is geometric / arithmetic mean of the power
-        spectrum and for real music sits in ~1e-4..1e-2 — almost flat to the
-        eye in linear space. We map log10(flatness) from [-4, 0] -> [0, 1]
-        so the result spans the perceptually interesting range:
-
-            ~0.0  perfectly tonal (sine, sustained chord)
-            ~0.5  typical mixed music
-            ~1.0  noise / dense percussion
-
-        Cheap (one STFT + a mean), so no windowing or downsampling needed.
-        """
-        sf = spectral_flatness(y=y)
-        if sf.size == 0:
-            return 0.0
-        raw = float(np.mean(sf))
-        if raw <= 0:
-            return 0.0
-        return float(np.clip((np.log10(raw) + 4.0) / 4.0, 0.0, 1.0))
 
     def _compute_business(
         self,
@@ -499,13 +456,11 @@ class FFTManager(object):
                 self._last_viz_time = now_viz
 
                 self.bpm_history.append(self.bpm.bpm)
-                self.offset_history.append(self.bpm.offset_time)
                 self.rms_history.append(self.current_rms)
                 self.confidence_history.append(self.bpm_confidence)
 
                 if self.send_fft_debug_data:
                     self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
-                    self.osc.send_osc("/bpm_offset_viz", list(self.offset_history))
                     self.osc.send_osc("/rms_history_viz", list(self.rms_history))
                     self.osc.send_osc(
                         "/confidence_history_viz", list(self.confidence_history)
@@ -522,10 +477,6 @@ class FFTManager(object):
                     self.osc.send_osc(
                         "/harmonic_percussive_viz",
                         list(self.harmonic_percussive_history),
-                    )
-                    self.osc.send_osc(
-                        "/spectral_flatness_viz",
-                        list(self.spectral_flatness_history),
                     )
                     self.osc.send_osc("/business_viz", list(self.business_history))
                     self.osc.send_osc("/regularity_viz", list(self.regularity_history))
