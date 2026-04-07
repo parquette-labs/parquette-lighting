@@ -206,7 +206,7 @@ class PresetManager(object):
             )
             return
 
-        self.current_presets[category] = category_presets
+        self.current_presets[category] = category_preset
 
         if not category in self.stored_presets:
             # Someone is creating a new preset, nothing to load
