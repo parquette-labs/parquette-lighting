@@ -620,14 +620,6 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/snap_sin_red_to_bpm",
-                lambda: 0,
-                lambda _, args: make_snap_handler(
-                    [sin_reds], "/sin_red_period", bpm_red
-                )(),
-            ),
-            OSCParam(
-                osc,
                 "/bpm_red_duty",
                 lambda: bpm_red.duty,
                 lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm_red]),
@@ -671,14 +663,6 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/snap_sin_plants_to_bpm",
-                lambda: 0,
-                lambda _, args: make_snap_handler(
-                    [sin_plants], "/sin_plants_period", bpm_red
-                )(),
-            ),
-            OSCParam(
-                osc,
                 "/sq_amp",
                 lambda: sq1.amp,
                 lambda _, args: OSCParam.obj_param_setter(args, "amp", [sq1, sq2, sq3]),
@@ -690,14 +674,6 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "period", [sq1, sq2, sq3]
                 ),
-            ),
-            OSCParam(
-                osc,
-                "/snap_sq_to_bpm",
-                lambda: 0,
-                lambda _, args: make_snap_handler(
-                    [sq1, sq2, sq2], "/sq_period", bpm_red
-                )(),
             ),
         ]
     )
@@ -716,27 +692,11 @@ def run(
                 lambda: sin_booth.period,
                 lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_booth]),
             ),
-            OSCParam(
-                osc,
-                "/snap_sin_booth_to_bpm",
-                lambda: 0,
-                lambda _, args: make_snap_handler(
-                    [sin_booth], "/sin_booth_period", bpm_red
-                )(),
-            ),
         ]
     )
 
     exposed_params["washes"].extend(
         [
-            OSCParam(
-                osc,
-                "/snap_sin_wash_to_bpm",
-                lambda: 0,
-                lambda _, args: make_snap_handler(
-                    [sin_wash], "/period_wash", bpm_wash
-                )(),
-            ),
             OSCParam(
                 osc,
                 "/bpm_wash_amp",
@@ -1008,6 +968,41 @@ def run(
             spot.reset(reset)
 
     osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
+
+    # Snap-to-BPM action buttons. These are momentary actions, not state, so
+    # they're registered directly on the dispatcher (not as OSCParams) and
+    # therefore are never written into preset pickles. Previously they lived
+    # as OSCParams inside saved categories, which meant preset save captured
+    # `/snap_*_to_bpm = 0` and preset load re-fired the snap, clobbering the
+    # restored period of the corresponding sine generator.
+    osc.dispatcher.map(
+        "/snap_sin_red_to_bpm",
+        lambda addr, *args: make_snap_handler([sin_reds], "/sin_red_period", bpm_red)(),
+    )
+    osc.dispatcher.map(
+        "/snap_sin_plants_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sin_plants], "/sin_plants_period", bpm_red
+        )(),
+    )
+    osc.dispatcher.map(
+        "/snap_sq_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sq1, sq2, sq3], "/sq_period", bpm_red
+        )(),
+    )
+    osc.dispatcher.map(
+        "/snap_sin_booth_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sin_booth], "/sin_booth_period", bpm_red
+        )(),
+    )
+    osc.dispatcher.map(
+        "/snap_sin_wash_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sin_wash], "/period_wash", bpm_wash
+        )(),
+    )
 
     client_tracker = ClientTracker(osc)
     client_tracker.start()
