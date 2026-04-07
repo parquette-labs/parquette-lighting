@@ -196,7 +196,7 @@ class PresetManager(object):
 
         self.osc.send_osc("/enable_save", self.enable_save_clear)
 
-    def select(self, category: str, category_preset: str, sync: bool = False) -> None:
+    def select(self, category: str, category_preset: str, sync: bool = True) -> None:
         if not category in self.exposed_params:
             # there are no valid exposed params in this category to control
             print(
@@ -206,7 +206,7 @@ class PresetManager(object):
             )
             return
 
-        self.current_presets[category] = category_preset
+        self.current_presets[category] = category_presets
 
         if not category in self.stored_presets:
             # Someone is creating a new preset, nothing to load

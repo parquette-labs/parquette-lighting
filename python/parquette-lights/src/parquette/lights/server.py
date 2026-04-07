@@ -346,8 +346,18 @@ def run(
         # Reuses the existing set_dimming_target on each fixture, which
         # accepts None for any channel to leave it unchanged — `w` is
         # omitted so the white target is preserved.
+        #
+        # Handles two invocation shapes:
+        #   pythonosc dispatcher → (addr, r, g, b) so args == (r, g, b)
+        #   PresetManager.load   → (addr, [r, g, b]) so args == ([r,g,b],)
+        if len(args) == 1 and isinstance(args[0], (list, tuple)):
+            rgb = args[0]
+        else:
+            rgb = args
+        if len(rgb) < 3:
+            return
         for fixture in _all_washes:
-            fixture.set_dimming_target(r=args[0], g=args[1], b=args[2])
+            fixture.set_dimming_target(r=rgb[0], g=rgb[1], b=rgb[2])
 
     exposed_params: Dict[str, List[OSCParam]] = {
         "fft": [],
@@ -987,9 +997,7 @@ def run(
     )
     osc.dispatcher.map(
         "/snap_sq_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [sq1, sq2, sq3], "/sq_period", bpm_red
-        )(),
+        lambda addr, *args: make_snap_handler([sq1, sq2, sq3], "/sq_period", bpm_red)(),
     )
     osc.dispatcher.map(
         "/snap_sin_booth_to_bpm",
@@ -999,9 +1007,7 @@ def run(
     )
     osc.dispatcher.map(
         "/snap_sin_wash_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [sin_wash], "/period_wash", bpm_wash
-        )(),
+        lambda addr, *args: make_snap_handler([sin_wash], "/period_wash", bpm_wash)(),
     )
 
     client_tracker = ClientTracker(osc)
