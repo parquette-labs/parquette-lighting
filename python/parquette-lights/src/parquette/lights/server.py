@@ -582,6 +582,14 @@ def run(
                     args, "tempo_alpha", [fft_manager]
                 ),
             ),
+            OSCParam(
+                osc,
+                "/business_floor",
+                lambda: fft_manager.business_floor,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "business_floor", [fft_manager]
+                ),
+            ),
         ]
     )
 

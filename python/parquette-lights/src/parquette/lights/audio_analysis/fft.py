@@ -14,7 +14,10 @@ from librosa import (
     db_to_amplitude,  # pylint: disable=no-name-in-module
 )  # pylint: disable=no-name-in-module
 from librosa import resample  # pylint: disable=no-name-in-module
-from librosa.feature import melspectrogram, spectral_flatness  # pylint: disable=no-name-in-module
+from librosa.feature import (
+    melspectrogram,
+    spectral_flatness,
+)  # pylint: disable=no-name-in-module
 from librosa.beat import beat_track
 from librosa.onset import onset_strength, onset_detect
 from librosa.effects import hpss
@@ -51,8 +54,10 @@ class FFTManager(object):
         debug_timeout: int = 30,
         rms_window_secs: float = 1.0,
         debug: bool = False,
+        business_floor: float = 2.0,
     ) -> None:
         self.debug = debug
+        self.business_floor = business_floor
         self.osc = osc
         self.audio_cap = audio_cap
         self.n_mels = self.audio_cap.chunk // 8
@@ -91,9 +96,7 @@ class FFTManager(object):
             maxlen=self.raw_bpm_metric_history_len
         )
         self.business_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
-        self.regularity_history: deque = deque(
-            maxlen=self.raw_bpm_metric_history_len
-        )
+        self.regularity_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self._rms_ss: deque = deque()
@@ -202,9 +205,15 @@ class FFTManager(object):
         # Compute onset envelope once; reuse for both beat_track and alignment score
         oenv = onset_strength(y=y, sr=sr)
         # Discrete onset frames, computed once and reused by the business /
-        # regularity metrics below.
+        # regularity metrics below. `delta` is bumped well above the librosa
+        # default (0.07) so the adaptive picker requires a larger jump above
+        # the local mean — kills most of the ambient-envelope-wiggle noise.
         onset_frames = onset_detect(
-            onset_envelope=oenv, sr=sr, hop_length=hop_length, units="frames"
+            onset_envelope=oenv,
+            sr=sr,
+            hop_length=hop_length,
+            units="frames",
+            # delta=0.5,
         )
         reported_tempo, beat_frames = beat_track(
             onset_envelope=oenv,
@@ -268,8 +277,10 @@ class FFTManager(object):
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
         flatness = self._compute_spectral_flatness(y)
-        business = self._compute_business(onset_frames, len(oenv), sr, hop_length)
-        regularity = self._compute_regularity(onset_frames, sr, hop_length)
+        business, kept_onset_frames = self._compute_business(
+            onset_frames, oenv, len(oenv), sr, hop_length
+        )
+        regularity = self._compute_regularity(kept_onset_frames, sr, hop_length)
 
         self.harmonic_percussive_history.append(hp_ratio)
         self.spectral_flatness_history.append(flatness)
@@ -347,15 +358,27 @@ class FFTManager(object):
     def _compute_business(
         self,
         onset_frames: np.ndarray,
+        oenv: np.ndarray,
         oenv_len: int,
         sr: int,
         hop_length: int,
-    ) -> float:
-        """Onsets per second over the analysis window."""
+    ):
+        """
+        Onsets per second over the analysis window, after filtering candidate
+        onsets by an absolute envelope-magnitude floor to kill the onset
+        picker's auto-scaling on quiet / ambient material.
+
+        Returns (rate, kept_onset_frames) so downstream metrics (e.g.
+        regularity) can consume the same filtered set.
+        """
+        if len(onset_frames) > 0:
+            magnitudes = oenv[onset_frames]
+            onset_frames = onset_frames[magnitudes >= self.business_floor]
+
         window_secs = (oenv_len * hop_length) / sr
         if window_secs <= 0:
-            return 0.0
-        return float(len(onset_frames)) / window_secs
+            return 0.0, onset_frames
+        return float(len(onset_frames)) / window_secs, onset_frames
 
     def _compute_regularity(
         self, onset_frames: np.ndarray, sr: int, hop_length: int
@@ -496,6 +519,16 @@ class FFTManager(object):
                     self.osc.send_osc(
                         "/stability_conf_viz", list(self.stability_conf_history)
                     )
+                    self.osc.send_osc(
+                        "/harmonic_percussive_viz",
+                        list(self.harmonic_percussive_history),
+                    )
+                    self.osc.send_osc(
+                        "/spectral_flatness_viz",
+                        list(self.spectral_flatness_history),
+                    )
+                    self.osc.send_osc("/business_viz", list(self.business_history))
+                    self.osc.send_osc("/regularity_viz", list(self.regularity_history))
                     # C5: uidb update consolidated into wall-clock block; counter removed
                     self.uidb.update_ui()
 
