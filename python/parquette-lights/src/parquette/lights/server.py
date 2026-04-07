@@ -23,6 +23,7 @@ from .audio_analysis import FFTManager, AudioCapture
 from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .preset_manager import PresetManager
+from .util.client_tracker import ClientTracker
 
 
 @click.command()
@@ -1040,6 +1041,9 @@ def run(
             spot.reset(reset)
 
     osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
+
+    client_tracker = ClientTracker(osc)
+    client_tracker.start()
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
