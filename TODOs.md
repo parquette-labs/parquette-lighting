@@ -4,7 +4,7 @@
 * Hazer
 * Adjust levels with real input
 * Impulse
-* DMX pass
+* DMX passthrough
 
 # Notes/Ideas/TODOs
 

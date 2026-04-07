@@ -340,6 +340,15 @@ def run(
         else:
             fft.set_bounds(args[0], args[2])
 
+    _all_washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
+
+    def _dispatch_wash_color(_addr, *args):
+        # Reuses the existing set_dimming_target on each fixture, which
+        # accepts None for any channel to leave it unchanged — `w` is
+        # omitted so the white target is preserved.
+        for fixture in _all_washes:
+            fixture.set_dimming_target(r=args[0], g=args[1], b=args[2])
+
     exposed_params: Dict[str, List[OSCParam]] = {
         "fft": [],
         "reds": [
@@ -367,63 +376,6 @@ def run(
         "washes_color": [
             OSCParam(
                 osc,
-                "/wash_r",
-                lambda: washceilf.r_target,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args,
-                    "r_target",
-                    [
-                        washfl,
-                        washfr,
-                        washml,
-                        washmr,
-                        washbl,
-                        washbr,
-                        washceilf,
-                        washceilr,
-                    ],
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/wash_g",
-                lambda: washceilf.g_target,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args,
-                    "g_target",
-                    [
-                        washfl,
-                        washfr,
-                        washml,
-                        washmr,
-                        washbl,
-                        washbr,
-                        washceilf,
-                        washceilr,
-                    ],
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/wash_b",
-                lambda: washceilf.b_target,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args,
-                    "b_target",
-                    [
-                        washfl,
-                        washfr,
-                        washml,
-                        washmr,
-                        washbl,
-                        washbr,
-                        washceilf,
-                        washceilr,
-                    ],
-                ),
-            ),
-            OSCParam(
-                osc,
                 "/wash_w",
                 lambda: washceilf.w_target,
                 lambda _, args: OSCParam.obj_param_setter(
@@ -434,6 +386,21 @@ def run(
                         washceilr,
                     ],
                 ),
+            ),
+            # Combined RGB target for the wash color picker. Stored in
+            # presets so the picker round-trips through save/load and sync.
+            # Reuses set_dimming_target on each fixture (which accepts None
+            # to leave a channel unchanged) — `w` is omitted so the white
+            # target stays put.
+            OSCParam(
+                osc,
+                "/wash_color",
+                lambda: [
+                    washceilf.r_target,
+                    washceilf.g_target,
+                    washceilf.b_target,
+                ],
+                _dispatch_wash_color,
             ),
         ],
         "washes": [
