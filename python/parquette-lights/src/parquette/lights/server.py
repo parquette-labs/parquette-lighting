@@ -215,10 +215,12 @@ def run(
         osc,
         audio_capture,
         energy_threshold=100.0,
-        confidence_threshold=0.5,
         tempo_alpha=0.25,
         rms_window_secs=rms_window,
         debug=debug,
+        onset_envelope_floor=2.0,
+        min_business=0.5,
+        min_regularity=0.4,
     )
 
     initialAmp: float = 200
@@ -568,14 +570,6 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/bpm_confidence_threshold",
-                lambda: fft_manager.confidence_threshold,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "confidence_threshold", [fft_manager]
-                ),
-            ),
-            OSCParam(
-                osc,
                 "/bpm_tempo_alpha",
                 lambda: fft_manager.tempo_alpha,
                 lambda _, args: OSCParam.obj_param_setter(
@@ -584,10 +578,26 @@ def run(
             ),
             OSCParam(
                 osc,
-                "/business_floor",
-                lambda: fft_manager.business_floor,
+                "/onset_envelope_floor",
+                lambda: fft_manager.onset_envelope_floor,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "business_floor", [fft_manager]
+                    args, "onset_envelope_floor", [fft_manager]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_business_min",
+                lambda: fft_manager.min_business,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "min_business", [fft_manager]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/bpm_regularity_min",
+                lambda: fft_manager.min_regularity,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "min_regularity", [fft_manager]
                 ),
             ),
         ]

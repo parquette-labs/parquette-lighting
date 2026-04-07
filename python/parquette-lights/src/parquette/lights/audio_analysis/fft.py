@@ -22,7 +22,7 @@ import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
 from ..osc import OSCManager, UIDebugFrame
-from ..util.math import fold_tempo, fold_tempo_for_stability
+from ..util.math import fold_tempo
 from .audio import AudioCapture
 
 
@@ -46,24 +46,25 @@ class FFTManager(object):
         audio_cap: AudioCapture,
         *,
         energy_threshold: float = 100.0,
-        confidence_threshold: float = 0.4,
         tempo_alpha: float = 0.25,
         debug_timeout: int = 30,
         rms_window_secs: float = 1.0,
         debug: bool = False,
-        business_floor: float = 2.0,
+        onset_envelope_floor: float = 2.0,
+        min_business: float = 0.5,
+        min_regularity: float = 0.4,
     ) -> None:
         self.debug = debug
-        self.business_floor = business_floor
+        self.onset_envelope_floor = onset_envelope_floor
+        self.min_business = min_business
+        self.min_regularity = min_regularity
         self.osc = osc
         self.audio_cap = audio_cap
         self.n_mels = self.audio_cap.chunk // 8
 
         self.energy_threshold = energy_threshold
-        self.confidence_threshold = confidence_threshold
         self.tempo_alpha = tempo_alpha
         self.rms_window_secs = rms_window_secs
-        self.bpm_confidence = 0.0
         self.current_rms: float = 0.0
         self._last_beat_track_time: float = 0.0
         self._last_viz_time: float = 0.0
@@ -76,15 +77,9 @@ class FFTManager(object):
         # C2: all history buffers as deques — O(1) append/eviction, no list copies
         self.bpm_history: deque = deque(maxlen=self.bpm_history_len)
         self.rms_history: deque = deque(maxlen=self.bpm_history_len)
-        self.confidence_history: deque = deque(maxlen=self.bpm_history_len)
-        # Raw (unsmoothed) histories updated at 500ms cadence (beat_track rate)
+        # Raw (unsmoothed) tempo reports — kept for debugging the tracker
+        # independently of the validity gate.
         self.raw_bpm_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
-        self.alignment_conf_history: deque = deque(
-            maxlen=self.raw_bpm_metric_history_len
-        )
-        self.stability_conf_history: deque = deque(
-            maxlen=self.raw_bpm_metric_history_len
-        )
         self.harmonic_percussive_history: deque = deque(
             maxlen=self.raw_bpm_metric_history_len
         )
@@ -174,9 +169,9 @@ class FFTManager(object):
             self.bpm.rms_valid = True
         else:
             self.bpm.rms_valid = False
-            self.bpm_confidence = 0.0
+            self.bpm.bpm_valid = False
             self.uidb["reported_tempo"] = "n/a"
-            self.uidb["bpm_confidence"] = "n/a"
+            self.uidb["bpm_valid"] = "n/a"
 
     # C1: win_ts snapshot passed in — no longer reads live audio_cap.window_ts deque
     def _run_beat_track(self, win: List[np.ndarray], win_ts: List[float]) -> None:
@@ -219,47 +214,8 @@ class FFTManager(object):
         reported_tempo = fold_tempo(float(reported_tempo))
         self.uidb["reported_tempo"] = reported_tempo
 
-        # Track raw (unsmoothed) tempo for stability calculation
+        # Raw (unsmoothed) tempo reports — debug readout only.
         self.raw_bpm_history.append(float(reported_tempo))
-
-        # Option A: onset alignment
-        # Onset envelope is computed independently of beat_track's forced grid.
-        # Structured music: strong onsets at beat positions → ratio >> 1.
-        # Ambient music: onset envelope flat relative to beats → ratio ≈ 1.
-        valid_frames = beat_frames[beat_frames < len(oenv)]
-        self.uidb["len_beat_frames"] = len(beat_frames)
-        if len(valid_frames) > 0 and len(beat_frames) > 6:
-            alignment_ratio = float(np.mean(oenv[valid_frames])) / (
-                float(np.mean(oenv)) + 1e-6
-            )
-            alignment_conf = float(np.clip((alignment_ratio - 1.0) / 3.0, 0.0, 1.0))
-        else:
-            alignment_conf = 0.0
-
-        # Option C: tempo stability
-        # Arrhythmic music causes beat_track to report a different tempo each call.
-        # Fold by both 2x and 1.5x before computing variance so the tracker
-        # alternating between T and 1.5T (or 2T/3) does not penalise stability.
-        reference = self.bpm.bpm if self.bpm.bpm > 0 else 100.0
-        recent_raw = list(self.raw_bpm_history)[-5:]
-        if len(recent_raw) >= 3:
-            folded = [fold_tempo_for_stability(b, reference) for b in recent_raw]
-            tempo_cv = float(np.std(folded) / (np.mean(folded) + 1e-6))
-            stability_conf = float(np.clip(1.0 - tempo_cv * 5.0, 0.0, 1.0))
-        else:
-            stability_conf = 0.0  # not enough history yet
-
-        self.alignment_conf_history.append(alignment_conf)
-        self.stability_conf_history.append(stability_conf)
-
-        # Both must independently pass
-        self.bpm_confidence = min(alignment_conf, stability_conf)
-        self.bpm.bpm_valid = self.bpm_confidence >= self.confidence_threshold
-        self.uidb["bpm_confidence"] = "{bpm:.2} {sign} {thres:.2}".format(
-            bpm=self.bpm_confidence,
-            sign=">" if self.bpm.bpm_valid else "<",
-            thres=self.confidence_threshold,
-        )
 
         if self.bpm.bpm > 0:
             self.bpm.bpm = (
@@ -277,6 +233,23 @@ class FFTManager(object):
         self.harmonic_percussive_history.append(hp_ratio)
         self.business_history.append(business)
         self.regularity_history.append(regularity)
+
+        # BPM validity gate: require recent (3-tick mean) business and
+        # regularity to both exceed configurable floors. The 3-tick mean
+        # dampens one-tick flickers at state boundaries so the BPM
+        # generator doesn't stutter on/off. Raw plots stay raw.
+        recent_business = float(np.mean(list(self.business_history)[-3:]))
+        recent_regularity = float(np.mean(list(self.regularity_history)[-3:]))
+        self.bpm.bpm_valid = (
+            recent_business >= self.min_business
+            and recent_regularity >= self.min_regularity
+        )
+        self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs}".format(
+            b=recent_business,
+            bs="✓" if recent_business >= self.min_business else "✗",
+            r=recent_regularity,
+            rs="✓" if recent_regularity >= self.min_regularity else "✗",
+        )
 
         self.uidb["harmonic_percussive"] = f"{hp_ratio:.2f}"
         self.uidb["business"] = f"{business:.2f}/s"
@@ -330,7 +303,7 @@ class FFTManager(object):
         """
         if len(onset_frames) > 0:
             magnitudes = oenv[onset_frames]
-            onset_frames = onset_frames[magnitudes >= self.business_floor]
+            onset_frames = onset_frames[magnitudes >= self.onset_envelope_floor]
 
         window_secs = (oenv_len * hop_length) / sr
         if window_secs <= 0:
@@ -457,22 +430,12 @@ class FFTManager(object):
 
                 self.bpm_history.append(self.bpm.bpm)
                 self.rms_history.append(self.current_rms)
-                self.confidence_history.append(self.bpm_confidence)
 
                 if self.send_fft_debug_data:
                     self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
                     self.osc.send_osc("/rms_history_viz", list(self.rms_history))
                     self.osc.send_osc(
-                        "/confidence_history_viz", list(self.confidence_history)
-                    )
-                    self.osc.send_osc(
                         "/raw_bpm_history_viz", list(self.raw_bpm_history)
-                    )
-                    self.osc.send_osc(
-                        "/alignment_conf_viz", list(self.alignment_conf_history)
-                    )
-                    self.osc.send_osc(
-                        "/stability_conf_viz", list(self.stability_conf_history)
                     )
                     self.osc.send_osc(
                         "/harmonic_percussive_viz",
