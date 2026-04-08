@@ -161,17 +161,6 @@ class Spot(LightFixture):
             self.color_swap_fade_multiplier = 1.0
             return
 
-        # If the spot is already dark, there's nothing to fade out and
-        # nothing to fade back in to — just swap the color directly.
-        # Without this short-circuit the fade thread would still drive the
-        # multiplier from 1.0 → 0 → 1.0 around the swap, which (combined
-        # with any dynamic driving on _dimming from the mixer tick) can
-        # briefly flash the spot on at the start of the sequence.
-        if self._dimming == 0:
-            self._color_direct(color_index)
-            self.color_swap_fade_multiplier = 1.0
-            return
-
         # Wall-clock driven so we don't drift when individual time.sleep
         # calls oversleep (which they reliably do under GIL pressure on
         # macOS). Each phase records its own start instant and computes
