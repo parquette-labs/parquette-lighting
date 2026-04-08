@@ -119,7 +119,7 @@ from .util.client_tracker import ClientTracker
 )
 @click.option(
     "--spot-color-fade",
-    default=-1.0,
+    default=1.0,
     type=float,
     help="Seconds for moving-head color change fade out/in (negative disables)",
 )

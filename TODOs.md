@@ -1,7 +1,5 @@
 # Untested
 
-* XY Tilt
-* Hazer
 * Adjust levels with real input
 * Impulse
 * DMX passthrough
@@ -9,7 +7,7 @@
 
 # Notes/Ideas/TODOs
 
-* Add an interval to the hazer
+* Retry XY mapping work
 * Need a working offset calculator for the BPM, was working ok before
 * sq1, sq2, sq3, need to have separate period controls
 * Move controls for synths next to patch bays
