@@ -1,12 +1,14 @@
-# Untested
+# Pre show todos
 
 * Adjust levels with real input
-* Impulse
+* Tune the presets further 
+
+# Untested
 * DMX passthrough
-* Color fade in out
 
 # Notes/Ideas/TODOs
 
+* Update the BPM much less often for smoothing?
 * Retry XY mapping work
 * Need a working offset calculator for the BPM, was working ok before
 * sq1, sq2, sq3, need to have separate period controls
@@ -24,6 +26,7 @@
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Blue/green deploy mechanism
 * Trigger the next beat impulse (or all synths with the next time step)?
+* Viz should connect to an out channel
 
 # Feedback
 * Maybe we need softer strobes
