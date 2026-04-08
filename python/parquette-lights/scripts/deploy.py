@@ -143,16 +143,12 @@ def handle_remote_dirty(root: Path) -> None:
     syncable, blocking = classify_remote_dirty(entries)
 
     if blocking:
-        click.secho(
-            "Remote has uncommitted changes outside layout/params:", fg="red"
-        )
+        click.secho("Remote has uncommitted changes outside layout/params:", fg="red")
         for path in blocking:
             click.echo(f"  {path}")
         fail("Resolve manually on the remote before deploying.")
 
-    click.secho(
-        "Remote has uncommitted changes in syncable files:", fg="yellow"
-    )
+    click.secho("Remote has uncommitted changes in syncable files:", fg="yellow")
     for path in syncable:
         click.echo(f"  {path}")
     click.echo()
@@ -266,9 +262,7 @@ def main(skip_install: bool, remote_host: str, verbose: bool) -> None:
     remote_pull(branch)
 
     if skip_install:
-        click.secho(
-            "--skip-install set; not running launchd/install.sh", fg="yellow"
-        )
+        click.secho("--skip-install set; not running launchd/install.sh", fg="yellow")
     else:
         remote_install()
 

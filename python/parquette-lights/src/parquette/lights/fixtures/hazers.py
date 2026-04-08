@@ -1,32 +1,47 @@
+import time
+
 from parquette.lights.dmx import DMXManager, DMXValue
 
 
 class RadianceHazer(object):
-    def __init__(self, dmx: DMXManager, addr: int):
+    def __init__(self, dmx: DMXManager, addr: int, *, debug: bool = False):
         self.dmx = dmx
         self.addr = addr
-        self.num_chans = 2
+
+        self.debug = debug
+
         self._output: DMXValue = 0
         self._fan: DMXValue = 0
-        # PWM-style cycle config (intensity/fan are the on-phase targets,
-        # interval is total period in seconds, duration is on-time per cycle).
-        # interval == 0 (or duration >= interval) means continuous on.
-        self.intensity: DMXValue = 0
-        self.cycle_fan: DMXValue = 0
+
+        self.target_output: DMXValue = 0
+        self.target_fan: DMXValue = 0
+
         self.interval: float = 0.0
         self.duration: float = 0.0
 
-    def tick(self, now: float) -> None:
-        if self.interval <= 0 or self.duration >= self.interval:
+    def tick(self) -> None:
+        now = time.monotonic()
+
+        if self.duration <= 0:
+            on = False
+        elif self.interval <= 0 or self.duration >= self.interval:
             on = True
         else:
             on = (now % self.interval) < self.duration
+
         if on:
-            self.output = self.intensity
-            self.fan = self.cycle_fan
+            self.output = self.target_output
+            self.fan = self.target_fan
         else:
             self.output = 0
             self.fan = 0
+
+        if self.debug:
+            print(
+                "Hazer [intensity, fan] {}".format(
+                    self.dmx.chans[self.addr - 1 : self.addr + 1],
+                )
+            )
 
     @property
     def output(self) -> DMXValue:

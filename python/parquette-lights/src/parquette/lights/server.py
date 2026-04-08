@@ -70,6 +70,12 @@ from .util.client_tracker import ClientTracker
     "--debug-osc-out", is_flag=True, default=False, help="Print outbound OSC messages"
 )
 @click.option(
+    "--debug-hazer",
+    is_flag=True,
+    default=False,
+    help="Print the hazer's DMX channel state on every tick",
+)
+@click.option(
     "--boot-art-net",
     is_flag=True,
     default=False,
@@ -127,6 +133,7 @@ def run(
     debug: bool,
     debug_osc_in: bool,
     debug_osc_out: bool,
+    debug_hazer: bool,
     boot_art_net: bool,
     art_net_auto: bool,
     enable_save_clear: bool,
@@ -207,13 +214,7 @@ def run(
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
 
-    hazer = RadianceHazer(dmx, addr=250)
-    hazer.output = 0
-    hazer.fan = 0
-    hazer.intensity = 0
-    hazer.cycle_fan = 0
-    hazer.interval = 0.0
-    hazer.duration = 0.0
+    hazer = RadianceHazer(dmx, addr=250, debug=debug_hazer)
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     audio_capture.dmx = dmx
@@ -475,34 +476,28 @@ def run(
             OSCParam(
                 osc,
                 "/hazer_intensity",
-                lambda: hazer.intensity,
+                lambda: hazer.target_output,
                 lambda _, args: OSCParam.obj_param_setter(
-                    args, "intensity", [hazer]
+                    args, "target_output", [hazer]
                 ),
             ),
             OSCParam(
                 osc,
                 "/hazer_fan",
-                lambda: hazer.cycle_fan,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "cycle_fan", [hazer]
-                ),
+                lambda: hazer.target_fan,
+                lambda _, args: OSCParam.obj_param_setter(args, "target_fan", [hazer]),
             ),
             OSCParam(
                 osc,
                 "/hazer_interval",
                 lambda: hazer.interval,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "interval", [hazer]
-                ),
+                lambda _, args: OSCParam.obj_param_setter(args, "interval", [hazer]),
             ),
             OSCParam(
                 osc,
                 "/hazer_duration",
                 lambda: hazer.duration,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "duration", [hazer]
-                ),
+                lambda _, args: OSCParam.obj_param_setter(args, "duration", [hazer]),
             ),
         ],
         "non-saved": [],
@@ -1041,7 +1036,7 @@ def run(
             else:
                 mixer.runChannelMix()
                 mixer.runOutputMix()
-                hazer.tick(time.monotonic())
+                hazer.tick()
                 mixer.updateDMX()
             time.sleep(0.01)
 
