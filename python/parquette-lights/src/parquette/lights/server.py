@@ -855,8 +855,10 @@ def run(
             OSCParam(
                 osc,
                 "/spot_joystick_xy_{}".format(i + 1),
-                lambda fixture=fixture: [0, 0],
-                lambda _, *args, fixture=fixture: fixture.aim_at(args[0], args[1], 1),
+                lambda fixture=fixture: fixture.get_aim()[0:2],
+                lambda _, *args, fixture=fixture: fixture.aim_at(
+                    args[0][0], args[0][1], 1
+                ),
             )
         )
 
