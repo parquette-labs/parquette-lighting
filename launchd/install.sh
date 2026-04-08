@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Pass -y to skip the interactive "load and start services?" prompt — used
+# by the deploy.py script for non-interactive remote installs.
+ASSUME_YES=0
+while getopts "y" opt; do
+    case $opt in
+        y) ASSUME_YES=1 ;;
+        *) echo "Usage: $0 [-y]" >&2; exit 1 ;;
+    esac
+done
+
 script_path=$(dirname $(realpath "$0"))
 project_path=$(dirname "$script_path")
 
@@ -26,7 +36,11 @@ do
     echo "$output" >> ~/Library/LaunchAgents/$service_name.plist
 done
 
-read -p "Do you want to load and start services now? (y/n) " yn
+if [ "$ASSUME_YES" -eq 1 ]; then
+    yn="y"
+else
+    read -p "Do you want to load and start services now? (y/n) " yn
+fi
 case $yn in
     [Yy]* )
     	for service_name in "${services[@]}"
