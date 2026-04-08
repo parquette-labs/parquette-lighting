@@ -8,6 +8,7 @@
 
 # Notes/Ideas/TODOs
 
+* Something is wrong with BPM again?
 * Update the BPM much less often for smoothing?
 * Save state across reboot
 * Retry XY mapping work

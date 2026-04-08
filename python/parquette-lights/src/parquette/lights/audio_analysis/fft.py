@@ -403,7 +403,7 @@ class FFTManager(object):
             fft_data = self.forward(win[-1])
 
             now = time.monotonic()
-            if now - self._last_beat_track_time >= 0.2:
+            if now - self._last_beat_track_time >= 1:
                 if self._beat_future is None or self._beat_future.done():
                     self._last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
