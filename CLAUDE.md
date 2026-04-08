@@ -44,3 +44,4 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - Avoid using _ before variable and function names (to denote private etc)
 - When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manage so they can be saved and sync'd with the front end
 - When creating parameters assume you need a front end UI element (slider or similar) in the associated tab (most misc configration should go in fft dmx) and that UI element should also have a text area under it with a name and a real time value
+- Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code

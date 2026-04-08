@@ -119,9 +119,15 @@ from .util.client_tracker import ClientTracker
 )
 @click.option(
     "--spot-color-fade",
-    default=0.1,
+    default=0.05,
     type=float,
     help="Seconds for moving-head color change fade out/in (negative disables)",
+)
+@click.option(
+    "--spot-mechanical-time",
+    default=0.05,
+    type=float,
+    help="Seconds to hold dark while the moving-head color wheel mechanically settles",
 )
 # pylint: disable-next=too-many-positional-arguments
 def run(
@@ -142,6 +148,7 @@ def run(
     audio_window: float,
     rms_window: float,
     spot_color_fade: float,
+    spot_mechanical_time: float,
 ) -> None:
     print("Setup", flush=True)
 
@@ -187,6 +194,7 @@ def run(
 
     for spot in spotlights:
         spot.color_swap_fade_time = spot_color_fade
+        spot.color_swap_mechanical_time = spot_mechanical_time
 
     washfl = RGBLight(dmx, 104)
     washfl.rgb(0, 0, 0)
@@ -817,6 +825,25 @@ def run(
                 lambda: mixer.spots_master,
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "spots_master", [mixer]
+                ),
+            ),
+            # Color-swap fade timings, applied to every spotlight. These
+            # live in `non-saved` so they're global config independent of
+            # any preset and survive across preset loads.
+            OSCParam(
+                osc,
+                "/spot_color_fade_time",
+                lambda: spotlights[0].color_swap_fade_time if spotlights else 0.0,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "color_swap_fade_time", spotlights
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/spot_mechanical_time",
+                lambda: spotlights[0].color_swap_mechanical_time if spotlights else 0.0,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "color_swap_mechanical_time", spotlights
                 ),
             ),
         ]
