@@ -209,6 +209,7 @@ class Spot(LightFixture):
         pan, tilt = result
         self.pan_deg(pan)
         self.tilt_deg(tilt)
+        print(x, y, z, pan, tilt)
 
     def get_aim(self) -> Tuple[float, float, float]:
         """Return the current beam direction as a unit (x, y, z)."""
