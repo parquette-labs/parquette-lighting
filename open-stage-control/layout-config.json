@@ -6386,62 +6386,6 @@
             "off": 0,
             "mode": "tap",
             "decoupled": false
-          },
-          {
-            "type": "fader",
-            "id": "spot_color_fade_time",
-            "top": 580,
-            "left": 200,
-            "width": 70,
-            "height": 200,
-            "address": "/spot_color_fade_time",
-            "value": 0,
-            "default": 0,
-            "decimals": 2,
-            "range": {
-              "min": -1,
-              "max": 2
-            }
-          },
-          {
-            "type": "textarea",
-            "id": "spot_color_fade_time_text",
-            "top": 780,
-            "left": 200,
-            "width": 70,
-            "height": 60,
-            "interaction": false,
-            "value": "spot fade @{spot_color_fade_time}s",
-            "default": "",
-            "bypass": true
-          },
-          {
-            "type": "fader",
-            "id": "spot_mechanical_time",
-            "top": 580,
-            "left": 280,
-            "width": 70,
-            "height": 200,
-            "address": "/spot_mechanical_time",
-            "value": 0,
-            "default": 0,
-            "decimals": 2,
-            "range": {
-              "min": 0,
-              "max": 2
-            }
-          },
-          {
-            "type": "textarea",
-            "id": "spot_mechanical_time_text",
-            "top": 780,
-            "left": 280,
-            "width": 70,
-            "height": 60,
-            "interaction": false,
-            "value": "spot mech @{spot_mechanical_time}s",
-            "default": "",
-            "bypass": true
           }
         ],
         "tabs": [],
