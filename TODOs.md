@@ -10,6 +10,7 @@
 
 * Something is wrong with BPM again? Seems related to the update freq (I set the interval back to 1s)
 * Update the BPM much less often for smoothing?
+* Transition from spot off doesnt' do the fade right due to the jump in levels
 * Save state across reboot
 * Retry XY mapping work
 * Need a working offset calculator for the BPM, was working ok before
