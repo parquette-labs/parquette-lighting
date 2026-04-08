@@ -9,6 +9,7 @@
 # Notes/Ideas/TODOs
 
 * Update the BPM much less often for smoothing?
+* Save state across reboot
 * Retry XY mapping work
 * Need a working offset calculator for the BPM, was working ok before
 * sq1, sq2, sq3, need to have separate period controls

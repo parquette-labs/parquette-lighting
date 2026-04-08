@@ -170,8 +170,11 @@ def handle_remote_dirty(root: Path) -> None:
             ssh(f"git checkout -- {shlex.quote(path)}")
         return
 
-    # choice == "a": scp each file from remote → local. The local commit
-    # step that runs next will pick them up alongside any existing edits.
+    # choice == "a": scp each file from remote → local, then `git checkout
+    # --` on the remote so the working tree is clean before the pull. The
+    # local commit step picks the files up alongside any existing local
+    # edits, and the post-push pull on the remote then fast-forwards the
+    # same content back into place.
     for path in syncable:
         local_dest = root / path
         local_dest.parent.mkdir(parents=True, exist_ok=True)
@@ -182,6 +185,8 @@ def handle_remote_dirty(root: Path) -> None:
                 str(local_dest),
             ]
         )
+    for path in syncable:
+        ssh(f"git checkout -- {shlex.quote(path)}")
 
 
 def ensure_local_clean(root: Path) -> None:
