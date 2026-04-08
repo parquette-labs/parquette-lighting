@@ -188,7 +188,7 @@ class PresetManager(object):
         for category, category_preset in self.current_presets.items():
             self.osc.send_osc("/preset_selector/{}".format(category), category_preset)
 
-        self.osc.send_osc("/enable_save", self.enable_save_clear)
+        self.osc.send_osc("/enable_save", 1 if self.enable_save_clear else 0)
 
     def select(self, category: str, category_preset: str, sync: bool = True) -> None:
         if not category in self.exposed_params:
