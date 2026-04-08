@@ -339,7 +339,7 @@ class YRXY200Spot(Spot):
         # Conservative default for the physical color wheel settle time. Tune
         # against the fixture if it ends up too fast (visible color swap mid
         # fade-in) or too slow (dead time at zero brightness).
-        self.color_swap_mechanical_time = 0.3
+        self.color_swap_mechanical_time = 0.2
 
         self.pan_channel = DMXControlChannel("pan_channel", 0)
         self.tilt_channel = DMXControlChannel("tilt_channel", 2)
