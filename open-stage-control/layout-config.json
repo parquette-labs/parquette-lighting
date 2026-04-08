@@ -1,6 +1,6 @@
 {
   "createdWith": "Open Stage Control",
-  "version": "1.30.2",
+  "version": "1.29.5",
   "type": "session",
   "content": {
     "type": "root",
@@ -103,8 +103,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "switch",
@@ -155,8 +154,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -178,8 +176,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -201,8 +198,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "switch",
@@ -316,8 +312,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -340,8 +335,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -364,8 +358,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -388,8 +381,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "switch",
@@ -480,8 +472,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -504,8 +495,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -528,8 +518,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -552,8 +541,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -631,8 +619,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -655,8 +642,7 @@
             "off": 0,
             "mode": "push",
             "doubleTap": false,
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "textarea",
@@ -736,8 +722,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -760,8 +745,7 @@
             "off": 0,
             "mode": "push",
             "doubleTap": false,
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "switch",
@@ -807,8 +791,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -831,8 +814,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "fader",
@@ -1074,8 +1056,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -1421,8 +1402,7 @@
             "on": 1,
             "off": 0,
             "mode": "momentary",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           }
         ],
         "tabs": [],
@@ -1552,8 +1532,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               },
               {
                 "type": "fader",
@@ -1650,11 +1629,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "stepsX": false,
-                "stepsY": false,
-                "clipX": "",
-                "clipY": ""
+                "bypass": false
               },
               {
                 "type": "xy",
@@ -1687,11 +1662,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "stepsX": false,
-                "stepsY": false,
-                "clipX": "",
-                "clipY": ""
+                "bypass": false
               }
             ],
             "tabs": []
@@ -1857,8 +1828,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               },
               {
                 "type": "fader",
@@ -1921,11 +1891,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "stepsX": false,
-                "stepsY": false,
-                "clipX": "",
-                "clipY": ""
+                "bypass": false
               },
               {
                 "type": "switch",
@@ -2024,11 +1990,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "stepsX": false,
-                "stepsY": false,
-                "clipX": "",
-                "clipY": ""
+                "bypass": false
               }
             ],
             "tabs": []
@@ -2129,8 +2091,7 @@
                     "default": "",
                     "address": "auto",
                     "decimals": 2,
-                    "bypass": false,
-                    "click": false
+                    "bypass": false
                   },
                   {
                     "type": "fader",
@@ -2193,11 +2154,7 @@
                     "default": "",
                     "address": "auto",
                     "decimals": 2,
-                    "bypass": false,
-                    "stepsX": false,
-                    "stepsY": false,
-                    "clipX": "",
-                    "clipY": ""
+                    "bypass": false
                   },
                   {
                     "type": "switch",
@@ -2290,8 +2247,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           }
         ],
         "tabs": [],
@@ -3272,8 +3228,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               }
             ],
             "tabs": []
@@ -3426,8 +3381,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -3651,8 +3605,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               },
               {
                 "type": "fader",
@@ -3762,8 +3715,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               }
             ],
             "tabs": [],
@@ -3917,8 +3869,7 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
-                "click": false
+                "bypass": false
               }
             ],
             "tabs": [],
@@ -5071,8 +5022,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -5094,8 +5044,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "dropdown",
@@ -5135,8 +5084,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "textarea",
@@ -5290,9 +5238,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               },
               {
                 "type": "multixy",
@@ -5336,9 +5282,7 @@
                 "logScaleY": false,
                 "axisLock": "",
                 "doubleTap": false,
-                "sensitivity": 1,
-                "stepsX": false,
-                "stepsY": false
+                "sensitivity": 1
               }
             ],
             "tabs": []
@@ -5363,8 +5307,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "textarea",
@@ -5589,8 +5532,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "button",
@@ -5612,8 +5554,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "textarea",
@@ -5815,8 +5756,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "dropdown",
@@ -5855,8 +5795,7 @@
             "off": 0,
             "mode": "tap",
             "doubleTap": false,
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           },
           {
             "type": "button",
@@ -5879,8 +5818,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "switch",
@@ -5924,8 +5862,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "button",
@@ -5947,8 +5884,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "click": false
+            "bypass": false
           },
           {
             "type": "plot",
@@ -6450,8 +6386,7 @@
             "on": 1,
             "off": 0,
             "mode": "tap",
-            "decoupled": false,
-            "click": false
+            "decoupled": false
           }
         ],
         "tabs": [],

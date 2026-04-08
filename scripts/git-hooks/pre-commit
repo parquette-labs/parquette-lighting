@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# Pre-commit hook: strip default/auto fields from open-stage-control's
+# layout-config.json before each commit so the in-repo file stays compact.
+#
+# Install with:
+#   cp scripts/git-hooks/pre-commit "$(git rev-parse --git-path hooks)/pre-commit"
+#   chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
+#
+# Behaviour:
+#   - Only runs if open-stage-control/layout-config.json is staged.
+#   - Runs `poetry run poe strip-osc-layout` from python/parquette-lights.
+#   - Re-stages the layout file so the strip lands in the same commit.
+
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+LAYOUT_REL="open-stage-control/layout-config.json"
+
+# Skip if the layout file isn't part of this commit.
+if ! git diff --cached --name-only | grep -qx "$LAYOUT_REL"; then
+    exit 0
+fi
+
+echo "[pre-commit] stripping defaults from $LAYOUT_REL"
+cd "$REPO_ROOT/python/parquette-lights"
+poetry run poe strip-osc-layout
+
+cd "$REPO_ROOT"
+git add "$LAYOUT_REL"

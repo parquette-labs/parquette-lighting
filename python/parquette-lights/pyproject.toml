@@ -46,5 +46,12 @@ black = "black ./"
 pytest = "pytest"
 strip-osc-layout = "python scripts/strip_layout_defaults.py"
 deploy = "python scripts/deploy.py"
+install-git-hooks.shell = """
+    set -e
+    HOOKS_DIR=$(git -C ../.. rev-parse --git-path hooks)
+    cp ../../scripts/git-hooks/pre-commit "$HOOKS_DIR/pre-commit"
+    chmod +x "$HOOKS_DIR/pre-commit"
+    echo "installed pre-commit hook to $HOOKS_DIR/pre-commit"
+"""
 check.sequence = ["black", "pylint", "mypy"]
 check.ignore_fail = "return_non_zero"
