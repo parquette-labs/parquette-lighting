@@ -8,7 +8,7 @@
 
 # Notes/Ideas/TODOs
 
-* Something is wrong with BPM again?
+* Something is wrong with BPM again? Seems related to the update freq (I set the interval back to 1s)
 * Update the BPM much less often for smoothing?
 * Save state across reboot
 * Retry XY mapping work
