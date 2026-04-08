@@ -9,28 +9,23 @@
 
 # Notes/Ideas/TODOs
 
-* Need a working offset calculator for the BPM
-* hazer interval
-* sq1, sq2, sq3, need separate periods
-* Debug non sheds
-* Color picker doesn't load
+* Add an interval to the hazer
+* Trigger the next beat impulse (or all synths with the next time step)
+* Need a working offset calculator for the BPM, was working ok before
+* sq1, sq2, sq3, need to have separate period controls
+* Move controls for synths next to patch bays
+* Debug non SHED fixtures
 * Annotate FFT plots in the front end with key frequencies
-* Some type of sequencer source both for short, medium and long term scheduling. Perhaps a long term scheduler is different
-* Some kind of orchestrator based on the metrics of music type
-* Some kind of scheduler for the orchestrator
+* Movement patterns drivers for the spots
+* Sequencer and orchestrator
+	* Some type of sequencer source both for short, medium and long term scheduling. Perhaps a long term scheduler is different
+	* Some kind of orchestrator based on the metrics of music type
+	* Some kind of scheduler for the orchestrator
 * Spinning mode similar to fwd / zig zag
 * All input values from the OSC sliders should be smoothed slightly via a parameter defined in click in seconds. Default should be 0.1s smoothing.
 * Overall and per light brightness perception map and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Blue/green deploy mechanism
-* Movement patterns drivers for the spots
-* Generator modes vs patchbay
-	* Wave generators should be able to switch shapes without rewiring in the patchbay? Or general rethink of the patchbay
-	* FFTs should also be able to swap slicing without rewiring? Or some better mechanism for swapping behavior, similar to idea with waves
-* Move controls for synths next to patch bays
-* Trigger the next beat impulse (or all synths with the next time step)
-* Restore the BPM phase from before?
-* Joystick saving doesn't work
 
 # Feedback
 * Maybe we need softer strobes
