@@ -873,8 +873,8 @@ def run(
                     xy = args
                 if len(xy) < 2:
                     return
-                fixture.aim_at(xy[0], xy[1], 10)
-                _echo_position(fixture, i)
+                fixture.aim_at(xy[0], xy[1], 18)
+                # _echo_position(fixture, i)
 
             return _dispatch
 

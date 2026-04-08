@@ -34,3 +34,11 @@
 * Make text bigger
 * randomizer
 * SQ disco struggles
+
+
+# Buggy stuff
+Fix 
+```
+# pythonosc → (addr, x, y) → args == (x, y)
+# PresetManager.load → (addr, [x, y]) → args == ([x, y],)
+```
