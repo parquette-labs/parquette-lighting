@@ -269,7 +269,7 @@ def run(
         phase=0,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=150,
+        duty=0.5,
     )
 
     sq2 = WaveGenerator(
@@ -279,7 +279,7 @@ def run(
         phase=476,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=0.3,
+        duty=0.5,
     )
 
     sq3 = WaveGenerator(
@@ -289,7 +289,7 @@ def run(
         phase=335,
         offset=0,
         shape=WaveGenerator.Shape.SQUARE,
-        duty=0.41,
+        duty=0.5,
     )
 
     impulse = ImpulseGenerator(
@@ -829,14 +829,61 @@ def run(
 
     # pylint: disable=protected-access
     for i, fixture in enumerate(spotlights):
+
+        def _echo_position(fixture=fixture, i=i):
+            # After any position change (from any of the three handles),
+            # push the canonical pan/tilt and the derived xy back out so all
+            # UI widgets — and all connected clients — track the new aim.
+            # Coarse joystick gets MSBs, fine joystick gets LSBs, xy gets
+            # the unit-sphere projection from get_aim().
+            osc.send_osc(
+                "/spot_joystick_{}".format(i + 1),
+                [fixture._pan, fixture._tilt],
+            )
+            osc.send_osc(
+                "/spot_joystick_fine_{}".format(i + 1),
+                [fixture._pan_fine, fixture._tilt_fine],
+            )
+            osc.send_osc(
+                "/spot_joystick_xy_{}".format(i + 1),
+                list(fixture.get_aim()[0:2]),
+            )
+
+        def _make_coarse_dispatch(fixture, i):
+            def _dispatch(_addr, *args):
+                fix_pantilt_wedge(fixture, args, False)
+                _echo_position(fixture, i)
+
+            return _dispatch
+
+        def _make_fine_dispatch(fixture, i):
+            def _dispatch(_addr, *args):
+                fix_pantilt_wedge(fixture, args, True)
+                _echo_position(fixture, i)
+
+            return _dispatch
+
+        def _make_xy_dispatch(fixture, i):
+            def _dispatch(_addr, *args):
+                # pythonosc → (addr, x, y) → args == (x, y)
+                # PresetManager.load → (addr, [x, y]) → args == ([x, y],)
+                if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                    xy = args[0]
+                else:
+                    xy = args
+                if len(xy) < 2:
+                    return
+                fixture.aim_at(xy[0], xy[1], 1)
+                _echo_position(fixture, i)
+
+            return _dispatch
+
         exposed_params["spots_position"].append(
             OSCParam(
                 osc,
                 "/spot_joystick_{}".format(i + 1),
                 lambda fixture=fixture: [fixture._pan, fixture._tilt],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, False
-                ),
+                _make_coarse_dispatch(fixture, i),
             )
         )
 
@@ -844,21 +891,21 @@ def run(
             OSCParam(
                 osc,
                 "/spot_joystick_fine_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._pan, fixture._tilt],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, True
-                ),
+                lambda fixture=fixture: [fixture._pan_fine, fixture._tilt_fine],
+                _make_fine_dispatch(fixture, i),
             )
         )
 
-        exposed_params["spots_position"].append(
+        # xy lives in `non-saved` so it's never written into preset pickles
+        # (pan/tilt is the only canonical position state). It's still
+        # iterated by presets.sync(), so the UI joystick refreshes on
+        # /reload and after select_all via the value_lambda below.
+        exposed_params["non-saved"].append(
             OSCParam(
                 osc,
                 "/spot_joystick_xy_{}".format(i + 1),
-                lambda fixture=fixture: fixture.get_aim()[0:2],
-                lambda _, *args, fixture=fixture: fixture.aim_at(
-                    args[0][0], args[0][1], 1
-                ),
+                lambda fixture=fixture: list(fixture.get_aim()[0:2]),
+                _make_xy_dispatch(fixture, i),
             )
         )
 
