@@ -1,10 +1,10 @@
 # Pre show todos
 
 * Adjust levels with real input
-* Tune the presets further 
 
 # Untested
 * DMX passthrough
+* Real hazer
 
 # Notes/Ideas/TODOs
 
