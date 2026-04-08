@@ -88,13 +88,20 @@ class OSCParam(object):
         addr: str,
         value_lambda: Callable,
         dispatch_lambda: Callable,
+        on_change: Optional[Callable[[], None]] = None,
     ) -> None:
         self.osc = osc
         self.addr = addr
         self.value_lambda = value_lambda
-        self.dispatch_lambda = dispatch_lambda
+        self.on_change = on_change
 
-        osc.dispatcher.map(addr, dispatch_lambda)
+        def handler(a: str, args: Any) -> None:
+            dispatch_lambda(a, args)
+            if self.on_change is not None:
+                self.on_change()
+
+        self.dispatch_lambda = handler
+        osc.dispatcher.map(addr, handler)
 
     def load(self, addr: str, args: Any) -> None:
         self.dispatch_lambda(addr, args)

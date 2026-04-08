@@ -1,10 +1,11 @@
-from typing import List, Dict, Tuple, Any, Set
+from typing import List, Dict, Tuple, Any, Set, Optional
 
 import pickle
 import pprint
 from copy import copy
 
 from .osc import OSCManager, OSCParam
+from .util.session_store import SessionStore
 
 
 class PresetManager(object):
@@ -16,6 +17,7 @@ class PresetManager(object):
         *,
         enable_save_clear: bool = False,
         debug: bool = False,
+        session: Optional[SessionStore] = None,
     ) -> None:
         self.osc = osc
         self.exposed_params = exposed_params
@@ -25,6 +27,7 @@ class PresetManager(object):
         self.prev_current_presets: Dict[str, str] = {}
         self.enable_save_clear = enable_save_clear
         self.debug = debug
+        self.session = session
 
         osc.dispatcher.map(
             "/save_preset/*", lambda addr, args: self.save(addr.split("/")[2])
@@ -85,6 +88,19 @@ class PresetManager(object):
                 self.select(cat, "Off", sync=False)
 
         self.sync()
+
+    def save_current_selection(self) -> Dict[str, str]:
+        return dict(self.current_presets)
+
+    def load_current_selection(self, data: Dict[str, str]) -> None:
+        for cat, preset_name in data.items():
+            try:
+                self.select(cat, preset_name, sync=False)
+            # pylint: disable=broad-exception-caught
+            except Exception as e:
+                print(
+                    f"  failed to restore preset {cat}={preset_name}: {e}", flush=True
+                )
 
     def set_enable_save_clear(self, enable: bool) -> None:
         self.enable_save_clear = enable
@@ -201,6 +217,9 @@ class PresetManager(object):
             return
 
         self.current_presets[category] = category_preset
+
+        if self.session is not None:
+            self.session.save()
 
         if not category in self.stored_presets:
             # Someone is creating a new preset, nothing to load

@@ -1,4 +1,5 @@
 from typing import (
+    Any,
     List,
     Tuple,
     cast,
@@ -18,6 +19,22 @@ from ..util.math import constrain
 
 
 class Mixer(object):
+    MASTER_ATTRS = (
+        "reds_master",
+        "plants_master",
+        "booth_master",
+        "washes_master",
+        "spots_master",
+    )
+
+    def save_current_masters(self) -> Dict[str, Any]:
+        return {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
+
+    def load_current_masters(self, data: Dict[str, Any]) -> None:
+        for attr, value in data.items():
+            if attr in self.MASTER_ATTRS:
+                setattr(self, attr, value)
+
     def __init__(
         self,
         *,

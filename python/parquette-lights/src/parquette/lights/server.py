@@ -24,6 +24,7 @@ from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
+from .util.session_store import SessionStore
 
 
 @click.command()
@@ -787,6 +788,8 @@ def run(
             ),
         ]
     )
+    session = SessionStore("./session.pickle")
+
     exposed_params["non-saved"].extend(
         [
             OSCParam(
@@ -794,6 +797,7 @@ def run(
                 "/reds_master",
                 lambda: mixer.reds_master,
                 lambda _, args: OSCParam.obj_param_setter(args, "reds_master", [mixer]),
+                on_change=session.save,
             ),
             OSCParam(
                 osc,
@@ -802,6 +806,7 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "plants_master", [mixer]
                 ),
+                on_change=session.save,
             ),
             OSCParam(
                 osc,
@@ -810,6 +815,7 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "booth_master", [mixer]
                 ),
+                on_change=session.save,
             ),
             OSCParam(
                 osc,
@@ -818,6 +824,7 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "washes_master", [mixer]
                 ),
+                on_change=session.save,
             ),
             OSCParam(
                 osc,
@@ -826,6 +833,7 @@ def run(
                 lambda _, args: OSCParam.obj_param_setter(
                     args, "spots_master", [mixer]
                 ),
+                on_change=session.save,
             ),
         ]
     )
@@ -923,7 +931,16 @@ def run(
         presets_file,
         enable_save_clear=enable_save_clear,
         debug=debug,
+        session=session,
     )
+
+    def _session_snapshot():
+        return {
+            "current_presets": presets.save_current_selection(),
+            "masters": mixer.save_current_masters(),
+        }
+
+    session.bind(_session_snapshot)
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
@@ -1032,6 +1049,15 @@ def run(
 
     print("Start OSC server", flush=True)
     osc.serve(threaded=True)
+
+    # Restore persisted session state (active presets, master fader values)
+    # before the initial sync, so the front end is pushed the restored
+    # values rather than defaults.
+    restored = session.load()
+    if restored is not None:
+        print("Restoring session state", flush=True)
+        presets.load_current_selection(restored.get("current_presets") or {})
+        mixer.load_current_masters(restored.get("masters") or {})
 
     print("Sync front end", flush=True)
     presets.sync()
