@@ -42,3 +42,4 @@ Fix
 # pythonosc → (addr, x, y) → args == (x, y)
 # PresetManager.load → (addr, [x, y]) → args == ([x, y],)
 ```
+Heartbeat sends all the time which it doesnt need to when it's zero
