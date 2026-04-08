@@ -86,12 +86,6 @@ class PresetManager(object):
 
         self.sync()
 
-    def all_black(self) -> None:
-        self.select_all("Off")
-
-    def house_lights(self) -> None:
-        self.select_all("Static")
-
     def set_enable_save_clear(self, enable: bool) -> None:
         self.enable_save_clear = enable
 

@@ -913,12 +913,9 @@ def run(
     )
 
     def all_black():
-        presets.all_black()
         mixer.setChannelLevel("sodium", 0)
 
-    # def restore_lights():
-    #     presets.restore_lights()
-    #     mixer.setChannelLevel("sodium", 0)
+        presets.select_all("Off")
 
     def set_dmx_passthrough(value) -> None:
         if isinstance(value, (list, tuple)):
@@ -935,7 +932,6 @@ def run(
     def house_lights():
         if dmx.passthrough:
             set_dmx_passthrough(False)
-        presets.house_lights()
 
         mixer.reds_master = 1
         mixer.spots_master = 0
@@ -945,11 +941,9 @@ def run(
 
         mixer.setChannelLevel("sodium", 255)
 
-    def class_lights():
-        if dmx.passthrough:
-            set_dmx_passthrough(False)
-        presets.select_all("Class")
+        presets.select_all("Static")
 
+    def class_lights():
         mixer.reds_master = 0.8
         mixer.spots_master = 0.3
         mixer.washes_master = 0.25
@@ -957,6 +951,11 @@ def run(
         mixer.plants_master = 0.5
 
         mixer.setChannelLevel("sodium", 0)
+
+        if dmx.passthrough:
+            set_dmx_passthrough(False)
+
+        presets.select_all("Class")
 
     osc.dispatcher.map(
         "/set_fft_viz", lambda addr, *args: mixer.set_fft_viz(bool(args[0]))
