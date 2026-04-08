@@ -210,6 +210,10 @@ def run(
     hazer = RadianceHazer(dmx, addr=250)
     hazer.output = 0
     hazer.fan = 0
+    hazer.intensity = 0
+    hazer.cycle_fan = 0
+    hazer.interval = 0.0
+    hazer.duration = 0.0
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     audio_capture.dmx = dmx
@@ -470,15 +474,35 @@ def run(
         "hazer": [
             OSCParam(
                 osc,
-                "/hazer_output",
-                lambda: hazer.output,
-                lambda _, args: OSCParam.obj_param_setter(args, "output", [hazer]),
+                "/hazer_intensity",
+                lambda: hazer.intensity,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "intensity", [hazer]
+                ),
             ),
             OSCParam(
                 osc,
                 "/hazer_fan",
-                lambda: hazer.fan,
-                lambda _, args: OSCParam.obj_param_setter(args, "fan", [hazer]),
+                lambda: hazer.cycle_fan,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "cycle_fan", [hazer]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/hazer_interval",
+                lambda: hazer.interval,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "interval", [hazer]
+                ),
+            ),
+            OSCParam(
+                osc,
+                "/hazer_duration",
+                lambda: hazer.duration,
+                lambda _, args: OSCParam.obj_param_setter(
+                    args, "duration", [hazer]
+                ),
             ),
         ],
         "non-saved": [],
@@ -1075,6 +1099,7 @@ def run(
             else:
                 mixer.runChannelMix()
                 mixer.runOutputMix()
+                hazer.tick(time.monotonic())
                 mixer.updateDMX()
             time.sleep(0.01)
 

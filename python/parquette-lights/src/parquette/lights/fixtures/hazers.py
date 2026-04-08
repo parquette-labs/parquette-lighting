@@ -8,6 +8,25 @@ class RadianceHazer(object):
         self.num_chans = 2
         self._output: DMXValue = 0
         self._fan: DMXValue = 0
+        # PWM-style cycle config (intensity/fan are the on-phase targets,
+        # interval is total period in seconds, duration is on-time per cycle).
+        # interval == 0 (or duration >= interval) means continuous on.
+        self.intensity: DMXValue = 0
+        self.cycle_fan: DMXValue = 0
+        self.interval: float = 0.0
+        self.duration: float = 0.0
+
+    def tick(self, now: float) -> None:
+        if self.interval <= 0 or self.duration >= self.interval:
+            on = True
+        else:
+            on = (now % self.interval) < self.duration
+        if on:
+            self.output = self.intensity
+            self.fan = self.cycle_fan
+        else:
+            self.output = 0
+            self.fan = 0
 
     @property
     def output(self) -> DMXValue:
