@@ -384,6 +384,11 @@ class YRXY200Spot(Spot):
         tilt_max_deg=270,
         pan_center_deg=0,
         tilt_center_deg=270 / 2,
+        # Mounting roll about the forward axis. Increase to rotate the
+        # joystick xy frame clockwise (looking down the beam). Tune until a
+        # straight vertical drag on the xy joystick produces vertical motion
+        # on the projection surface.
+        roll_deg=0.0,
     )
 
     class YRXY200Channel(Enum):

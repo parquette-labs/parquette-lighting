@@ -36,6 +36,16 @@ class AimingConfig:
     All angles in degrees. ``pan_center`` / ``tilt_center`` are the raw
     pan/tilt values at which the beam points along the fixture's forward
     axis (+Z by default).
+
+    ``roll_deg`` rotates the fixture's local (x, y) frame about the forward
+    axis to compensate for a fixture that is physically mounted rolled
+    relative to the world's "up". With ``roll_deg = 0`` the fixture's +Y is
+    assumed to be world-up. With ``roll_deg = 30`` the fixture is rotated 30
+    degrees clockwise (looking down the beam) from upright; ``xyz_to_pantilt``
+    then rotates the input (x, y) by -30 degrees before computing pan/tilt
+    so that joystick "up" produces beam motion in world up. ``pantilt_to_xyz``
+    applies the inverse so ``get_aim()`` returns coordinates in the same
+    frame the caller passed to ``aim_at``.
     """
 
     pan_min_deg: float
@@ -44,6 +54,7 @@ class AimingConfig:
     tilt_max_deg: float
     pan_center_deg: float
     tilt_center_deg: float
+    roll_deg: float = 0.0
 
     def __post_init__(self) -> None:
         if self.pan_max_deg <= self.pan_min_deg:
@@ -59,11 +70,20 @@ class AimingConfig:
 def pantilt_to_xyz(
     pan_deg: float, tilt_deg: float, cfg: AimingConfig
 ) -> Tuple[float, float, float]:
-    """Forward map: yoke angles -> unit beam direction (x, y, z)."""
+    """Forward map: yoke angles -> unit beam direction (x, y, z) in the
+    caller's frame (i.e. with roll already undone)."""
     dp = radians(pan_deg - cfg.pan_center_deg)
     dt = radians(tilt_deg - cfg.tilt_center_deg)
     cdt = cos(dt)
-    return (sin(dp) * cdt, sin(dt), cos(dp) * cdt)
+    x_local = sin(dp) * cdt
+    y_local = sin(dt)
+    z = cos(dp) * cdt
+    # Rotate the local (x, y) by +roll to express in the caller's frame.
+    rr = radians(cfg.roll_deg)
+    cr, sr = cos(rr), sin(rr)
+    x = x_local * cr - y_local * sr
+    y = x_local * sr + y_local * cr
+    return (x, y, z)
 
 
 def xyz_to_pantilt(
@@ -89,6 +109,15 @@ def xyz_to_pantilt(
         current_pan_deg = cfg.pan_center_deg
     if current_tilt_deg is None:
         current_tilt_deg = cfg.tilt_center_deg
+
+    # Convert the caller's (x, y) into the fixture-local frame by undoing
+    # the mounting roll. The fixture's pan/tilt are computed in its own
+    # local axes, so the trig math below operates on the rotated values.
+    rr = radians(cfg.roll_deg)
+    cr, sr = cos(rr), sin(rr)
+    x_local = x * cr + y * sr
+    y_local = -x * sr + y * cr
+    x, y = x_local, y_local
 
     n = sqrt(x * x + y * y + z * z)
     if n == 0:
