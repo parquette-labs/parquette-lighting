@@ -381,7 +381,7 @@ class YRXY200Spot(Spot):
         pan_max_deg=540,
         tilt_min_deg=0,
         tilt_max_deg=270,
-        pan_center_deg=540 / 2,
+        pan_center_deg=0,
         tilt_center_deg=270 / 2,
     )
 

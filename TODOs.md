@@ -10,7 +10,6 @@
 # Notes/Ideas/TODOs
 
 * Add an interval to the hazer
-* Trigger the next beat impulse (or all synths with the next time step)
 * Need a working offset calculator for the BPM, was working ok before
 * sq1, sq2, sq3, need to have separate period controls
 * Move controls for synths next to patch bays
@@ -26,6 +25,7 @@
 * Overall and per light brightness perception map and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Blue/green deploy mechanism
+* Trigger the next beat impulse (or all synths with the next time step)?
 
 # Feedback
 * Maybe we need softer strobes
@@ -34,3 +34,11 @@
 * Make text bigger
 * randomizer
 * SQ disco struggles
+
+
+# Buggy stuff
+Fix 
+```
+# pythonosc → (addr, x, y) → args == (x, y)
+# PresetManager.load → (addr, [x, y]) → args == ([x, y],)
+```
