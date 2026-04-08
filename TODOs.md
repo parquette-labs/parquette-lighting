@@ -10,6 +10,8 @@
 # Notes/Ideas/TODOs
 
 * Need a working offset calculator for the BPM
+* hazer interval
+* sq1, sq2, sq3, need separate periods
 * Debug non sheds
 * Color picker doesn't load
 * Annotate FFT plots in the front end with key frequencies
