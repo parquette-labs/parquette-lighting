@@ -161,20 +161,31 @@ class Spot(LightFixture):
             self.color_swap_fade_multiplier = 1.0
             return
 
+        # Wall-clock driven so we don't drift when individual time.sleep
+        # calls oversleep (which they reliably do under GIL pressure on
+        # macOS). Each phase records its own start instant and computes
+        # progress as elapsed / duration; the total wall-clock time of
+        # each phase is therefore accurate to within one `tick`.
+        tick = 0.01
+
         # ---- fade out ----
-        # Scale duration to current multiplier so that interrupting a near-bright
-        # in-progress fade still feels snappy instead of taking the full fade_time.
+        # Scale duration to current multiplier so that interrupting a
+        # near-bright in-progress fade still feels snappy instead of
+        # taking the full fade_time.
         start_mult = self.color_swap_fade_multiplier
         if start_mult > 0.0:
-            step_time = 0.01  # 10ms
-            steps_out = max(1, int(fade_time / step_time * start_mult))
-            for i in range(steps_out):
+            fade_out_duration = fade_time * start_mult
+            t0 = time.monotonic()
+            while True:
                 if cancel_event.is_set():
                     return
+                elapsed = time.monotonic() - t0
+                if elapsed >= fade_out_duration:
+                    break
                 self.color_swap_fade_multiplier = start_mult * (
-                    1.0 - (i + 1) / steps_out
+                    1.0 - elapsed / fade_out_duration
                 )
-                time.sleep(step_time)
+                time.sleep(tick)
 
         if cancel_event.is_set():
             return
@@ -185,24 +196,26 @@ class Spot(LightFixture):
         self._color_direct(color_index)
 
         # ---- mechanical settle ----
-        elapsed = 0.0
-        while elapsed < self.color_swap_mechanical_time:
-            if cancel_event.is_set():
-                return
-            time.sleep(0.01)
-            elapsed += 0.01
+        if self.color_swap_mechanical_time > 0:
+            t0 = time.monotonic()
+            while time.monotonic() - t0 < self.color_swap_mechanical_time:
+                if cancel_event.is_set():
+                    return
+                time.sleep(tick)
 
         if cancel_event.is_set():
             return
 
         # ---- fade in ----
-        step_time = 0.01
-        steps_in = max(1, int(fade_time / step_time))
-        for i in range(steps_in):
+        t0 = time.monotonic()
+        while True:
             if cancel_event.is_set():
                 return
-            self.color_swap_fade_multiplier = (i + 1) / steps_in
-            time.sleep(step_time)
+            elapsed = time.monotonic() - t0
+            if elapsed >= fade_time:
+                break
+            self.color_swap_fade_multiplier = elapsed / fade_time
+            time.sleep(tick)
 
         self.color_swap_fade_multiplier = 1.0
 
