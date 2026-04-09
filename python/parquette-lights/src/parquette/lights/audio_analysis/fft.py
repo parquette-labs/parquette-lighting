@@ -69,8 +69,8 @@ class FFTManager(object):
         self.tempo_alpha = tempo_alpha
         self.rms_window_secs = rms_window_secs
         self.current_rms: float = 0.0
-        self._last_beat_track_time: float = 0.0
-        self._last_viz_time: float = 0.0
+        self.last_beat_track_time: float = 0.0
+        self.last_debug_update: float = 0.0
 
         self.bpm_history_len: int = (
             600  # 1 min at 10 samples/sec (one sample per 100ms)
@@ -90,7 +90,7 @@ class FFTManager(object):
         self.regularity_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
-        self._rms_ss: deque = deque()
+        self.rms_ss: deque = deque()
 
         # C6: executor created once here; stop_fft waits for in-flight future but
         # does not shut down or recreate the executor
@@ -113,7 +113,7 @@ class FFTManager(object):
         # Multi-client safe: only "on" heartbeats extend the gate. If we
         # honoured "off", a second UI tab whose active tab isn't FFT/DMX
         # would override the first tab's heartbeat and freeze the plots.
-        # The existing debug_timeout check in _run_fwd auto-closes the gate
+        # The existing debug_timeout check in run_fwd auto-closes the gate
         # ~debug_timeout seconds after the last "on" message.
         if enable:
             self.send_fft_debug_data = True
@@ -148,7 +148,7 @@ class FFTManager(object):
             or len(self.audio_cap.window) == 0
         )
 
-    def _update_rms(self, win: List[np.ndarray]) -> None:
+    def update_rms(self, win: List[np.ndarray]) -> None:
         if not self.audio_ready():
             return
 
@@ -161,11 +161,11 @@ class FFTManager(object):
         )
 
         # Incremental sum-of-squares: push new chunk, trim to window, no concatenation
-        self._rms_ss.append(float(np.dot(win[-1], win[-1])))
-        while len(self._rms_ss) > n_rms_chunks:
-            self._rms_ss.popleft()
+        self.rms_ss.append(float(np.dot(win[-1], win[-1])))
+        while len(self.rms_ss) > n_rms_chunks:
+            self.rms_ss.popleft()
         self.current_rms = math.sqrt(
-            sum(self._rms_ss) / (len(self._rms_ss) * self.audio_cap.chunk)
+            sum(self.rms_ss) / (len(self.rms_ss) * self.audio_cap.chunk)
         )
 
         self.uidb["audio_rms"] = "{rms:.2} {sign} {thres:.2}".format(
@@ -184,7 +184,7 @@ class FFTManager(object):
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_valid"] = "n/a"
 
-    def _run_beat_track(self, win: List[np.ndarray]) -> None:
+    def run_beat_track(self, win: List[np.ndarray]) -> None:
         if not self.bpms or not self.bpms[0].rms_valid:
             return
 
@@ -205,7 +205,6 @@ class FFTManager(object):
             sr=sr,
             hop_length=hop_length,
             units="frames",
-            # delta=0.5,
         )
         reported_tempo, _ = beat_track(
             onset_envelope=oenv,
@@ -216,33 +215,22 @@ class FFTManager(object):
         )
 
         reported_tempo = fold_tempo(float(reported_tempo))
-        self.uidb["reported_tempo"] = reported_tempo
-
-        # Raw (unsmoothed) tempo reports — debug readout only.
-        self.raw_bpm_history.append(float(reported_tempo))
 
         for b in self.bpms:
-            if b.bpm > 0:
-                b.bpm = (
-                    self.tempo_alpha * float(reported_tempo)
-                    + (1 - self.tempo_alpha) * b.bpm
-                )
+            b.bpm = int(
+                self.tempo_alpha * float(reported_tempo)
+                + (1 - self.tempo_alpha) * b.bpm
+            )
 
-        # Force all BPM generators to share the same internal offset_time so
-        # they can never drift apart from independent reanchors. manual_offset
-        # stays per-generator (that's the user-facing phase knob). We take the
-        # first generator's offset_time as the canonical anchor.
-        if self.bpms:
-            anchor = self.bpms[0].offset_time
-            for b in self.bpms[1:]:
-                b.offset_time = anchor
+        self.raw_bpm_history.append(float(reported_tempo))
+        self.bpm_history.append(self.bpms[0].bpm if self.bpms else 0.0)
 
         # Audio character metrics — see _compute_* helpers below.
-        hp_ratio = self._compute_harmonic_percussive_ratio(y, sr)
-        business, kept_onset_frames = self._compute_business(
+        hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
+        business, kept_onset_frames = self.compute_business(
             onset_frames, oenv, sr, hop_length
         )
-        regularity = self._compute_regularity(kept_onset_frames, sr, hop_length)
+        regularity = self.compute_regularity(kept_onset_frames, sr, hop_length)
 
         self.harmonic_percussive_history.append(hp_ratio)
         self.business_history.append(business)
@@ -254,13 +242,16 @@ class FFTManager(object):
         # generator doesn't stutter on/off. Raw plots stay raw.
         recent_business = float(np.mean(list(self.business_history)[-3:]))
         recent_regularity = float(np.mean(list(self.regularity_history)[-3:]))
-        bpm_valid_now = (
+        bpm_valid = (
             recent_business >= self.min_business
             and recent_regularity >= self.min_regularity
         )
         for b in self.bpms:
-            b.bpm_valid = bpm_valid_now
+            b.bpm_valid = bpm_valid
 
+        compute_time = time.monotonic() - compute_start_time
+
+        self.uidb["reported_tempo"] = reported_tempo
         self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs}".format(
             b=recent_business,
             bs="✓" if recent_business >= self.min_business else "✗",
@@ -272,13 +263,11 @@ class FFTManager(object):
         self.uidb["business"] = f"{business:.2f}/s"
         self.uidb["regularity"] = f"{regularity:.2f}"
 
-        compute_time = time.monotonic() - compute_start_time
-
         self.uidb["beat_avg_time"] = (
             self.uidb["beat_avg_time"] * 0.9 + compute_time * 1000 * 0.1
         )
 
-    def _compute_harmonic_percussive_ratio(self, y: np.ndarray, sr: int) -> float:
+    def compute_harmonic_percussive_ratio(self, y: np.ndarray, sr: int) -> float:
         """
         >1 means percussive energy dominates (drums, beats),
         <1 means harmonic / sustained energy dominates (pads, vocals, ambient).
@@ -302,7 +291,7 @@ class FFTManager(object):
         rms_p = float(np.sqrt(np.mean(y_p * y_p)) + 1e-9)
         return rms_p / rms_h
 
-    def _compute_business(
+    def compute_business(
         self,
         onset_frames: np.ndarray,
         oenv: np.ndarray,
@@ -327,7 +316,7 @@ class FFTManager(object):
             return 0.0, onset_frames
         return float(len(onset_frames)) / window_secs, onset_frames
 
-    def _compute_regularity(
+    def compute_regularity(
         self, onset_frames: np.ndarray, sr: int, hop_length: int
     ) -> float:
         """
@@ -368,7 +357,7 @@ class FFTManager(object):
         normalized = weighted / (self.current_rms**2 + 1e-12)
         return normalized / MEL_NORM_REF
 
-    def _run_fwd(self) -> None:
+    def run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
         self.uidb["beat_avg_time"] = 0
 
@@ -397,17 +386,17 @@ class FFTManager(object):
             # a snapshot that won't be mutated while beat_track runs.
             win = list(self.audio_cap.window)
 
-            # _update_rms must run before forward() so forward() can divide by
+            # update_rms must run before forward() so forward() can divide by
             # the current (smoothed) rms² to make the mel output loudness-invariant.
-            self._update_rms(win)
+            self.update_rms(win)
             fft_data = self.forward(win[-1])
 
             now = time.monotonic()
-            if now - self._last_beat_track_time >= 1:
+            if now - self.last_beat_track_time >= 0.2:
                 if self._beat_future is None or self._beat_future.done():
-                    self._last_beat_track_time = now
+                    self.last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
-                        self._run_beat_track, win
+                        self.run_beat_track, win
                     )
 
             if fft_data is None:
@@ -423,14 +412,6 @@ class FFTManager(object):
                 self.send_fft_debug_data = False
 
             if self.send_fft_debug_data:
-                self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
-                self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
-
-            self.uidb["fft_max"] = max(fft_data)
-            self.uidb["fft_min"] = min(fft_data)
-
-            # C4: cap OSC payload at 64 bins; use direct tolist() when no downsampling
-            if self.send_fft_debug_data:
                 max_bins = 64
                 downsampled = max(1, len(fft_data) // max_bins)
                 if downsampled == 1:
@@ -440,21 +421,16 @@ class FFTManager(object):
                     banded = fft_data[:n].reshape(-1, downsampled).sum(axis=1).tolist()
                     self.osc.send_osc("/fft_viz", banded)
 
-            compute_time = time.monotonic() - compute_start_time
+            current_time = time.monotonic()
+            if current_time - self.last_debug_update >= 0.1:
+                self.last_debug_update = current_time
 
-            self.uidb["fft_avg_time"] = (
-                self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
-            )
-
-            # Wall-clock viz timer: fires every 100ms regardless of audio hardware rate
-            now_viz = time.monotonic()
-            if now_viz - self._last_viz_time >= 0.1:
-                self._last_viz_time = now_viz
-
-                self.bpm_history.append(self.bpms[0].bpm if self.bpms else 0.0)
                 self.rms_history.append(self.current_rms)
 
                 if self.send_fft_debug_data:
+                    self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
+                    self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
+
                     self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
                     self.osc.send_osc("/rms_history_viz", list(self.rms_history))
                     self.osc.send_osc(
@@ -466,8 +442,16 @@ class FFTManager(object):
                     )
                     self.osc.send_osc("/business_viz", list(self.business_history))
                     self.osc.send_osc("/regularity_viz", list(self.regularity_history))
-                    # C5: uidb update consolidated into wall-clock block; counter removed
+
                     self.uidb.update_ui()
+
+            compute_time = time.monotonic() - compute_start_time
+
+            self.uidb["fft_max"] = max(fft_data)
+            self.uidb["fft_min"] = min(fft_data)
+            self.uidb["fft_avg_time"] = (
+                self.uidb["fft_avg_time"] * 0.9 + compute_time * 1000 * 0.1
+            )
 
     def start_fft(self) -> None:
         if self.fft_thread is not None:
@@ -476,15 +460,16 @@ class FFTManager(object):
         self.setup_fft()
 
         self.fft_running = True
-        self.fft_thread = Thread(target=self._run_fwd)
+        self.fft_thread = Thread(target=self.run_fwd)
         self.fft_thread.start()
 
     def stop_fft(self) -> None:
         self.fft_running = False
+
         if self.fft_thread is not None:
             self.fft_thread.join()
             self.fft_thread = None
-        # C6: wait for any in-flight beat_track without shutting down the executor
+
         if self._beat_future is not None:
             self._beat_future.result()
             self._beat_future = None
