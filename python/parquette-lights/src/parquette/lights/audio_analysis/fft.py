@@ -302,7 +302,14 @@ class FFTManager(object):
         if sr > target_sr:
             y_tail = resample(y_tail, orig_sr=sr, target_sr=target_sr)
 
-        y_h, y_p = hpss(y_tail, kernel_size=17, n_fft=1024)
+        # Guard against too-short tails (early ticks before the audio window
+        # has filled): librosa warns when n_fft > len(y). Skip the analysis
+        # and return a neutral 1.0 ratio rather than emit the warning.
+        n_fft = 1024
+        if len(y_tail) < n_fft:
+            return 1.0
+
+        y_h, y_p = hpss(y_tail, kernel_size=17, n_fft=n_fft)
         rms_h = float(np.sqrt(np.mean(y_h * y_h)) + 1e-9)
         rms_p = float(np.sqrt(np.mean(y_p * y_p)) + 1e-9)
         return rms_p / rms_h

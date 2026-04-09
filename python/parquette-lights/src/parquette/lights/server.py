@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 
 import sys
 import time
@@ -129,6 +129,12 @@ from .util.session_store import SessionStore
     type=float,
     help="Seconds to hold dark while the moving-head color wheel mechanically settles",
 )
+@click.option(
+    "--audio-interface",
+    default=None,
+    type=str,
+    help="Auto-connect to an audio input device by name (substring, case-insensitive) and start audio + FFT analysis on boot",
+)
 # pylint: disable-next=too-many-positional-arguments
 def run(
     local_ip: str,
@@ -149,6 +155,7 @@ def run(
     rms_window: float,
     spot_color_fade: float,
     spot_mechanical_time: float,
+    audio_interface: Optional[str],
 ) -> None:
     print("Setup", flush=True)
 
@@ -238,6 +245,34 @@ def run(
         min_business=0.5,
         min_regularity=0.4,
     )
+
+    if audio_interface is not None:
+        needle = audio_interface.lower()
+        match_idx: Optional[int] = None
+        match_name: Optional[str] = None
+        for i, port in enumerate(audio_capture.list_audio_ports()):
+            if int(port["maxInputChannels"]) <= 0:
+                continue
+            name = str(port["name"])
+            if needle in name.lower():
+                match_idx = i
+                match_name = name
+                break
+        if match_idx is None:
+            print(
+                "No audio input device matched '{}'".format(audio_interface),
+                flush=True,
+            )
+        else:
+            print(
+                "Auto-connecting audio interface '{}' (index {})".format(
+                    match_name, match_idx
+                ),
+                flush=True,
+            )
+            audio_capture.setup_audio(match_idx)
+            audio_capture.start_audio()
+            fft_manager.start_fft()
 
     initialAmp: float = 200
     initialPeriod: int = 3500
