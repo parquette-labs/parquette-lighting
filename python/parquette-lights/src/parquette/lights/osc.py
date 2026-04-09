@@ -1,4 +1,4 @@
-from typing import Optional, List, Any, Callable
+from typing import Optional, List, Any, Callable, Sequence
 
 from threading import Thread
 
@@ -109,6 +109,33 @@ class OSCParam(object):
 
     def sync(self) -> None:
         self.osc.send_osc(self.addr, self.value_lambda())
+
+    @classmethod
+    def bind(
+        cls,
+        osc: OSCManager,
+        addr: str,
+        target: Any,
+        field: str,
+        *,
+        extra: Sequence[Any] = (),
+        on_change: Optional[Callable[[], None]] = None,
+    ) -> "OSCParam":
+        """Bind an OSC address to an attribute on one or more target objects.
+
+        Captures `target.field` for the value getter and uses
+        `obj_param_setter` to write incoming values back to `target` plus any
+        `extra` targets. Replaces the dominant boilerplate pattern of
+        `OSCParam(osc, addr, lambda: o.f, lambda _, a: obj_param_setter(a, "f", [o]))`.
+        """
+        targets = [target, *extra]
+        return cls(
+            osc,
+            addr,
+            lambda: getattr(target, field),
+            lambda _addr, args: cls.obj_param_setter(args, field, targets),
+            on_change=on_change,
+        )
 
     @classmethod
     def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:

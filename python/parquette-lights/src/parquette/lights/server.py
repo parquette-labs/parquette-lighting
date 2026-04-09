@@ -1,5 +1,4 @@
-# pylint: disable=too-many-lines
-from typing import List, Dict
+from typing import Any, List
 
 import sys
 import time
@@ -15,13 +14,13 @@ from .generators import (
     ImpulseGenerator,
     BPMGenerator,
     Mixer,
-    SignalPatchParam,
 )
 
 from .audio_analysis import FFTManager, AudioCapture
 
-from .osc import OSCManager, OSCParam
+from .osc import OSCManager
 from .dmx import DMXManager
+from .params import ParamDeps, build_exposed_params
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
 from .util.session_store import SessionStore
@@ -348,261 +347,56 @@ def run(
         history_len=666 * 6,
     )
 
-    def fft_dispatch_wedge(fft, args):
-        if len(args) == 1:
-            fft.set_bounds(args[0][0], args[0][2])
-        else:
-            fft.set_bounds(args[0], args[2])
+    session = SessionStore("./session.pickle")
 
-    _all_washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
+    def set_dmx_passthrough(value: Any) -> None:
+        if isinstance(value, (list, tuple)):
+            value = value[0] if value else 0
+        enabled = bool(value)
+        dmx.passthrough = enabled
+        if not enabled:
+            # Safety: ensure capture/FFT threads are running after we leave passthrough.
+            if audio_capture.audio_thread is None or not audio_capture.audio_running:
+                audio_capture.start_audio()
+            if fft_manager.fft_thread is None or not fft_manager.fft_running:
+                fft_manager.start_fft()
 
-    def _dispatch_wash_color(_addr, *rgb):
-        # Reuses the existing set_dimming_target on each fixture, which
-        # accepts None for any channel to leave it unchanged — `w` is
-        # omitted so the white target is preserved.
-        if len(rgb) < 3:
-            return
-        for fixture in _all_washes:
-            fixture.set_dimming_target(r=rgb[0], g=rgb[1], b=rgb[2])
-
-    exposed_params: Dict[str, List[OSCParam]] = {
-        "fft": [],
-        "reds": [
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/reds",
-                ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5", "viz"],
-                mixer,
-            )
+    deps = ParamDeps(
+        osc=osc,
+        dmx=dmx,
+        mixer=mixer,
+        session=session,
+        fft_manager=fft_manager,
+        fft1=fft1,
+        fft2=fft2,
+        sin_reds=sin_reds,
+        sin_plants=sin_plants,
+        sin_booth=sin_booth,
+        sin_wash=sin_wash,
+        sq1=sq1,
+        sq2=sq2,
+        sq3=sq3,
+        impulse=impulse,
+        bpm_red=bpm_red,
+        bpm_wash=bpm_wash,
+        hazer=hazer,
+        washceilf=washceilf,
+        washceilr=washceilr,
+        all_washes=[
+            washfl,
+            washfr,
+            washml,
+            washmr,
+            washbl,
+            washbr,
+            washceilf,
+            washceilr,
         ],
-        "plants": [
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/plants",
-                ["ceil_1", "ceil_2", "ceil_3", "viz"],
-                mixer,
-            )
-        ],
-        "booth": [
-            SignalPatchParam(
-                osc, "/signal_patchbay/booth", ["under_1", "under_2", "viz"], mixer
-            )
-        ],
-        "strobes": [],
-        "washes_color": [
-            OSCParam(
-                osc,
-                "/wash_w",
-                lambda: washceilf.w_target,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args,
-                    "w_target",
-                    [
-                        washceilf,
-                        washceilr,
-                    ],
-                ),
-            ),
-            # Combined RGB target for the wash color picker. Stored in
-            # presets so the picker round-trips through save/load and sync.
-            # Reuses set_dimming_target on each fixture (which accepts None
-            # to leave a channel unchanged) — `w` is omitted so the white
-            # target stays put.
-            OSCParam(
-                osc,
-                "/wash_color",
-                lambda: [
-                    washceilf.r_target,
-                    washceilf.g_target,
-                    washceilf.b_target,
-                ],
-                _dispatch_wash_color,
-            ),
-        ],
-        "washes": [
-            OSCParam(
-                osc,
-                "/amp_wash",
-                lambda: sin_wash.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_wash]),
-            ),
-            OSCParam(
-                osc,
-                "/period_wash",
-                lambda: sin_wash.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_wash]),
-            ),
-            OSCParam(
-                osc,
-                "/stutter_period_wash",
-                lambda: mixer.stutter_period_wash,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "stutter_period_wash", [mixer]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/wash_mode_switch",
-                lambda: mixer.wash_mode,
-                lambda _, args: OSCParam.obj_param_setter(args, "wash_mode", [mixer]),
-            ),
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/washes",
-                [
-                    "wash_1",
-                    "wash_2",
-                    "wash_3",
-                    "wash_4",
-                    "wash_5",
-                    "wash_6",
-                    "wash_7",
-                    "wash_8",
-                    "viz",
-                ],
-                mixer,
-            ),
-        ],
-        "spots_light": [
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/spots_lights",
-                ["tung_spot", "spot_1", "spot_2", "viz"],
-                mixer,
-            )
-        ],
-        "spots_position": [],
-        "audio": [],
-        "hazer": [
-            OSCParam(
-                osc,
-                "/hazer_intensity",
-                lambda: hazer.target_output,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "target_output", [hazer]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/hazer_fan",
-                lambda: hazer.target_fan,
-                lambda _, args: OSCParam.obj_param_setter(args, "target_fan", [hazer]),
-            ),
-            OSCParam(
-                osc,
-                "/hazer_interval",
-                lambda: hazer.interval,
-                lambda _, args: OSCParam.obj_param_setter(args, "interval", [hazer]),
-            ),
-            OSCParam(
-                osc,
-                "/hazer_duration",
-                lambda: hazer.duration,
-                lambda _, args: OSCParam.obj_param_setter(args, "duration", [hazer]),
-            ),
-        ],
-        "non-saved": [],
-    }
-
-    exposed_params["audio"].extend(
-        [
-            OSCParam(
-                osc,
-                "/fft1_amp",
-                lambda: fft1.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft1]),
-            ),
-            OSCParam(
-                osc,
-                "/fft2_amp",
-                lambda: fft2.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [fft2]),
-            ),
-            OSCParam(
-                osc,
-                "/fft_lpf_alpha",
-                lambda: fft1.lpf_alpha,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "lpf_alpha", [fft1, fft2]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/fft_threshold_1",
-                lambda: fft1.thres,
-                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft1]),
-            ),
-            OSCParam(
-                osc,
-                "/fft_threshold_2",
-                lambda: fft2.thres,
-                lambda _, args: OSCParam.obj_param_setter(args, "thres", [fft2]),
-            ),
-            OSCParam(
-                osc,
-                "/fft_bounds_1",
-                lambda: (fft1.fft_bounds[0], 0, fft1.fft_bounds[1], 0),
-                lambda addr, *args: fft_dispatch_wedge(fft1, args),
-            ),
-            OSCParam(
-                osc,
-                "/fft_bounds_2",
-                lambda: (fft2.fft_bounds[0], 0, fft2.fft_bounds[1], 0),
-                lambda addr, *args: fft_dispatch_wedge(fft2, args),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_energy_threshold",
-                lambda: fft_manager.energy_threshold,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "energy_threshold", [fft_manager]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_tempo_alpha",
-                lambda: fft_manager.tempo_alpha,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "tempo_alpha", [fft_manager]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/onset_envelope_floor",
-                lambda: fft_manager.onset_envelope_floor,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "onset_envelope_floor", [fft_manager]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_business_min",
-                lambda: fft_manager.min_business,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "min_business", [fft_manager]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_regularity_min",
-                lambda: fft_manager.min_regularity,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "min_regularity", [fft_manager]
-                ),
-            ),
-        ]
+        spotlights=spotlights,
+        set_dmx_passthrough=set_dmx_passthrough,
     )
 
-    exposed_params["non-saved"].extend(
-        [
-            OSCParam(
-                osc,
-                "/dmx_passthrough",
-                lambda: dmx.passthrough,
-                lambda _, args: set_dmx_passthrough(args),
-            ),
-        ]
-    )
+    exposed_params = build_exposed_params(deps)
 
     def make_snap_handler(gens, period_addr, bpm_gen):
         def handler():
@@ -614,309 +408,6 @@ def run(
 
         return handler
 
-    exposed_params["reds"].extend(
-        [
-            OSCParam(
-                osc,
-                "/sin_red_amp",
-                lambda: sin_reds.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_reds]),
-            ),
-            OSCParam(
-                osc,
-                "/sin_red_period",
-                lambda: sin_reds.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_reds]),
-            ),
-            OSCParam(
-                osc,
-                "/mode_switch",
-                lambda: mixer.mode,
-                lambda _, args: OSCParam.obj_param_setter(args, "mode", [mixer]),
-            ),
-            OSCParam(
-                osc,
-                "/stutter_period",
-                lambda: mixer.stutter_period,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "stutter_period", [mixer]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_red_mult",
-                lambda: bpm_red.bpm_mult,
-                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm_red]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_red_duty",
-                lambda: bpm_red.duty,
-                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm_red]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_red_lpf_alpha",
-                lambda: bpm_red.lpf_alpha,
-                lambda _, args: OSCParam.obj_param_setter(args, "lpf_alpha", [bpm_red]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_red_amp",
-                lambda: bpm_red.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm_red]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_red_manual_offset",
-                lambda: bpm_red.manual_offset,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "manual_offset", [bpm_red]
-                ),
-            ),
-        ]
-    )
-
-    exposed_params["plants"].extend(
-        [
-            OSCParam(
-                osc,
-                "/sin_plants_amp",
-                lambda: sin_plants.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_plants]),
-            ),
-            OSCParam(
-                osc,
-                "/sin_plants_period",
-                lambda: sin_plants.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_plants]),
-            ),
-            OSCParam(
-                osc,
-                "/sq_amp",
-                lambda: sq1.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sq1, sq2, sq3]),
-            ),
-            OSCParam(
-                osc,
-                "/sq_period",
-                lambda: sq1.period,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "period", [sq1, sq2, sq3]
-                ),
-            ),
-        ]
-    )
-
-    exposed_params["booth"].extend(
-        [
-            OSCParam(
-                osc,
-                "/sin_booth_amp",
-                lambda: sin_booth.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [sin_booth]),
-            ),
-            OSCParam(
-                osc,
-                "/sin_booth_period",
-                lambda: sin_booth.period,
-                lambda _, args: OSCParam.obj_param_setter(args, "period", [sin_booth]),
-            ),
-        ]
-    )
-
-    exposed_params["washes"].extend(
-        [
-            OSCParam(
-                osc,
-                "/bpm_wash_amp",
-                lambda: bpm_wash.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [bpm_wash]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_wash_duty",
-                lambda: bpm_wash.duty,
-                lambda _, args: OSCParam.obj_param_setter(args, "duty", [bpm_wash]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_wash_lpf_alpha",
-                lambda: bpm_wash.lpf_alpha,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "lpf_alpha", [bpm_wash]
-                ),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_wash_mult",
-                lambda: bpm_wash.bpm_mult,
-                lambda _, args: OSCParam.obj_param_setter(args, "bpm_mult", [bpm_wash]),
-            ),
-            OSCParam(
-                osc,
-                "/bpm_wash_manual_offset",
-                lambda: bpm_wash.manual_offset,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "manual_offset", [bpm_wash]
-                ),
-            ),
-        ]
-    )
-
-    exposed_params["strobes"].extend(
-        [
-            OSCParam(
-                osc,
-                "/impulse_amp",
-                lambda: impulse.amp,
-                lambda _, args: OSCParam.obj_param_setter(args, "amp", [impulse]),
-            ),
-            OSCParam(
-                osc,
-                "/impulse_duty",
-                lambda: impulse.duty,
-                lambda _, args: OSCParam.obj_param_setter(args, "duty", [impulse]),
-            ),
-        ]
-    )
-    session = SessionStore("./session.pickle")
-
-    exposed_params["non-saved"].extend(
-        [
-            OSCParam(
-                osc,
-                "/reds_master",
-                lambda: mixer.reds_master,
-                lambda _, args: OSCParam.obj_param_setter(args, "reds_master", [mixer]),
-                on_change=session.save,
-            ),
-            OSCParam(
-                osc,
-                "/plants_master",
-                lambda: mixer.plants_master,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "plants_master", [mixer]
-                ),
-                on_change=session.save,
-            ),
-            OSCParam(
-                osc,
-                "/booth_master",
-                lambda: mixer.booth_master,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "booth_master", [mixer]
-                ),
-                on_change=session.save,
-            ),
-            OSCParam(
-                osc,
-                "/washes_master",
-                lambda: mixer.washes_master,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "washes_master", [mixer]
-                ),
-                on_change=session.save,
-            ),
-            OSCParam(
-                osc,
-                "/spots_master",
-                lambda: mixer.spots_master,
-                lambda _, args: OSCParam.obj_param_setter(
-                    args, "spots_master", [mixer]
-                ),
-                on_change=session.save,
-            ),
-        ]
-    )
-
-    for category, chan_names in mixer.categorized_channel_names.items():
-        for chan_name in chan_names:
-            exposed_params[category].append(
-                OSCParam(
-                    osc,
-                    "/chan_levels/{}".format(chan_name),
-                    lambda chan=chan_name: mixer.getChannelLevel(chan),
-                    lambda addr, args: mixer.setChannelLevel(addr.split("/")[2], args),
-                )
-            )
-
-    def fix_pantilt_wedge(fixture, args, fine=False):
-        # needed because of weirdness with arduino osc
-        if fine:
-            if len(args) == 1:
-                fixture.pantilt_fine(args[0][0], args[0][1])
-            else:
-                fixture.pantilt_fine(args[0], args[1])
-        else:
-            if len(args) == 1:
-                fixture.pantilt(args[0][0], args[0][1])
-            else:
-                fixture.pantilt(args[0], args[1])
-
-    # pylint: disable=protected-access
-    for i, fixture in enumerate(spotlights):
-        exposed_params["spots_position"].append(
-            OSCParam(
-                osc,
-                "/spot_joystick_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._pan, fixture._tilt],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, False
-                ),
-            )
-        )
-
-        exposed_params["spots_position"].append(
-            OSCParam(
-                osc,
-                "/spot_joystick_fine_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._pan_fine, fixture._tilt_fine],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, True
-                ),
-            )
-        )
-
-        exposed_params["spots_light"].append(
-            OSCParam(
-                osc,
-                "/spot_color_{}".format(i + 1),
-                lambda fixture=fixture: fixture.color_index,
-                lambda _, args, fixture=fixture: fixture.color(args),
-            )
-        )
-
-        exposed_params["spots_light"].append(
-            OSCParam(
-                osc,
-                "/spot_pattern_{}".format(i + 1),
-                lambda fixture=fixture: fixture.pattern_index,
-                lambda _, args, fixture=fixture: fixture.pattern(args),
-            )
-        )
-
-        exposed_params["spots_light"].append(
-            OSCParam(
-                osc,
-                "/spot_prisim_{}".format(i + 1),
-                lambda fixture=fixture: fixture.prisim_enabled,
-                lambda _, args, fixture=fixture: fixture.prisim(
-                    args, fixture.prisim_rotation
-                ),
-            )
-        )
-
-        exposed_params["spots_light"].append(
-            OSCParam(
-                osc,
-                "/spot_prisim_rotation_{}".format(i + 1),
-                lambda fixture=fixture: fixture.prisim_rotation,
-                lambda _, args, fixture=fixture: fixture.prisim(
-                    fixture.prisim_enabled, args
-                ),
-            )
-        )
     presets = PresetManager(
         osc,
         exposed_params,
@@ -943,18 +434,6 @@ def run(
         mixer.setChannelLevel("sodium", 0)
 
         presets.select_all("Off")
-
-    def set_dmx_passthrough(value) -> None:
-        if isinstance(value, (list, tuple)):
-            value = value[0] if value else 0
-        enabled = bool(value)
-        dmx.passthrough = enabled
-        if not enabled:
-            # Safety: ensure capture/FFT threads are running after we leave passthrough.
-            if audio_capture.audio_thread is None or not audio_capture.audio_running:
-                audio_capture.start_audio()
-            if fft_manager.fft_thread is None or not fft_manager.fft_running:
-                fft_manager.start_fft()
 
     def house_lights():
         if dmx.passthrough:
