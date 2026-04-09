@@ -5,3 +5,4 @@ dist
 .python-version
 open-stage-control/server.config
 .claude
+python/parquette-lights/session.pickle

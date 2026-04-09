@@ -4756,7 +4756,7 @@
             "id": "washes_targets",
             "interaction": true,
             "width": 450,
-            "height": 330,
+            "height": 340,
             "value": "",
             "default": "",
             "address": "auto",
@@ -4912,7 +4912,7 @@
           },
           {
             "type": "matrix",
-            "top": 1040,
+            "top": 1050,
             "left": 20,
             "id": "washes_offests",
             "interaction": true,
