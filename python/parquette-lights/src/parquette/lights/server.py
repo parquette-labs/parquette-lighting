@@ -130,6 +130,12 @@ from .util.session_store import SessionStore
     help="Seconds to hold dark while the moving-head color wheel mechanically settles",
 )
 @click.option(
+    "--session-file",
+    default="session.pickle",
+    type=str,
+    help="File to store and load session state (active presets, master faders) from",
+)
+@click.option(
     "--audio-interface",
     default=None,
     type=str,
@@ -155,6 +161,7 @@ def run(
     rms_window: float,
     spot_color_fade: float,
     spot_mechanical_time: float,
+    session_file: str,
     audio_interface: Optional[str],
 ) -> None:
     print("Setup", flush=True)
@@ -382,7 +389,7 @@ def run(
         history_len=666 * 6,
     )
 
-    session = SessionStore("./session.pickle")
+    session = SessionStore(session_file)
 
     def set_dmx_passthrough(value: Any) -> None:
         if isinstance(value, (list, tuple)):
