@@ -56,6 +56,51 @@
 		* Press "Start FFT"
 		* You should see audio signal coming in to the FFT visualizer
 
+# Deploying
+
+If you're on the parquette LAN you can use the deploy script to push code to the MM
+
+From `python/parquette-lights/` run:
+
+```
+poetry run poe deploy
+```
+
+This wraps `scripts/deploy.py`. It will:
+
+1. Inspect the remote (`parquette-mm`) working tree. If
+   `open-stage-control/layout-config.json` or
+   `python/parquette-lights/params.pickle` were edited live on the mac mini,
+   you'll be prompted to (a) `scp` them down into your local checkout, (b)
+   discard them on the remote, or (c) abort. Any other dirty files on the
+   remote abort the deploy — fix them by hand first.
+2. If your local tree is dirty (either pre-existing edits or files just
+   pulled down in step 1), drop you into `git commit -a` so you can write a
+   message. Closing the editor without saving aborts.
+3. `git push` the current branch to origin.
+4. SSH to the remote, fetch + checkout the same branch, and `git pull --ff-only`.
+5. Run `./launchd/install.sh -y` on the remote to reinstall and restart the
+   `ca.parquette.lighting.server` and `…openstagecontrol` launchd agents.
+
+Useful flags: `--skip-install` (sync code without restarting launchd),
+`--remote-host HOST` (override the SSH target), and `-v` (echo every shell
+command run locally and remotely).
+
+**Live state is preserved across deploys.** The server writes
+`python/parquette-lights/session.pickle` whenever a master fader moves or
+the active preset selection changes; on the next boot it restores those
+master fader values and re-selects the same preset per category, so a deploy
++ launchd restart drops you back into whatever the room was doing before.
+The path is configurable via `--session-file`. If you want to wipe the
+remembered state (e.g. start cold for an event) just delete the file:
+
+```
+rm python/parquette-lights/session.pickle
+```
+
+This file is intentionally untracked — only `params.pickle` (the saved
+preset library) is committed.
+
 # Repo information
 
 * `/open-stage-control` contains the configuration for the open stage control front end, the `layout-config.json` contains the front end design, the other files are the server and UI initial state
