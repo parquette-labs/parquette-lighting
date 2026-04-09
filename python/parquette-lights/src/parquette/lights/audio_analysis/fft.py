@@ -23,7 +23,6 @@ import numpy as np
 from ..generators import BPMGenerator, FFTGenerator
 from ..osc import OSCManager, UIDebugFrame
 from ..dmx import DMXManager
-from ..util.math import fold_tempo
 from .audio import AudioCapture
 
 
@@ -242,16 +241,20 @@ class FFTManager(object):
         self.business_history.append(business)
         self.regularity_history.append(regularity)
 
-        # BPM validity gate: require recent (3-tick mean) business and
-        # regularity to both exceed configurable floors. The 3-tick mean
-        # dampens one-tick flickers at state boundaries so the BPM
-        # generator doesn't stutter on/off. Raw plots stay raw.
-        recent_business = float(np.mean(list(self.business_history)[-3:]))
-        recent_regularity = float(np.mean(list(self.regularity_history)[-3:]))
-        bpm_valid = (
-            recent_business >= self.min_business
-            and recent_regularity >= self.min_regularity
+        # BPM validity gate: require the last 5 ticks of business and
+        # regularity to ALL pass the configured floors. Stricter than a
+        # mean — a single bad tick drops the gate, so the BPM generator
+        # only stays valid through sustained good audio. Raw plots stay raw.
+        gate_window = 5
+        recent_business_vals = list(self.business_history)[-gate_window:]
+        recent_regularity_vals = list(self.regularity_history)[-gate_window:]
+        business_pass = len(recent_business_vals) == gate_window and all(
+            v >= self.min_business for v in recent_business_vals
         )
+        regularity_pass = len(recent_regularity_vals) == gate_window and all(
+            v >= self.min_regularity for v in recent_regularity_vals
+        )
+        bpm_valid = business_pass and regularity_pass
         for b in self.bpms:
             b.bpm_valid = bpm_valid
 
@@ -259,10 +262,10 @@ class FFTManager(object):
 
         self.uidb["reported_tempo"] = reported_tempo
         self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs}".format(
-            b=recent_business,
-            bs="✓" if recent_business >= self.min_business else "✗",
-            r=recent_regularity,
-            rs="✓" if recent_regularity >= self.min_regularity else "✗",
+            b=business,
+            bs="✓" if business_pass else "✗",
+            r=regularity,
+            rs="✓" if regularity_pass else "✗",
         )
 
         self.uidb["harmonic_percussive"] = f"{hp_ratio:.2f}"
