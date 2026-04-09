@@ -28,12 +28,19 @@ class Mixer(object):
     )
 
     def save_current_masters(self) -> Dict[str, Any]:
-        return {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
+        data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
+        # Sodium is technically a channel level (lives under "non-saved" in
+        # the categorized_channel_names map) but we persist it alongside the
+        # masters so the room comes back up with the same house-light state.
+        data["sodium"] = self.getChannelLevel("sodium")
+        return data
 
     def load_current_masters(self, data: Dict[str, Any]) -> None:
         for attr, value in data.items():
             if attr in self.MASTER_ATTRS:
                 setattr(self, attr, value)
+            elif attr == "sodium":
+                self.setChannelLevel("sodium", value)
 
     def __init__(
         self,
