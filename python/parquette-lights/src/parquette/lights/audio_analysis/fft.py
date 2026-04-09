@@ -55,6 +55,7 @@ class FFTManager(object):
         onset_envelope_floor: float = 2.0,
         min_business: float = 0.5,
         min_regularity: float = 0.4,
+        bpm_publish_interval: float = 5.0,
     ) -> None:
         self.debug = debug
         self.onset_envelope_floor = onset_envelope_floor
@@ -71,6 +72,14 @@ class FFTManager(object):
         self.current_rms: float = 0.0
         self.last_beat_track_time: float = 0.0
         self.last_debug_update: float = 0.0
+
+        # Beat tracking continues to run at ~0.2s (see run_fwd) but the
+        # value pushed to BPMGenerators is throttled — `smoothed_bpm`
+        # is the continuously IIR-smoothed truth, copied to each generator
+        # only every `bpm_publish_interval` seconds.
+        self.bpm_publish_interval = bpm_publish_interval
+        self.smoothed_bpm: float = 0.0
+        self.last_bpm_publish_time: float = 0.0
 
         self.bpm_history_len: int = (
             600  # 1 min at 10 samples/sec (one sample per 100ms)
@@ -216,14 +225,21 @@ class FFTManager(object):
 
         reported_tempo = fold_tempo(float(reported_tempo))
 
-        for b in self.bpms:
-            b.bpm = int(
-                self.tempo_alpha * float(reported_tempo)
-                + (1 - self.tempo_alpha) * b.bpm
-            )
+        # Continuously update the smoothed estimate every tick so the IIR
+        # dynamics are unchanged; only the publish to generators is throttled.
+        self.smoothed_bpm = (
+            self.tempo_alpha * float(reported_tempo)
+            + (1 - self.tempo_alpha) * self.smoothed_bpm
+        )
+
+        current_time = time.monotonic()
+        if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
+            self.last_bpm_publish_time = current_time
+            for b in self.bpms:
+                b.bpm = int(self.smoothed_bpm)
 
         self.raw_bpm_history.append(float(reported_tempo))
-        self.bpm_history.append(self.bpms[0].bpm if self.bpms else 0.0)
+        self.bpm_history.append(self.smoothed_bpm)
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
