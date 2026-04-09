@@ -26,6 +26,7 @@
 * Overall and per light brightness perception map and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Viz should connect to an out channel
+* Auto reload the webpage if it doesn't reconnect after 5 sec
 
 # Feedback
 * Maybe we need softer strobes
