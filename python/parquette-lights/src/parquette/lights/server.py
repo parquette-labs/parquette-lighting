@@ -30,116 +30,142 @@ from .util.session_store import SessionStore
 @click.option(
     "--local-ip",
     default="127.0.0.1",
+    show_default=True,
     type=str,
-    help="The local IP address to bind to, typically you should use 0.0.0.0 to have it be accessible on the LAN, default is 127.0.0.1",
+    help="The local IP address to bind to. Use 0.0.0.0 to be accessible on the LAN.",
 )
 @click.option(
     "--local-port",
     default=5005,
+    show_default=True,
     type=int,
-    help="The local port to listen for OSC commands on, default is 5005",
+    help="The local port to listen for OSC commands on.",
 )
 @click.option(
     "--target-ip",
     default="127.0.0.1",
+    show_default=True,
     type=str,
-    help="IP address of the open stage control instance, default is 127.0.0.1",
+    help="IP address of the open stage control instance.",
 )
 @click.option(
     "--target-port",
     default=5006,
+    show_default=True,
     type=int,
-    help="The port the open stage control instance is listening for OSC on",
+    help="The port the open stage control instance is listening for OSC on.",
 )
 @click.option(
     "--art-net-ip",
     default="192.168.88.111",
+    show_default=True,
     type=str,
-    help="The IP address for artnet node / device to send to",
+    help="The IP address for art-net node / device to send to.",
 )
 @click.option(
     "--debug",
     is_flag=True,
     default=False,
-    help="Print debut information excluding OSC traffic monitoring",
+    show_default=True,
+    help="Print debug information (excluding OSC traffic monitoring).",
 )
 @click.option(
-    "--debug-osc-in", is_flag=True, default=False, help="Print inbound OSC messages"
+    "--debug-osc-in",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Print inbound OSC messages.",
 )
 @click.option(
-    "--debug-osc-out", is_flag=True, default=False, help="Print outbound OSC messages"
+    "--debug-osc-out",
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Print outbound OSC messages.",
 )
 @click.option(
     "--debug-hazer",
     is_flag=True,
     default=False,
-    help="Print the hazer's DMX channel state on every tick",
+    show_default=True,
+    help="Print the hazer's DMX channel state on every tick.",
 )
 @click.option(
     "--boot-art-net",
     is_flag=True,
     default=False,
-    help="Automatically launch the art-net connection on boot",
+    show_default=True,
+    help="Automatically launch the art-net connection on boot.",
 )
 @click.option(
     "--art-net-auto",
     is_flag=True,
     default=False,
-    help="Enable auto persisting data to the art net at 30hz, likely not needed",
+    show_default=True,
+    help="Enable auto persisting data to the art-net at 30hz (likely not needed).",
 )
 @click.option(
     "--enable-save-clear",
     is_flag=True,
     default=False,
-    help="Allow saving and clearing presets on boot",
+    show_default=True,
+    help="Allow saving and clearing presets on boot.",
 )
 @click.option(
     "--entec-auto",
     default=None,
+    show_default=True,
     type=str,
-    help="Auto connect to a given entec port on boot",
-)  # /dev/tty.usbserial-EN264168
+    help="Auto-connect to a given Enttec port on boot (e.g. /dev/tty.usbserial-EN264168).",
+)
 @click.option(
     "--presets-file",
     default="params.pickle",
+    show_default=True,
     type=str,
-    help="File to store and load presets from",
+    help="File to store and load presets from.",
 )
 @click.option(
     "--audio-window",
     default=5.0,
+    show_default=True,
     type=float,
-    help="Audio tracking audio window length in seconds (used for BPM)",
+    help="Audio tracking window length in seconds (used for BPM).",
 )
 @click.option(
     "--rms-window",
     default=0.5,
+    show_default=True,
     type=float,
-    help="Window length in seconds used for RMS energy gating of BPM",
+    help="Window length in seconds used for RMS energy gating of BPM.",
 )
 @click.option(
     "--spot-color-fade",
     default=0.1,
+    show_default=True,
     type=float,
-    help="Seconds for moving-head color change fade out/in (negative disables)",
+    help="Seconds for moving-head color change fade out/in (negative disables).",
 )
 @click.option(
     "--spot-mechanical-time",
     default=0.45,
+    show_default=True,
     type=float,
-    help="Seconds to hold dark while the moving-head color wheel mechanically settles",
+    help="Seconds to hold dark while the moving-head color wheel mechanically settles.",
 )
 @click.option(
     "--session-file",
     default="session.pickle",
+    show_default=True,
     type=str,
-    help="File to store and load session state (active presets, master faders) from",
+    help="File to store and load session state (active presets, master faders) from.",
 )
 @click.option(
     "--audio-interface",
     default=None,
+    show_default=True,
     type=str,
-    help="Auto-connect to an audio input device by name (substring, case-insensitive) and start audio + FFT analysis on boot",
+    help="Auto-connect to an audio input device by name (substring, case-insensitive) and start audio + FFT analysis on boot.",
 )
 # pylint: disable-next=too-many-positional-arguments
 def run(
