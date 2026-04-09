@@ -1,4 +1,4 @@
-# CLAUDE.md
+	# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -17,8 +17,10 @@ All run from `python/parquette-lights/`:
 - `poetry sync` — install deps
 - `poetry run server` — run the lighting server (entry: `parquette.lights.server:run`). Useful flags: `--local-ip 0.0.0.0`, `--entec-auto /dev/tty.usbserial-...`, `--art-net-ip`, `--boot-art-net`.
 - `poetry run poe check` — runs black, pylint, mypy in sequence (continues on failure)
-- `poetry run poe black` / `poe pylint` / `poe mypy` / `poe pytest` — individual tasks
-- `poetry run pytest tests/path/to/test_file.py::test_name` — run a single test
+- `poetry run poe black` - runs black code formatter
+- `poetry run poe mypy` - runs mypy and checks for typing issues 
+- `poetry run poe pylint` - runs pylint and checks for issues
+- `poetry run poe pytest` - runs the test suite
 - `poetry run poe strip-osc-layout` — runs `scripts/strip_layout_defaults.py` to clean up the OSC layout JSON
 
 ## Architecture
@@ -45,3 +47,5 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manage so they can be saved and sync'd with the front end
 - When creating parameters assume you need a front end UI element (slider or similar) in the associated tab (most misc configration should go in fft dmx) and that UI element should also have a text area under it with a name and a real time value
 - Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code
+- When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors
+- Code written should use mypy typing hints

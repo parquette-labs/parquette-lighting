@@ -11,7 +11,7 @@
 * Something is wrong with BPM again? Seems related to the update freq (I set the interval back to 1s)
 * Update the BPM much less often for smoothing?
 * Transition from spot off doesnt' do the fade right due to the jump in levels
-* Save state across reboot
+* <s>Save state across reboot</s>
 * Retry XY mapping work
 * Need a working offset calculator for the BPM, was working ok before
 * sq1, sq2, sq3, need to have separate period controls
@@ -27,7 +27,6 @@
 * All input values from the OSC sliders should be smoothed slightly via a parameter defined in click in seconds. Default should be 0.1s smoothing.
 * Overall and per light brightness perception map and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
-* Blue/green deploy mechanism
 * Trigger the next beat impulse (or all synths with the next time step)?
 * Viz should connect to an out channel
 
@@ -36,13 +35,6 @@
 * An alternate dumb layout URL mode
 * Color wheels
 * Make text bigger
-* randomizer
+* Randomizer
 * SQ disco struggles
 
-
-# Buggy stuff
-Fix 
-```
-# pythonosc → (addr, x, y) → args == (x, y)
-# PresetManager.load → (addr, [x, y]) → args == ([x, y],)
-```
