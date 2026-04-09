@@ -99,9 +99,12 @@ class AudioCapture(object):
     def _run_capture(self) -> None:
         while self.audio_running:
             try:
+                # Idle while no input device is selected/open. The thread
+                # stays alive so a later setup_audio() call can hand it a
+                # fresh stream without needing a restart.
                 if self.stream is None:
-                    self.audio_running = False
-                    return
+                    time.sleep(0.1)
+                    continue
 
                 data = self.stream.read(self.chunk, exception_on_overflow=False)
 

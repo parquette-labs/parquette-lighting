@@ -73,30 +73,18 @@ class FFTManager(object):
         self.last_beat_track_time: float = 0.0
         self.last_debug_update: float = 0.0
 
-        # Beat tracking continues to run at ~0.2s (see run_fwd) but the
-        # value pushed to BPMGenerators is throttled — `smoothed_bpm`
-        # is the continuously IIR-smoothed truth, copied to each generator
-        # only every `bpm_publish_interval` seconds.
         self.bpm_publish_interval = bpm_publish_interval
         self.smoothed_bpm: float = 0.0
         self.last_bpm_publish_time: float = 0.0
 
-        self.bpm_history_len: int = (
-            600  # 1 min at 10 samples/sec (one sample per 100ms)
-        )
-        self.raw_bpm_metric_history_len: int = 120
+        self.bpm_history_len: int = 150
 
-        # C2: all history buffers as deques — O(1) append/eviction, no list copies
         self.bpm_history: deque = deque(maxlen=self.bpm_history_len)
+        self.raw_bpm_history: deque = deque(maxlen=self.bpm_history_len)
         self.rms_history: deque = deque(maxlen=self.bpm_history_len)
-        # Raw (unsmoothed) tempo reports — kept for debugging the tracker
-        # independently of the validity gate.
-        self.raw_bpm_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
-        self.harmonic_percussive_history: deque = deque(
-            maxlen=self.raw_bpm_metric_history_len
-        )
-        self.business_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
-        self.regularity_history: deque = deque(maxlen=self.raw_bpm_metric_history_len)
+        self.harmonic_percussive_history: deque = deque(maxlen=self.bpm_history_len)
+        self.business_history: deque = deque(maxlen=self.bpm_history_len)
+        self.regularity_history: deque = deque(maxlen=self.bpm_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self.rms_ss: deque = deque()
@@ -151,11 +139,13 @@ class FFTManager(object):
             self.stop_fft()
 
     def audio_ready(self) -> bool:
-        return not (
-            self.audio_cap is None
-            or self.audio_cap.stream is None
-            or len(self.audio_cap.window) == 0
-        )
+        # Require a full audio window before any FFT / beat-track work
+        # runs. With a partially-filled window the RMS / beat tracker can
+        # divide by zero (n_rms_chunks collapses to 0) and librosa emits
+        # n_fft warnings on the too-short signal.
+        if self.audio_cap is None or self.audio_cap.stream is None:
+            return False
+        return len(self.audio_cap.window) >= self.audio_cap.window_len
 
     def update_rms(self, win: List[np.ndarray]) -> None:
         if not self.audio_ready():
@@ -223,7 +213,7 @@ class FFTManager(object):
             tightness=200,
         )
 
-        reported_tempo = fold_tempo(float(reported_tempo))
+        # reported_tempo = fold_tempo(float(reported_tempo))
 
         # Continuously update the smoothed estimate every tick so the IIR
         # dynamics are unchanged; only the publish to generators is throttled.
@@ -454,8 +444,8 @@ class FFTManager(object):
                     self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
                     self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
 
-                    self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
                     self.osc.send_osc("/rms_history_viz", list(self.rms_history))
+                    self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
                     self.osc.send_osc(
                         "/raw_bpm_history_viz", list(self.raw_bpm_history)
                     )

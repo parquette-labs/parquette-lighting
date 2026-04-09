@@ -17,32 +17,6 @@ def fold_tempo(bpm: float, reference: float = 100.0) -> float:
     return bpm
 
 
-def fold_tempo_for_stability(bpm: float, reference: float) -> float:
-    """Fold bpm for stability comparison, treating 2x and 1.5x multiples as equivalent.
-
-    Steps reference up and down by both 2x and 1.5x to build a candidate set,
-    then returns bpm normalised relative to whichever candidate is closest in
-    log space. A beat tracker alternating between T and 1.5T (or 2T/3) will
-    produce near-zero variance after folding.
-    """
-    if reference <= 0 or bpm <= 0:
-        return bpm
-
-    candidates = []
-    for factor in (2.0, 1.5, 1.33):
-        r = reference
-        while r >= bpm / 3.0:
-            candidates.append(r)
-            r /= factor
-        r = reference * factor
-        while r <= bpm * 3.0:
-            candidates.append(r)
-            r *= factor
-
-    closest = min(candidates, key=lambda c: abs(c - bpm))
-    return bpm * (reference / closest)
-
-
 # pylint: disable-next=too-many-positional-arguments
 def value_map(
     value: Union[float, int],
