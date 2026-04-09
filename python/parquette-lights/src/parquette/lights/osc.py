@@ -95,16 +95,16 @@ class OSCParam(object):
         self.value_lambda = value_lambda
         self.on_change = on_change
 
-        def handler(a: str, args: Any) -> None:
-            dispatch_lambda(a, args)
+        def handler(a: str, *osc_args: Any) -> None:
+            dispatch_lambda(a, *osc_args)
             if self.on_change is not None:
                 self.on_change()
 
         self.dispatch_lambda = handler
         osc.dispatcher.map(addr, handler)
 
-    def load(self, addr: str, args: Any) -> None:
-        self.dispatch_lambda(addr, args)
+    def load(self, addr: str, *osc_args: Any) -> None:
+        self.dispatch_lambda(addr, *osc_args)
         self.sync()
 
     def sync(self) -> None:

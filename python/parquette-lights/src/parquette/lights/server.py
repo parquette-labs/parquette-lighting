@@ -356,18 +356,10 @@ def run(
 
     _all_washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
 
-    def _dispatch_wash_color(_addr, *args):
+    def _dispatch_wash_color(_addr, *rgb):
         # Reuses the existing set_dimming_target on each fixture, which
         # accepts None for any channel to leave it unchanged — `w` is
         # omitted so the white target is preserved.
-        #
-        # Handles two invocation shapes:
-        #   pythonosc dispatcher → (addr, r, g, b) so args == (r, g, b)
-        #   PresetManager.load   → (addr, [r, g, b]) so args == ([r,g,b],)
-        if len(args) == 1 and isinstance(args[0], (list, tuple)):
-            rgb = args[0]
-        else:
-            rgb = args
         if len(rgb) < 3:
             return
         for fixture in _all_washes:

@@ -233,7 +233,10 @@ class PresetManager(object):
             addr, value = param_preset[0], param_preset[1]
             for param in self.exposed_params[category]:
                 if param.addr == addr:
-                    param.load(addr, value)
+                    if isinstance(value, (list, tuple)):
+                        param.load(addr, *value)
+                    else:
+                        param.load(addr, value)
 
         if sync:
             self.sync()
