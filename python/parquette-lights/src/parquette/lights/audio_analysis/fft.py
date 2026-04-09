@@ -182,7 +182,7 @@ class FFTManager(object):
             self.uidb["reported_tempo"] = "n/a"
             self.uidb["bpm_valid"] = "n/a"
 
-    def run_beat_track(self, win: List[np.ndarray]) -> None:
+    def run_beat_track(self, win: List[np.ndarray], win_ts: List[float]) -> None:
         if not self.bpms or not self.bpms[0].rms_valid:
             return
 
@@ -204,7 +204,7 @@ class FFTManager(object):
             hop_length=hop_length,
             units="frames",
         )
-        reported_tempo, _ = beat_track(
+        reported_tempo, beat_frames = beat_track(
             onset_envelope=oenv,
             sr=sr,
             units="frames",
@@ -224,8 +224,25 @@ class FFTManager(object):
         current_time = time.monotonic()
         if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
             self.last_bpm_publish_time = current_time
+
+            # Beat phase: convert the last detected beat (frame index into y)
+            # back to a wall-clock time, using the audio chunk timestamps
+            # snapshotted alongside the audio window. Setting `offset_time`
+            # to the beat's wall ms aligns each generator's cycle with the
+            # actual downbeat — `value(now_ms)` then fires precisely on
+            # detected beats (modulo bpm_mult subdivisions).
+            new_offset_time: Optional[float] = None
+            if len(beat_frames) > 0 and win_ts:
+                last_beat_sample = int(beat_frames[-1]) * hop_length
+                samples_after = max(0, len(y) - last_beat_sample)
+                end_ts = win_ts[-1]
+                new_offset_time = (end_ts - samples_after / sr) * 1000.0
+
+            bpm_int = int(self.smoothed_bpm)
             for b in self.bpms:
-                b.bpm = int(self.smoothed_bpm)
+                b.bpm = bpm_int
+                if new_offset_time is not None:
+                    b.offset_time = new_offset_time
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
@@ -401,6 +418,7 @@ class FFTManager(object):
             # Required for deque thread-safety and so the beat executor receives
             # a snapshot that won't be mutated while beat_track runs.
             win = list(self.audio_cap.window)
+            win_ts = list(self.audio_cap.window_ts)
 
             # update_rms must run before forward() so forward() can divide by
             # the current (smoothed) rms² to make the mel output loudness-invariant.
@@ -412,7 +430,7 @@ class FFTManager(object):
                 if self._beat_future is None or self._beat_future.done():
                     self.last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
-                        self.run_beat_track, win
+                        self.run_beat_track, win, win_ts
                     )
 
             if fft_data is None:
