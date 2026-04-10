@@ -8,7 +8,6 @@ from typing import (
 )
 
 import time
-from copy import copy
 import math
 
 from . import Generator
@@ -16,6 +15,42 @@ from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
 from ..fixtures import LightFixture, Spot, RGBWLight
 from ..util.math import constrain
+
+
+class MixChannel:
+    def __init__(
+        self,
+        name: str,
+        category: str,
+        index: int,
+        history_ticks: int,
+        *,
+        impulse_generator: Optional[Generator] = None,
+    ) -> None:
+        self.name = name
+        self.category = category
+        self.index = index
+        self.history: List[float] = [0.0] * history_ticks
+        self.offset: float = 0.0
+        self.impulse_generator = impulse_generator
+        self.impulse_connected = impulse_generator is not None
+        self.master_value: float = 1.0
+        self.connected_generators: List[Generator] = []
+
+    def tick(self, ts: float) -> None:
+        """Compute current value and push into history."""
+        val = self.offset
+        for gen in self.connected_generators:
+            val += gen.value(ts)
+        val *= self.master_value
+        if self.impulse_connected and self.impulse_generator is not None:
+            val += self.impulse_generator.value(ts)
+        self.history[1:] = self.history[0:-1]
+        self.history[0] = val
+
+    def value(self, timeslice: int = 0) -> float:
+        """Read value from history. timeslice=0 is current, 1 is 20ms ago, etc."""
+        return self.history[timeslice]
 
 
 class Mixer(object):
@@ -26,6 +61,27 @@ class Mixer(object):
         "washes_master",
         "spots_master",
     )
+
+    @staticmethod
+    def make_master_property(master_name: str, category: str) -> property:
+        backing_field = master_name + "_val"
+
+        def getter(self: "Mixer") -> float:
+            return getattr(self, backing_field)
+
+        def setter(self: "Mixer", value: float) -> None:
+            setattr(self, backing_field, value)
+            for ch in self.mix_channels:
+                if ch.category == category:
+                    ch.master_value = value
+
+        return property(getter, setter)
+
+    reds_master = make_master_property("reds_master", "reds")
+    plants_master = make_master_property("plants_master", "plants")
+    booth_master = make_master_property("booth_master", "booth")
+    spots_master = make_master_property("spots_master", "spots_light")
+    washes_master = make_master_property("washes_master", "washes")
 
     def save_current_masters(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
@@ -48,7 +104,6 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
-        # fixtures: List[Fixture],
         spots: List[Spot],
         washes: List[LightFixture],
         history_len: float,
@@ -58,40 +113,108 @@ class Mixer(object):
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
-        # TODO use this as the chan name reference throughout to better filter categories
-        # should include what master it uses, what it's mapping is in different scenarios (as a lambda)
-        self.categorized_channel_names: Dict[str, List[str]] = {
-            "reds": ["chan_1", "chan_2", "chan_3", "chan_4", "chan_5"],
-            "plants": [
-                "ceil_1",
-                "ceil_2",
-                "ceil_3",
-            ],
-            "booth": [
-                "under_1",
-                "under_2",
-            ],
-            "spots_light": ["tung_spot", "spot_1", "spot_2"],
-            "washes": [
-                "wash_1",
-                "wash_2",
-                "wash_3",
-                "wash_4",
-                "wash_5",
-                "wash_6",
-                "wash_7",
-                "wash_8",
-            ],
-            "non-saved": ["sodium", "synth_visualizer"],
-        }
 
-        self.channel_names: List[str] = [
-            name
-            for _, names in self.categorized_channel_names.items()
-            for name in names
+        self.history_ticks = math.ceil(history_len * 1000 / 20)
+        impulse_gen = next(g for g in generators if g.name == "impulse")
+
+        self.mix_channels: List[MixChannel] = [
+            # reds
+            MixChannel("chan_1", "reds", 0, self.history_ticks),
+            MixChannel("chan_2", "reds", 1, self.history_ticks),
+            MixChannel("chan_3", "reds", 2, self.history_ticks),
+            MixChannel("chan_4", "reds", 3, self.history_ticks),
+            MixChannel("chan_5", "reds", 4, self.history_ticks),
+            # plants
+            MixChannel("ceil_1", "plants", 5, self.history_ticks),
+            MixChannel("ceil_2", "plants", 6, self.history_ticks),
+            MixChannel("ceil_3", "plants", 7, self.history_ticks),
+            # booth
+            MixChannel("under_1", "booth", 8, self.history_ticks),
+            MixChannel("under_2", "booth", 9, self.history_ticks),
+            # spots
+            MixChannel("tung_spot", "spots_light", 10, self.history_ticks),
+            MixChannel("spot_1", "spots_light", 11, self.history_ticks),
+            MixChannel("spot_2", "spots_light", 12, self.history_ticks),
+            # washes (impulse connected)
+            MixChannel(
+                "wash_1",
+                "washes",
+                13,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_2",
+                "washes",
+                14,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_3",
+                "washes",
+                15,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_4",
+                "washes",
+                16,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_5",
+                "washes",
+                17,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_6",
+                "washes",
+                18,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_7",
+                "washes",
+                19,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel(
+                "wash_8",
+                "washes",
+                20,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            # non-saved
+            MixChannel(
+                "sodium",
+                "non-saved",
+                21,
+                self.history_ticks,
+                impulse_generator=impulse_gen,
+            ),
+            MixChannel("synth_visualizer", "non-saved", 22, self.history_ticks),
         ]
 
-        self.num_channels = len(self.channel_names)
+        self.channel_lookup: Dict[str, MixChannel] = {
+            ch.name: ch for ch in self.mix_channels
+        }
+        self.channel_names: List[str] = [ch.name for ch in self.mix_channels]
+
+        # Setting masters after mix_channels are built propagates to channels
+        # via the property setters
+        self.reds_master = 1.0
+        self.spots_master = 1.0
+        self.washes_master = 1.0
+        self.booth_master = 1.0
+        self.plants_master = 1.0
 
         self.dmx_mappings: Dict[str, List[Spot | RGBWLight | LightFixture]] = {
             "left": [
@@ -120,27 +243,8 @@ class Mixer(object):
             ],
         }
 
-        # TODO control the matrix sizing in open sound control with this var?
-        # TODO this could be initialized / resetup in a subfn that can be reused if the live setup changes
-        # This is an array of the output values at different time slices, the design is that each timeslice is 20ms back in time, so self.channels[timeslice][chan]
-        self.channels = [
-            [0.0] * self.num_channels for _ in range(math.ceil(history_len * 1000 / 20))
-        ]
-        # This is the default base value of each chan
-        self.channel_offsets = [0.0] * self.num_channels
-        # This is a matrix from the patch bay of what signals go to what chans of shape signal_matrix[num_gen][num_chan]
-        self.signal_matrix = [
-            [0.0] * self.num_channels for _ in range(len(self.generators))
-        ]
-
         self.stutter_period = 500
         self.stutter_period_wash = 500
-
-        self.reds_master = 1
-        self.spots_master = 1
-        self.washes_master = 1
-        self.booth_master = 1
-        self.plants_master = 1
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
@@ -150,8 +254,15 @@ class Mixer(object):
             "fft_1": [0.0] * self.fft_history_len,
             "fft_2": [0.0] * self.fft_history_len,
         }
-        self._fft_viz_until: float = 0.0
-        self._synth_visualizer_until: float = 0.0
+        self.fft_viz_until: float = 0.0
+        self.synth_visualizer_until: float = 0.0
+
+    @property
+    def categorized_channel_names(self) -> Dict[str, List[str]]:
+        result: Dict[str, List[str]] = {}
+        for ch in self.mix_channels:
+            result.setdefault(ch.category, []).append(ch.name)
+        return result
 
     def set_fft_viz(self, enable: bool) -> None:
         # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
@@ -161,54 +272,50 @@ class Mixer(object):
         # that is on the FFT/DMX tab. The gate expires naturally ~2s after
         # the last "on" heartbeat from any client.
         if enable:
-            self._fft_viz_until = time.time() + 2.0
+            self.fft_viz_until = time.time() + 2.0
 
-    def _fft_viz_active(self) -> bool:
-        return time.time() < self._fft_viz_until
+    def fft_viz_active(self) -> bool:
+        return time.time() < self.fft_viz_until
 
     def set_synth_visualizer(self, enable: bool) -> None:
         # Same multi-client semantics as set_fft_viz above.
         if enable:
-            self._synth_visualizer_until = time.time() + 2.0
+            self.synth_visualizer_until = time.time() + 2.0
 
-    def _synth_visualizer_active(self) -> bool:
-        return time.time() < self._synth_visualizer_until
+    def synth_visualizer_active(self) -> bool:
+        return time.time() < self.synth_visualizer_until
 
-    def setChannelLevel(self, chan_name: str, level: float):
-        self.channel_offsets[self.channel_names.index(chan_name)] = level
+    def setChannelLevel(self, chan_name: str, level: float) -> None:
+        self.channel_lookup[chan_name].offset = level
 
     def getChannelLevel(self, chan_name: str) -> float:
-        return self.channel_offsets[self.channel_names.index(chan_name)]
+        return self.channel_lookup[chan_name].offset
 
     def clearSignalMatrix(self, chan_name: Optional[str] = None) -> None:
-        # pylint: disable-next=consider-using-enumerate
-        for gen_ix in range(len(self.signal_matrix)):
-            for chan_ix in range(len(self.signal_matrix[gen_ix])):
-                if chan_name is None:
-                    self.signal_matrix[gen_ix][chan_ix] = 0
-                elif self.channel_names[chan_ix] == chan_name:
-                    self.signal_matrix[gen_ix][chan_ix] = 0
+        if chan_name is None:
+            for ch in self.mix_channels:
+                ch.connected_generators.clear()
+        else:
+            self.channel_lookup[chan_name].connected_generators.clear()
 
-    def configureSignalPath(self, target_gen: str, target_chan: str, enable: bool):
-        gen_ix = list(map(lambda gen: gen.name, self.generators)).index(target_gen)
-        chan_ix = self.channel_names.index(target_chan)
-        self.signal_matrix[gen_ix][chan_ix] = int(enable)
+    def configureSignalPath(
+        self, target_gen: str, target_chan: str, enable: bool
+    ) -> None:
+        ch = self.channel_lookup[target_chan]
+        gen = next(g for g in self.generators if g.name == target_gen)
+        if enable and gen not in ch.connected_generators:
+            ch.connected_generators.append(gen)
+        elif not enable and gen in ch.connected_generators:
+            ch.connected_generators.remove(gen)
 
     def configureSignalMatrix(
         self, target_gen: str, target_chans: Tuple[str] | List[str]
     ) -> None:
         try:
-            gen_ix = list(map(lambda gen: gen.name, self.generators)).index(target_gen)
-            destinations = [
-                self.channel_names.index(chan_name) for chan_name in target_chans
-            ]
-            for i in range(len(self.signal_matrix[gen_ix])):
-                if i in destinations:
-                    self.signal_matrix[gen_ix][i] = 1
-                else:
-                    self.signal_matrix[gen_ix][i] = 0
-
-        except ValueError:
+            target_set = set(target_chans)
+            for ch in self.mix_channels:
+                self.configureSignalPath(target_gen, ch.name, ch.name in target_set)
+        except (StopIteration, KeyError):
             print(
                 "Couldn't parse signal mapping, gen {}, chans {}".format(
                     target_gen, target_chans
@@ -217,112 +324,15 @@ class Mixer(object):
             )
 
     def runChannelMix(self) -> None:
-        # slide the channel history back one timestep
-        self.channels[1:] = self.channels[0:-1]
-
-        # setup current times
-        self.channels[0] = copy(self.channel_offsets)
-
         ts = time.time() * 1000
 
-        impulse_ix = list(map(lambda gen: gen.name, self.generators)).index("impulse")
-        self.channels[0][self.channel_names.index("sodium")] += self.generators[
-            impulse_ix
-        ].value(ts)
-
-        for gen_idx, gen_connected_chans in enumerate(self.signal_matrix):
-            for chan_idx, chan_connected in enumerate(gen_connected_chans):
-                self.channels[0][chan_idx] += (
-                    self.generators[gen_idx].value(ts) * chan_connected
-                )
-
-        for i, val in enumerate(self.channels[0]):
-            if not self.channel_names[i] in (
-                "tung_spot",
-                "under_1",
-                "under_2",
-                "sodium",
-                "ceil_1",
-                "ceil_2",
-                "ceil_3",
-                "spot_1",
-                "spot_2",
-                "wash_1",
-                "wash_2",
-                "wash_3",
-                "wash_4",
-                "wash_5",
-                "wash_6",
-                "wash_7",
-                "wash_8",
-            ):
-                self.channels[0][i] = val * self.reds_master
-
-        for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] in (
-                "ceil_1",
-                "ceil_2",
-                "ceil_3",
-            ):
-                self.channels[0][i] = val * self.plants_master
-
-        for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] in (
-                "spot_1",
-                "spot_2",
-                "tung_spot",
-            ):
-                self.channels[0][i] = val * self.spots_master
-
-        for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] in (
-                "wash_1",
-                "wash_2",
-                "wash_3",
-                "wash_4",
-                "wash_5",
-                "wash_6",
-                "wash_7",
-                "wash_8",
-            ):
-                self.channels[0][i] = val * self.washes_master
-
-        self.channels[0][self.channel_names.index("wash_1")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_2")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_3")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_4")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_5")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_6")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_7")] += self.generators[
-            impulse_ix
-        ].value(ts)
-        self.channels[0][self.channel_names.index("wash_8")] += self.generators[
-            impulse_ix
-        ].value(ts)
-
-        for i, val in enumerate(self.channels[0]):
-            if self.channel_names[i] in (
-                "under_1",
-                "under_2",
-            ):
-                self.channels[0][i] = val * self.booth_master
+        for ch in self.mix_channels:
+            ch.tick(ts)
 
         # Sample fft generator outputs into the rolling history buffer when
         # the fft_dmx modal is open (heartbeat-driven). Skipped otherwise so
         # we don't pay the per-tick cost.
-        if self._fft_viz_active():
+        if self.fft_viz_active():
             for name, hist in self.fft_gen_history.items():
                 gen = next((g for g in self.generators if g.name == name), None)
                 if gen is None:
@@ -332,91 +342,42 @@ class Mixer(object):
 
     def runOutputMix(self) -> None:
         # spots
-        self.dmx_mappings["spot"][0].dimming(
-            self.channels[0][self.channel_names.index("tung_spot")]
-        )
-        self.dmx_mappings["spot"][1].dimming(
-            self.channels[0][self.channel_names.index("spot_1")]
-        )
-        self.dmx_mappings["spot"][2].dimming(
-            self.channels[0][self.channel_names.index("spot_2")]
-        )
+        self.dmx_mappings["spot"][0].dimming(self.channel_lookup["tung_spot"].value())
+        self.dmx_mappings["spot"][1].dimming(self.channel_lookup["spot_1"].value())
+        self.dmx_mappings["spot"][2].dimming(self.channel_lookup["spot_2"].value())
 
         # booth
-        self.dmx_mappings["under"][0].dimming(
-            self.channels[0][self.channel_names.index("under_1")]
-        )
-        self.dmx_mappings["under"][1].dimming(
-            self.channels[0][self.channel_names.index("under_2")]
-        )
+        self.dmx_mappings["under"][0].dimming(self.channel_lookup["under_1"].value())
+        self.dmx_mappings["under"][1].dimming(self.channel_lookup["under_2"].value())
 
         # sodium
-        self.dmx_mappings["sodium"][0].dimming(
-            self.channels[0][self.channel_names.index("sodium")]
-        )
+        self.dmx_mappings["sodium"][0].dimming(self.channel_lookup["sodium"].value())
 
         # plants
-        self.dmx_mappings["ceil"][0].dimming(
-            self.channels[0][self.channel_names.index("ceil_1")]
-        )
-        self.dmx_mappings["ceil"][1].dimming(
-            self.channels[0][self.channel_names.index("ceil_2")]
-        )
-        self.dmx_mappings["ceil"][2].dimming(
-            self.channels[0][self.channel_names.index("ceil_3")]
-        )
+        self.dmx_mappings["ceil"][0].dimming(self.channel_lookup["ceil_1"].value())
+        self.dmx_mappings["ceil"][1].dimming(self.channel_lookup["ceil_2"].value())
+        self.dmx_mappings["ceil"][2].dimming(self.channel_lookup["ceil_3"].value())
+
         if self.wash_mode == "MONO":
             # washes
-            self.dmx_mappings["wash"][0].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][1].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][2].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][3].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][4].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][5].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][6].dimming(
-                self.channels[0][self.channel_names.index("wash_7")]
-            )
-            self.dmx_mappings["wash"][7].dimming(
-                self.channels[0][self.channel_names.index("wash_8")]
-            )
+            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
+            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
         elif self.wash_mode == "UNIQUE":
             # washes
-            self.dmx_mappings["wash"][0].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][1].dimming(
-                self.channels[0][self.channel_names.index("wash_2")]
-            )
-            self.dmx_mappings["wash"][2].dimming(
-                self.channels[0][self.channel_names.index("wash_3")]
-            )
-            self.dmx_mappings["wash"][3].dimming(
-                self.channels[0][self.channel_names.index("wash_4")]
-            )
-            self.dmx_mappings["wash"][4].dimming(
-                self.channels[0][self.channel_names.index("wash_5")]
-            )
-            self.dmx_mappings["wash"][5].dimming(
-                self.channels[0][self.channel_names.index("wash_6")]
-            )
-            self.dmx_mappings["wash"][6].dimming(
-                self.channels[0][self.channel_names.index("wash_7")]
-            )
-            self.dmx_mappings["wash"][7].dimming(
-                self.channels[0][self.channel_names.index("wash_8")]
-            )
+            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_2"].value())
+            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_3"].value())
+            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_4"].value())
+            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_5"].value())
+            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_6"].value())
+            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
+            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
         elif self.wash_mode in ("FWD", "BACK"):
             wash_zip = list(
                 zip(
@@ -441,15 +402,13 @@ class Mixer(object):
                     constrain(
                         self.stutter_period_wash * i / 10,
                         0,
-                        len(self.channels) - 1,
+                        self.history_ticks - 1,
                     )
                 )
                 fixture_l.dimming(
                     int(
                         constrain(
-                            self.channels[stutter_index][
-                                self.channel_names.index("wash_1")
-                            ],
+                            self.channel_lookup["wash_1"].value(stutter_index),
                             0,
                             255,
                         )
@@ -458,37 +417,32 @@ class Mixer(object):
                 fixture_r.dimming(
                     int(
                         constrain(
-                            self.channels[stutter_index][
-                                self.channel_names.index("wash_2")
-                            ],
+                            self.channel_lookup["wash_2"].value(stutter_index),
                             0,
                             255,
                         )
                     )
                 )
 
-            self.dmx_mappings["wash"][6].dimming(
-                self.channels[0][self.channel_names.index("wash_7")]
-            )
-            self.dmx_mappings["wash"][7].dimming(
-                self.channels[0][self.channel_names.index("wash_8")]
-            )
+            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
+            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
 
         if self.mode == "MONO":
             for group, fixtures in self.dmx_mappings.items():
                 if group in ("left", "right", "front"):
                     for fixture in fixtures:
-                        fixture.dimming(self.channels[0][0])
+                        fixture.dimming(self.channel_lookup["chan_1"].value())
 
         elif self.mode == "PENTA":
+            penta_channels = ["chan_2", "chan_3", "chan_4", "chan_5"]
             for i, (fixture_l, fixture_r) in enumerate(
                 zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
             ):
-                fixture_l.dimming(self.channels[0][i + 1])
-                fixture_r.dimming(self.channels[0][i + 1])
+                fixture_l.dimming(self.channel_lookup[penta_channels[i]].value())
+                fixture_r.dimming(self.channel_lookup[penta_channels[i]].value())
 
-            self.dmx_mappings["front"][0].dimming(self.channels[0][0])
-            self.dmx_mappings["front"][1].dimming(self.channels[0][0])
+            self.dmx_mappings["front"][0].dimming(self.channel_lookup["chan_1"].value())
+            self.dmx_mappings["front"][1].dimming(self.channel_lookup["chan_1"].value())
 
         elif self.mode in ("FWD", "BACK"):
             fixture_zip = list(
@@ -504,14 +458,22 @@ class Mixer(object):
                     constrain(
                         self.stutter_period * i / 10,
                         0,
-                        len(self.channels) - 1,
+                        self.history_ticks - 1,
                     )
                 )
                 fixture_l.dimming(
-                    int(constrain(self.channels[stutter_index][0], 0, 255))
+                    int(
+                        constrain(
+                            self.channel_lookup["chan_1"].value(stutter_index), 0, 255
+                        )
+                    )
                 )
                 fixture_r.dimming(
-                    int(constrain(self.channels[stutter_index][1], 0, 255))
+                    int(
+                        constrain(
+                            self.channel_lookup["chan_2"].value(stutter_index), 0, 255
+                        )
+                    )
                 )
 
         elif self.mode == "ZIG":
@@ -529,47 +491,35 @@ class Mixer(object):
                     constrain(
                         self.stutter_period * i / 10,
                         0,
-                        len(self.channels) - 1,
+                        self.history_ticks - 1,
                     )
                 )
-                fixture.dimming(int(constrain(self.channels[stutter_index][0], 0, 255)))
+                fixture.dimming(
+                    int(
+                        constrain(
+                            self.channel_lookup["chan_1"].value(stutter_index), 0, 255
+                        )
+                    )
+                )
 
             # washes
-            self.dmx_mappings["wash"][0].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][1].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][2].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][3].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][4].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][5].dimming(
-                self.channels[0][self.channel_names.index("wash_1")]
-            )
-            self.dmx_mappings["wash"][6].dimming(
-                self.channels[0][self.channel_names.index("wash_7")]
-            )
-            self.dmx_mappings["wash"][7].dimming(
-                self.channels[0][self.channel_names.index("wash_8")]
-            )
+            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_1"].value())
+            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
+            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
 
         # Virtual synth visualizer output: forward to frontend over OSC,
         # not bound to any DMX fixture.
-        if self._synth_visualizer_active():
-            sv_ix = self.channel_names.index("synth_visualizer")
-            sv_history = [
-                self.channels[t][sv_ix] for t in range(min(200, len(self.channels)))
-            ]
+        if self.synth_visualizer_active():
+            sv_ch = self.channel_lookup["synth_visualizer"]
+            sv_history = sv_ch.history[: min(200, len(sv_ch.history))]
             self.osc.send_osc("/synth_visualizer_history", sv_history)
 
-        if self._fft_viz_active():
+        if self.fft_viz_active():
             self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))
             self.osc.send_osc("/fftgen_2_history", list(self.fft_gen_history["fft_2"]))
 
@@ -591,12 +541,11 @@ class SignalPatchParam(OSCParam):
 
     def value_builder(self) -> List[List[str]]:
         mappings: List[List[str]] = []
-        # pylint: disable-next=consider-using-enumerate
-        for gen_ix in range(len(self.mixer.signal_matrix)):
-            gen_mapping = [self.mixer.generators[gen_ix].name]
-            for chan_ix in range(len(self.mixer.signal_matrix[gen_ix])):
-                if self.mixer.signal_matrix[gen_ix][chan_ix]:
-                    gen_mapping.append(self.mixer.channel_names[chan_ix])
+        for gen in self.mixer.generators:
+            gen_mapping = [gen.name]
+            for ch in self.mixer.mix_channels:
+                if gen in ch.connected_generators:
+                    gen_mapping.append(ch.name)
             mappings.append(gen_mapping)
         return mappings
 
@@ -616,16 +565,14 @@ class SignalPatchParam(OSCParam):
             self.mixer.configureSignalPath(args[0], chan_name, chan_name in args[1:])
 
     def sync(self) -> None:
-        for gen_ix in range(len(self.mixer.signal_matrix)):
-            output_val = [self.mixer.generators[gen_ix].name]
+        for gen in self.mixer.generators:
+            output_val = [gen.name]
             output_val.append("")
             self.osc.send_osc(self.addr, output_val)
 
-        # pylint: disable-next=consider-using-enumerate
-        for gen_ix in range(len(self.mixer.signal_matrix)):
-            output_val = [self.mixer.generators[gen_ix].name]
-            for chan_ix in range(len(self.mixer.signal_matrix[gen_ix])):
-                if self.mixer.signal_matrix[gen_ix][chan_ix]:
-                    output_val.append(self.mixer.channel_names[chan_ix])
-
+        for gen in self.mixer.generators:
+            output_val = [gen.name]
+            for ch in self.mixer.mix_channels:
+                if gen in ch.connected_generators:
+                    output_val.append(ch.name)
             self.osc.send_osc(self.addr, output_val)
