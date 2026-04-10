@@ -74,6 +74,7 @@ class FFTManager(object):
 
         self.bpm_publish_interval = bpm_publish_interval
         self.smoothed_bpm: float = 0.0
+        self.smoothed_offset_time: Optional[float] = None
         self.last_bpm_publish_time: float = 0.0
 
         self.bpm_history_len: int = 150
@@ -221,28 +222,34 @@ class FFTManager(object):
             + (1 - self.tempo_alpha) * self.smoothed_bpm
         )
 
+        # Offset: convert the last detected beat (frame index) back to a
+        # wall-clock ms timestamp. Computed every tick so the EMA converges
+        # between publishes, mirroring the BPM smoothing above.
+        new_offset_time: Optional[float] = None
+        if len(beat_frames) > 0 and win_ts:
+            last_beat_sample = int(beat_frames[-1]) * hop_length
+            samples_after = max(0, len(y) - last_beat_sample)
+            end_ts = win_ts[-1]
+            new_offset_time = (end_ts - samples_after / sr) * 1000.0
+
+        if new_offset_time is not None:
+            if self.smoothed_offset_time is None:
+                self.smoothed_offset_time = new_offset_time
+            else:
+                self.smoothed_offset_time = (
+                    self.tempo_alpha * new_offset_time
+                    + (1 - self.tempo_alpha) * self.smoothed_offset_time
+                )
+
         current_time = time.monotonic()
         if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
             self.last_bpm_publish_time = current_time
 
-            # Beat phase: convert the last detected beat (frame index into y)
-            # back to a wall-clock time, using the audio chunk timestamps
-            # snapshotted alongside the audio window. Setting `offset_time`
-            # to the beat's wall ms aligns each generator's cycle with the
-            # actual downbeat — `value(now_ms)` then fires precisely on
-            # detected beats (modulo bpm_mult subdivisions).
-            new_offset_time: Optional[float] = None
-            if len(beat_frames) > 0 and win_ts:
-                last_beat_sample = int(beat_frames[-1]) * hop_length
-                samples_after = max(0, len(y) - last_beat_sample)
-                end_ts = win_ts[-1]
-                new_offset_time = (end_ts - samples_after / sr) * 1000.0
-
             bpm_int = int(self.smoothed_bpm)
             for b in self.bpms:
                 b.bpm = bpm_int
-                if new_offset_time is not None:
-                    b.offset_time = new_offset_time
+                if self.smoothed_offset_time is not None:
+                    b.offset_time = self.smoothed_offset_time
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
