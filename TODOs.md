@@ -4,7 +4,7 @@
 
 # Notes/Ideas/TODOs
 
-* Refactor the mixer to have channel objects that fix the cludge with it
+* Viz should connect to an out channel
 * Use the mix targets on fixtures to generate the end targets in the patchbays automatically
 * Add position mixtargets for the spots
 * BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode
@@ -20,7 +20,6 @@
 * Some type of spatial mapping or better approach that is more generic for the spatial movements
 * Overall and per light brightness and color mapping and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
-* Viz should connect to an out channel
 * Remove impulse stutter controls?
 
 # Feedback
