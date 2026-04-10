@@ -50,3 +50,4 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors
 - Code written should use mypy typing hints
 - If you don't see a bug don't make changes guessing at the solution, describe possible debugging approaches but don't implement anything unless told.
+- Don't use _ named variables and function, assume all functions and variable are public
