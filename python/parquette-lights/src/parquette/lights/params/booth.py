@@ -13,7 +13,7 @@ def build(deps: ParamDeps) -> List[OSCParam]:
         SignalPatchParam(
             osc,
             "/signal_patchbay/booth",
-            ["under_1", "under_2", "synth_visualizer"],
+            ["under_1", "under_2"],
             deps.mixer,
         ),
         OSCParam.bind(osc, "/sin_booth_amp", sin_booth, "amp"),

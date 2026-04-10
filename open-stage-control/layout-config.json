@@ -2802,8 +2802,7 @@
               "chan_2",
               "chan_3",
               "chan_4",
-              "chan_5",
-              "synth_visualizer"
+              "chan_5"
             ],
             "exclusive": false
           },
@@ -2964,8 +2963,7 @@
             "outputs": [
               "ceil_1",
               "ceil_2",
-              "ceil_3",
-              "synth_visualizer"
+              "ceil_3"
             ],
             "exclusive": false
           },
@@ -2990,8 +2988,7 @@
             ],
             "outputs": [
               "under_1",
-              "under_2",
-              "synth_visualizer"
+              "under_2"
             ],
             "exclusive": false
           },
@@ -3017,8 +3014,7 @@
               "tung_spot",
               "spot_1",
               "spot_2",
-              "spot_3",
-              "synth_visualizer"
+              "spot_3"
             ],
             "exclusive": false
           },
@@ -3049,8 +3045,7 @@
               "wash_5",
               "wash_6",
               "wash_7",
-              "wash_8",
-              "synth_visualizer"
+              "wash_8"
             ],
             "exclusive": false
           },
@@ -3993,48 +3988,45 @@
                 "bars": false
               },
               {
-                "type": "fader",
+                "type": "switch",
                 "top": 30,
                 "left": 340,
-                "id": "chan_levels/synth_visualizer",
+                "id": "synth_visualizer_source",
                 "interaction": true,
-                "width": 70,
-                "height": 160,
-                "value": 0,
+                "width": 80,
+                "height": 200,
+                "layout": "vertical",
+                "mode": "tap",
+                "value": "",
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": false,
-                "design": "default",
-                "horizontal": false,
-                "pips": false,
-                "dashed": false,
-                "gradient": [],
-                "snap": true,
-                "touchZone": "all",
-                "spring": false,
-                "doubleTap": false,
-                "range": {
-                  "min": 0,
-                  "max": 255
-                },
-                "logScale": false,
-                "sensitivity": 1,
-                "steps": ""
-              },
-              {
-                "type": "textarea",
-                "top": 190,
-                "left": 340,
-                "id": "synth_visualizer_offset_text",
-                "interaction": false,
-                "width": 70,
-                "height": 40,
-                "value": "synth visualizer @{chan_levels/synth_visualizer}",
-                "default": "",
-                "address": "auto",
-                "decimals": 2,
-                "bypass": true
+                "values": {
+                  "Off": "",
+                  "Chan 1": "chan_1",
+                  "Chan 2": "chan_2",
+                  "Chan 3": "chan_3",
+                  "Chan 4": "chan_4",
+                  "Chan 5": "chan_5",
+                  "Ceil 1": "ceil_1",
+                  "Ceil 2": "ceil_2",
+                  "Ceil 3": "ceil_3",
+                  "Under 1": "under_1",
+                  "Under 2": "under_2",
+                  "Tung Spot": "tung_spot",
+                  "Spot 1": "spot_1",
+                  "Spot 2": "spot_2",
+                  "Wash 1": "wash_1",
+                  "Wash 2": "wash_2",
+                  "Wash 3": "wash_3",
+                  "Wash 4": "wash_4",
+                  "Wash 5": "wash_5",
+                  "Wash 6": "wash_6",
+                  "Wash 7": "wash_7",
+                  "Wash 8": "wash_8",
+                  "Sodium": "sodium"
+                }
               }
             ],
             "tabs": []

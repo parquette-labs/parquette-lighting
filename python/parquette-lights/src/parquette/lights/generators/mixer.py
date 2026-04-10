@@ -270,7 +270,6 @@ class Mixer(object):
                 impulse_generator=impulse_gen,
                 mapper=FixedMapper(self.dmx_mappings["sodium"][0]),
             ),
-            MixChannel("synth_visualizer", "non-saved", 22, self.history_ticks),
         ]
 
         self.channel_lookup: Dict[str, MixChannel] = {
@@ -296,6 +295,10 @@ class Mixer(object):
         }
         self.fft_viz_until: float = 0.0
         self.synth_visualizer_until: float = 0.0
+
+        # Synth visualizer mirrors the history of a selected source channel.
+        # Set via /synth_visualizer_source OSC param. Empty string means off.
+        self.synth_visualizer_source: str = ""
 
     @property
     def categorized_channel_names(self) -> Dict[str, List[str]]:
@@ -384,12 +387,13 @@ class Mixer(object):
         for ch in self.mix_channels:
             ch.map_output()
 
-        # Virtual synth visualizer output: forward to frontend over OSC,
-        # not bound to any DMX fixture.
-        if self.synth_visualizer_active():
-            sv_ch = self.channel_lookup["synth_visualizer"]
-            sv_history = sv_ch.history[: min(200, len(sv_ch.history))]
-            self.osc.send_osc("/synth_visualizer_history", sv_history)
+        # Virtual synth visualizer output: forward selected source channel's
+        # history to frontend over OSC, not bound to any DMX fixture.
+        if self.synth_visualizer_active() and self.synth_visualizer_source:
+            source = self.channel_lookup.get(self.synth_visualizer_source)
+            if source is not None:
+                sv_history = source.history[: min(200, len(source.history))]
+                self.osc.send_osc("/synth_visualizer_history", sv_history)
 
         if self.fft_viz_active():
             self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))

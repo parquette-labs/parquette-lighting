@@ -36,4 +36,7 @@ def build(deps: ParamDeps) -> List[OSCParam]:
         OSCParam.bind(
             osc, "/spots_master", mixer, "spots_master", on_change=session.save
         ),
+        OSCParam.bind(
+            osc, "/synth_visualizer_source", mixer, "synth_visualizer_source"
+        ),
     ]
