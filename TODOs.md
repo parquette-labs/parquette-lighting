@@ -4,7 +4,7 @@
 
 # Notes/Ideas/TODOs
 
-* Refactor the mixer to have channel objects that fix the cludge with 
+* Refactor the mixer to have channel objects that fix the cludge with it
 * Use the mix targets on fixtures to generate the end targets in the patchbays automatically
 * Add position mixtargets for the spots
 * BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode

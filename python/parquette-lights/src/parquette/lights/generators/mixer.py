@@ -26,6 +26,7 @@ class MixChannel:
         history_ticks: int,
         *,
         impulse_generator: Optional[Generator] = None,
+        mapper: Optional["ChannelMapper"] = None,
     ) -> None:
         self.name = name
         self.category = category
@@ -36,6 +37,7 @@ class MixChannel:
         self.impulse_connected = impulse_generator is not None
         self.master_value: float = 1.0
         self.connected_generators: List[Generator] = []
+        self.mapper: "ChannelMapper" = mapper or NoOpMapper()
 
     def tick(self, ts: float) -> None:
         """Compute current value and push into history."""
@@ -51,6 +53,162 @@ class MixChannel:
     def value(self, timeslice: int = 0) -> float:
         """Read value from history. timeslice=0 is current, 1 is 20ms ago, etc."""
         return self.history[timeslice]
+
+    def map_output(self) -> None:
+        self.mapper.map_output(self.value(), self)
+
+
+FixtureType = Spot | RGBWLight | LightFixture
+
+
+class ChannelMapper:
+    def map_output(self, value: float, channel: "MixChannel") -> None:
+        pass
+
+
+class FixedMapper(ChannelMapper):
+    def __init__(self, fixture: FixtureType) -> None:
+        self.fixture = fixture
+
+    def map_output(self, value: float, channel: "MixChannel") -> None:
+        self.fixture.dimming(value)
+
+
+class NoOpMapper(ChannelMapper):
+    pass
+
+
+class RedsMapper(ChannelMapper):
+    def __init__(
+        self,
+        left: List[FixtureType],
+        right: List[FixtureType],
+        front: List[FixtureType],
+    ) -> None:
+        self.left = left
+        self.right = right
+        self.front = front
+        self.mode = "MONO"
+        self.stutter_period = 500
+
+    def map_output(self, value: float, channel: "MixChannel") -> None:
+        if self.mode == "MONO":
+            self.map_mono(value, channel)
+        elif self.mode == "PENTA":
+            self.map_penta(value, channel)
+        elif self.mode in ("FWD", "BACK"):
+            self.map_fwd_back(value, channel)
+        elif self.mode == "ZIG":
+            self.map_zig(value, channel)
+
+    def map_mono(self, value: float, channel: "MixChannel") -> None:
+        if channel.name == "chan_1":
+            for fixture in self.left + self.right + self.front:
+                fixture.dimming(value)
+
+    def map_penta(self, value: float, channel: "MixChannel") -> None:
+        if channel.name == "chan_1":
+            for fixture in self.front:
+                fixture.dimming(value)
+        elif channel.name in ("chan_2", "chan_3", "chan_4", "chan_5"):
+            pair_index = int(channel.name.split("_")[1]) - 2
+            if 0 <= pair_index < len(self.left):
+                self.left[pair_index].dimming(value)
+                self.right[pair_index].dimming(value)
+
+    # pylint: disable-next=unused-argument
+    def map_fwd_back(self, value: float, channel: "MixChannel") -> None:
+        if channel.name not in ("chan_1", "chan_2"):
+            return
+        pairs = list(
+            zip(
+                self.front[0:1] + self.left,
+                self.front[1:2] + self.right,
+            )
+        )
+        if self.mode == "BACK":
+            pairs = list(reversed(pairs))
+        max_timeslice = len(channel.history) - 1
+        for i, (fixture_l, fixture_r) in enumerate(pairs):
+            stutter_index = int(
+                constrain(self.stutter_period * i / 10, 0, max_timeslice)
+            )
+            if channel.name == "chan_1":
+                fixture_l.dimming(int(constrain(channel.value(stutter_index), 0, 255)))
+            else:
+                fixture_r.dimming(int(constrain(channel.value(stutter_index), 0, 255)))
+
+    # pylint: disable-next=unused-argument
+    def map_zig(self, value: float, channel: "MixChannel") -> None:
+        if channel.name != "chan_1":
+            return
+        interleaved = [
+            val
+            for tup in zip(
+                self.front[0:1] + self.left,
+                self.front[1:2] + self.right,
+            )
+            for val in tup
+        ]
+        max_timeslice = len(channel.history) - 1
+        for i, fixture in enumerate(interleaved):
+            stutter_index = int(
+                constrain(self.stutter_period * i / 10, 0, max_timeslice)
+            )
+            fixture.dimming(int(constrain(channel.value(stutter_index), 0, 255)))
+
+
+class WashMapper(ChannelMapper):
+    def __init__(self, fixtures: List[FixtureType]) -> None:
+        self.fixtures = fixtures
+        self.mode = "MONO"
+        self.stutter_period = 500
+
+    def map_output(self, value: float, channel: "MixChannel") -> None:
+        if self.mode == "MONO":
+            self.map_mono(value, channel)
+        elif self.mode == "UNIQUE":
+            self.map_unique(value, channel)
+        elif self.mode in ("FWD", "BACK"):
+            self.map_fwd_back(value, channel)
+
+    def map_mono(self, value: float, channel: "MixChannel") -> None:
+        if channel.name == "wash_1":
+            for i in range(6):
+                self.fixtures[i].dimming(value)
+        elif channel.name == "wash_7":
+            self.fixtures[6].dimming(value)
+        elif channel.name == "wash_8":
+            self.fixtures[7].dimming(value)
+
+    def map_unique(self, value: float, channel: "MixChannel") -> None:
+        fixture_index = int(channel.name.split("_")[1]) - 1
+        self.fixtures[fixture_index].dimming(value)
+
+    def map_fwd_back(self, value: float, channel: "MixChannel") -> None:
+        if channel.name in ("wash_7", "wash_8"):
+            fixture_index = int(channel.name.split("_")[1]) - 1
+            self.fixtures[fixture_index].dimming(value)
+            return
+        if channel.name not in ("wash_1", "wash_2"):
+            return
+        pairs = list(
+            zip(
+                (self.fixtures[0], self.fixtures[2], self.fixtures[4]),
+                (self.fixtures[1], self.fixtures[3], self.fixtures[5]),
+            )
+        )
+        if self.mode == "BACK":
+            pairs = list(reversed(pairs))
+        max_timeslice = len(channel.history) - 1
+        for i, (fixture_l, fixture_r) in enumerate(pairs):
+            stutter_index = int(
+                constrain(self.stutter_period * i / 10, 0, max_timeslice)
+            )
+            if channel.name == "wash_1":
+                fixture_l.dimming(int(constrain(channel.value(stutter_index), 0, 255)))
+            else:
+                fixture_r.dimming(int(constrain(channel.value(stutter_index), 0, 255)))
 
 
 class Mixer(object):
@@ -85,6 +243,7 @@ class Mixer(object):
 
     def save_current_masters(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
+
         # Sodium is technically a channel level (lives under "non-saved" in
         # the categorized_channel_names map) but we persist it alongside the
         # masters so the room comes back up with the same house-light state.
@@ -108,8 +267,6 @@ class Mixer(object):
         washes: List[LightFixture],
         history_len: float,
     ) -> None:
-        self.mode = "MONO"
-        self.wash_mode = "MONO"
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
@@ -117,24 +274,116 @@ class Mixer(object):
         self.history_ticks = math.ceil(history_len * 1000 / 20)
         impulse_gen = next(g for g in generators if g.name == "impulse")
 
+        # Build DMX fixture groups
+        self.dmx_mappings: Dict[str, List[FixtureType]] = {
+            "left": [
+                LightFixture(dmx, 4),
+                LightFixture(dmx, 3),
+                LightFixture(dmx, 2),
+                LightFixture(dmx, 1),
+            ],
+            "right": [
+                LightFixture(dmx, 5),
+                LightFixture(dmx, 6),
+                LightFixture(dmx, 7),
+                LightFixture(dmx, 8),
+            ],
+            "front": [LightFixture(dmx, 12), LightFixture(dmx, 9)],
+            "under": [LightFixture(dmx, 10), LightFixture(dmx, 11)],
+            "spot": cast(list[FixtureType], [LightFixture(dmx, 13)] + spots),
+            "wash": cast(list[FixtureType], washes),
+            "sodium": [LightFixture(dmx, 20)],
+            "ceil": [
+                LightFixture(dmx, 18),
+                LightFixture(dmx, 19),
+                LightFixture(dmx, 17),
+            ],
+        }
+
+        # Create group mappers (held on Mixer for mode/stutter changes via OSC)
+        self.reds_mapper = RedsMapper(
+            left=self.dmx_mappings["left"],
+            right=self.dmx_mappings["right"],
+            front=self.dmx_mappings["front"],
+        )
+        self.wash_mapper = WashMapper(fixtures=self.dmx_mappings["wash"])
+
         self.mix_channels: List[MixChannel] = [
             # reds
-            MixChannel("chan_1", "reds", 0, self.history_ticks),
-            MixChannel("chan_2", "reds", 1, self.history_ticks),
-            MixChannel("chan_3", "reds", 2, self.history_ticks),
-            MixChannel("chan_4", "reds", 3, self.history_ticks),
-            MixChannel("chan_5", "reds", 4, self.history_ticks),
+            MixChannel(
+                "chan_1", "reds", 0, self.history_ticks, mapper=self.reds_mapper
+            ),
+            MixChannel(
+                "chan_2", "reds", 1, self.history_ticks, mapper=self.reds_mapper
+            ),
+            MixChannel(
+                "chan_3", "reds", 2, self.history_ticks, mapper=self.reds_mapper
+            ),
+            MixChannel(
+                "chan_4", "reds", 3, self.history_ticks, mapper=self.reds_mapper
+            ),
+            MixChannel(
+                "chan_5", "reds", 4, self.history_ticks, mapper=self.reds_mapper
+            ),
             # plants
-            MixChannel("ceil_1", "plants", 5, self.history_ticks),
-            MixChannel("ceil_2", "plants", 6, self.history_ticks),
-            MixChannel("ceil_3", "plants", 7, self.history_ticks),
+            MixChannel(
+                "ceil_1",
+                "plants",
+                5,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["ceil"][0]),
+            ),
+            MixChannel(
+                "ceil_2",
+                "plants",
+                6,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["ceil"][1]),
+            ),
+            MixChannel(
+                "ceil_3",
+                "plants",
+                7,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["ceil"][2]),
+            ),
             # booth
-            MixChannel("under_1", "booth", 8, self.history_ticks),
-            MixChannel("under_2", "booth", 9, self.history_ticks),
+            MixChannel(
+                "under_1",
+                "booth",
+                8,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["under"][0]),
+            ),
+            MixChannel(
+                "under_2",
+                "booth",
+                9,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["under"][1]),
+            ),
             # spots
-            MixChannel("tung_spot", "spots_light", 10, self.history_ticks),
-            MixChannel("spot_1", "spots_light", 11, self.history_ticks),
-            MixChannel("spot_2", "spots_light", 12, self.history_ticks),
+            MixChannel(
+                "tung_spot",
+                "spots_light",
+                10,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["spot"][0]),
+            ),
+            MixChannel(
+                "spot_1",
+                "spots_light",
+                11,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["spot"][1]),
+            ),
+            MixChannel(
+                "spot_2",
+                "spots_light",
+                12,
+                self.history_ticks,
+                mapper=FixedMapper(self.dmx_mappings["spot"][2]),
+            ),
             # washes (impulse connected)
             MixChannel(
                 "wash_1",
@@ -142,6 +391,7 @@ class Mixer(object):
                 13,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_2",
@@ -149,6 +399,7 @@ class Mixer(object):
                 14,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_3",
@@ -156,6 +407,7 @@ class Mixer(object):
                 15,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_4",
@@ -163,6 +415,7 @@ class Mixer(object):
                 16,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_5",
@@ -170,6 +423,7 @@ class Mixer(object):
                 17,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_6",
@@ -177,6 +431,7 @@ class Mixer(object):
                 18,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_7",
@@ -184,6 +439,7 @@ class Mixer(object):
                 19,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             MixChannel(
                 "wash_8",
@@ -191,6 +447,7 @@ class Mixer(object):
                 20,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=self.wash_mapper,
             ),
             # non-saved
             MixChannel(
@@ -199,6 +456,7 @@ class Mixer(object):
                 21,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
+                mapper=FixedMapper(self.dmx_mappings["sodium"][0]),
             ),
             MixChannel("synth_visualizer", "non-saved", 22, self.history_ticks),
         ]
@@ -215,36 +473,6 @@ class Mixer(object):
         self.washes_master = 1.0
         self.booth_master = 1.0
         self.plants_master = 1.0
-
-        self.dmx_mappings: Dict[str, List[Spot | RGBWLight | LightFixture]] = {
-            "left": [
-                LightFixture(dmx, 4),
-                LightFixture(dmx, 3),
-                LightFixture(dmx, 2),
-                LightFixture(dmx, 1),
-            ],
-            "right": [
-                LightFixture(dmx, 5),
-                LightFixture(dmx, 6),
-                LightFixture(dmx, 7),
-                LightFixture(dmx, 8),
-            ],
-            "front": [LightFixture(dmx, 12), LightFixture(dmx, 9)],
-            "under": [LightFixture(dmx, 10), LightFixture(dmx, 11)],
-            "spot": cast(
-                list[Spot | RGBWLight | LightFixture], [LightFixture(dmx, 13)] + spots
-            ),
-            "wash": cast(list[Spot | RGBWLight | LightFixture], washes),
-            "sodium": [LightFixture(dmx, 20)],
-            "ceil": [
-                LightFixture(dmx, 18),
-                LightFixture(dmx, 19),
-                LightFixture(dmx, 17),
-            ],
-        }
-
-        self.stutter_period = 500
-        self.stutter_period_wash = 500
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
@@ -341,176 +569,8 @@ class Mixer(object):
                 hist[0] = gen.value(ts)
 
     def runOutputMix(self) -> None:
-        # spots
-        self.dmx_mappings["spot"][0].dimming(self.channel_lookup["tung_spot"].value())
-        self.dmx_mappings["spot"][1].dimming(self.channel_lookup["spot_1"].value())
-        self.dmx_mappings["spot"][2].dimming(self.channel_lookup["spot_2"].value())
-
-        # booth
-        self.dmx_mappings["under"][0].dimming(self.channel_lookup["under_1"].value())
-        self.dmx_mappings["under"][1].dimming(self.channel_lookup["under_2"].value())
-
-        # sodium
-        self.dmx_mappings["sodium"][0].dimming(self.channel_lookup["sodium"].value())
-
-        # plants
-        self.dmx_mappings["ceil"][0].dimming(self.channel_lookup["ceil_1"].value())
-        self.dmx_mappings["ceil"][1].dimming(self.channel_lookup["ceil_2"].value())
-        self.dmx_mappings["ceil"][2].dimming(self.channel_lookup["ceil_3"].value())
-
-        if self.wash_mode == "MONO":
-            # washes
-            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
-            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
-        elif self.wash_mode == "UNIQUE":
-            # washes
-            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_2"].value())
-            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_3"].value())
-            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_4"].value())
-            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_5"].value())
-            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_6"].value())
-            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
-            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
-        elif self.wash_mode in ("FWD", "BACK"):
-            wash_zip = list(
-                zip(
-                    (
-                        self.dmx_mappings["wash"][0],
-                        self.dmx_mappings["wash"][2],
-                        self.dmx_mappings["wash"][4],
-                    ),
-                    (
-                        self.dmx_mappings["wash"][1],
-                        self.dmx_mappings["wash"][3],
-                        self.dmx_mappings["wash"][5],
-                    ),
-                )
-            )
-
-            if self.wash_mode == "BACK":
-                wash_zip = list(reversed(wash_zip))
-
-            for i, (fixture_l, fixture_r) in enumerate(wash_zip):
-                stutter_index = int(
-                    constrain(
-                        self.stutter_period_wash * i / 10,
-                        0,
-                        self.history_ticks - 1,
-                    )
-                )
-                fixture_l.dimming(
-                    int(
-                        constrain(
-                            self.channel_lookup["wash_1"].value(stutter_index),
-                            0,
-                            255,
-                        )
-                    )
-                )
-                fixture_r.dimming(
-                    int(
-                        constrain(
-                            self.channel_lookup["wash_2"].value(stutter_index),
-                            0,
-                            255,
-                        )
-                    )
-                )
-
-            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
-            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
-
-        if self.mode == "MONO":
-            for group, fixtures in self.dmx_mappings.items():
-                if group in ("left", "right", "front"):
-                    for fixture in fixtures:
-                        fixture.dimming(self.channel_lookup["chan_1"].value())
-
-        elif self.mode == "PENTA":
-            penta_channels = ["chan_2", "chan_3", "chan_4", "chan_5"]
-            for i, (fixture_l, fixture_r) in enumerate(
-                zip(self.dmx_mappings["left"], self.dmx_mappings["right"])
-            ):
-                fixture_l.dimming(self.channel_lookup[penta_channels[i]].value())
-                fixture_r.dimming(self.channel_lookup[penta_channels[i]].value())
-
-            self.dmx_mappings["front"][0].dimming(self.channel_lookup["chan_1"].value())
-            self.dmx_mappings["front"][1].dimming(self.channel_lookup["chan_1"].value())
-
-        elif self.mode in ("FWD", "BACK"):
-            fixture_zip = list(
-                zip(
-                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
-                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
-                )
-            )
-            if self.mode == "BACK":
-                fixture_zip = list(reversed(fixture_zip))
-            for i, (fixture_l, fixture_r) in enumerate(fixture_zip):
-                stutter_index = int(
-                    constrain(
-                        self.stutter_period * i / 10,
-                        0,
-                        self.history_ticks - 1,
-                    )
-                )
-                fixture_l.dimming(
-                    int(
-                        constrain(
-                            self.channel_lookup["chan_1"].value(stutter_index), 0, 255
-                        )
-                    )
-                )
-                fixture_r.dimming(
-                    int(
-                        constrain(
-                            self.channel_lookup["chan_2"].value(stutter_index), 0, 255
-                        )
-                    )
-                )
-
-        elif self.mode == "ZIG":
-            interleaved_fixtures = [
-                val
-                for tup in zip(
-                    self.dmx_mappings["front"][0:1] + self.dmx_mappings["left"],
-                    self.dmx_mappings["front"][1:2] + self.dmx_mappings["right"],
-                )
-                for val in tup
-            ]
-
-            for i, fixture in enumerate(interleaved_fixtures):
-                stutter_index = int(
-                    constrain(
-                        self.stutter_period * i / 10,
-                        0,
-                        self.history_ticks - 1,
-                    )
-                )
-                fixture.dimming(
-                    int(
-                        constrain(
-                            self.channel_lookup["chan_1"].value(stutter_index), 0, 255
-                        )
-                    )
-                )
-
-            # washes
-            self.dmx_mappings["wash"][0].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][1].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][2].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][3].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][4].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][5].dimming(self.channel_lookup["wash_1"].value())
-            self.dmx_mappings["wash"][6].dimming(self.channel_lookup["wash_7"].value())
-            self.dmx_mappings["wash"][7].dimming(self.channel_lookup["wash_8"].value())
+        for ch in self.mix_channels:
+            ch.map_output()
 
         # Virtual synth visualizer output: forward to frontend over OSC,
         # not bound to any DMX fixture.

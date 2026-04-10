@@ -41,8 +41,8 @@ def build(deps: ParamDeps) -> List[OSCParam]:
     return [
         OSCParam.bind(osc, "/amp_wash", sin_wash, "amp"),
         OSCParam.bind(osc, "/period_wash", sin_wash, "period"),
-        OSCParam.bind(osc, "/stutter_period_wash", mixer, "stutter_period_wash"),
-        OSCParam.bind(osc, "/wash_mode_switch", mixer, "wash_mode"),
+        OSCParam.bind(osc, "/stutter_period_wash", mixer.wash_mapper, "stutter_period"),
+        OSCParam.bind(osc, "/wash_mode_switch", mixer.wash_mapper, "mode"),
         SignalPatchParam(
             osc,
             "/signal_patchbay/washes",
