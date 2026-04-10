@@ -535,7 +535,8 @@ def run(
         "/set_fft_viz", lambda addr, *args: mixer.set_fft_viz(bool(args[0]))
     )
     osc.dispatcher.map(
-        "/set_viz_output", lambda addr, *args: mixer.set_viz_output(bool(args[0]))
+        "/set_synth_visualizer",
+        lambda addr, *args: mixer.set_synth_visualizer(bool(args[0])),
     )
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())

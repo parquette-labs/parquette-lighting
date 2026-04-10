@@ -55,7 +55,7 @@ def build(deps: ParamDeps) -> List[OSCParam]:
                 "wash_6",
                 "wash_7",
                 "wash_8",
-                "viz",
+                "synth_visualizer",
             ],
             mixer,
         ),

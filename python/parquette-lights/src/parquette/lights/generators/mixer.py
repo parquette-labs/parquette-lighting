@@ -82,7 +82,7 @@ class Mixer(object):
                 "wash_7",
                 "wash_8",
             ],
-            "non-saved": ["sodium", "viz"],
+            "non-saved": ["sodium", "synth_visualizer"],
         }
 
         self.channel_names: List[str] = [
@@ -151,7 +151,7 @@ class Mixer(object):
             "fft_2": [0.0] * self.fft_history_len,
         }
         self._fft_viz_until: float = 0.0
-        self._viz_output_until: float = 0.0
+        self._synth_visualizer_until: float = 0.0
 
     def set_fft_viz(self, enable: bool) -> None:
         # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
@@ -166,13 +166,13 @@ class Mixer(object):
     def _fft_viz_active(self) -> bool:
         return time.time() < self._fft_viz_until
 
-    def set_viz_output(self, enable: bool) -> None:
+    def set_synth_visualizer(self, enable: bool) -> None:
         # Same multi-client semantics as set_fft_viz above.
         if enable:
-            self._viz_output_until = time.time() + 2.0
+            self._synth_visualizer_until = time.time() + 2.0
 
-    def _viz_output_active(self) -> bool:
-        return time.time() < self._viz_output_until
+    def _synth_visualizer_active(self) -> bool:
+        return time.time() < self._synth_visualizer_until
 
     def setChannelLevel(self, chan_name: str, level: float):
         self.channel_offsets[self.channel_names.index(chan_name)] = level
@@ -560,14 +560,14 @@ class Mixer(object):
                 self.channels[0][self.channel_names.index("wash_8")]
             )
 
-        # Virtual viz output: forward to frontend over OSC for synth visualization,
+        # Virtual synth visualizer output: forward to frontend over OSC,
         # not bound to any DMX fixture.
-        if self._viz_output_active():
-            viz_ix = self.channel_names.index("viz")
-            viz_history = [
-                self.channels[t][viz_ix] for t in range(min(200, len(self.channels)))
+        if self._synth_visualizer_active():
+            sv_ix = self.channel_names.index("synth_visualizer")
+            sv_history = [
+                self.channels[t][sv_ix] for t in range(min(200, len(self.channels)))
             ]
-            self.osc.send_osc("/viz_output_history", viz_history)
+            self.osc.send_osc("/synth_visualizer_history", sv_history)
 
         if self._fft_viz_active():
             self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))

@@ -4,9 +4,11 @@
 
 # Notes/Ideas/TODOs
 
-* BPM 
-* Need a working offset calculator for the BPM, was working ok before
-
+* Refactor the mixer to have channel objects that fix the cludge with 
+* Use the mix targets on fixtures to generate the end targets in the patchbays automatically
+* Add position mixtargets for the spots
+* BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode
+* The BPM confidence is kinda bouncy, I want it quick to come on but not too bouncy
 * Pan tilt to XY mapping
 * sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 * Move controls for synths next to patch bays
@@ -19,7 +21,6 @@
 * Overall and per light brightness and color mapping and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Viz should connect to an out channel
-* Auto reload the webpage if it doesn't reconnect after 5 sec
 
 # Feedback
 * "Softer" strobes
