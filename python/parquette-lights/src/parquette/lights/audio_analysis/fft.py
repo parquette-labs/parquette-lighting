@@ -400,6 +400,7 @@ class FFTManager(object):
     def run_fwd(self) -> None:
         self.uidb["fft_avg_time"] = 0
         self.uidb["beat_avg_time"] = 0
+        debug_fft_tick = 0 if self.debug else -1
 
         while self.fft_running:
             # Block until the audio thread delivers a new chunk (or timeout to check
@@ -441,10 +442,35 @@ class FFTManager(object):
                     )
 
             if fft_data is None:
+                if self.debug:
+                    debug_fft_tick += 1
+                    if debug_fft_tick % 500 == 1:
+                        print(
+                            "DEBUG FFT: fft_data is None (tick {}), audio_ready={}".format(
+                                debug_fft_tick, self.audio_ready()
+                            ),
+                            flush=True,
+                        )
                 continue
 
             for d in self.downstream:
                 d.forward(fft_data, time.time() * 1000)
+
+            if self.debug:
+                debug_fft_tick += 1
+                if debug_fft_tick % 500 == 1:
+                    print(
+                        "DEBUG FFT: forwarding to {} downstream, fft_data sum={:.4f}, "
+                        "downstream values=[{}]".format(
+                            len(self.downstream),
+                            float(np.sum(fft_data)),
+                            ", ".join(
+                                "{}: {:.4f}".format(d.name, d.value())
+                                for d in self.downstream
+                            ),
+                        ),
+                        flush=True,
+                    )
 
             if (
                 self.send_fft_debug_data
@@ -503,6 +529,14 @@ class FFTManager(object):
         self.fft_running = True
         self.fft_thread = Thread(target=self.run_fwd)
         self.fft_thread.start()
+        if self.debug:
+            print(
+                "DEBUG FFT: start_fft called, downstream={}, audio_cap={}".format(
+                    [d.name for d in self.downstream],
+                    self.audio_cap is not None,
+                ),
+                flush=True,
+            )
 
     def stop_fft(self) -> None:
         self.fft_running = False

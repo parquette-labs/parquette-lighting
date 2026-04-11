@@ -32,6 +32,9 @@ class BPMGenerator(Generator):
         self.lpf_alpha = lpf_alpha
         self._lpf_state = offset
 
+    def current_period(self) -> float:
+        return 1000 * 60 / (self.bpm * self.bpm_mult)
+
     def value(self, millis: float) -> float:
         if not self.bpm_valid or not self.rms_valid:
             raw = self.offset

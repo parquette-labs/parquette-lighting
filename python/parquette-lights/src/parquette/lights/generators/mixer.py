@@ -78,10 +78,12 @@ class Mixer(object):
         spots: List[Spot],
         washes: List[LightFixture],
         history_len: float,
+        debug: bool = False,
     ) -> None:
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
+        self.debug = debug
 
         self.history_ticks = math.ceil(history_len * 1000 / 20)
         impulse_gen = next(g for g in generators if g.name == "impulse")
@@ -299,6 +301,7 @@ class Mixer(object):
         # Synth visualizer mirrors the history of a selected source channel.
         # Set via /synth_visualizer_source OSC param. Empty string means off.
         self.synth_visualizer_source: str = ""
+        self.debug_tick: int = 0
 
     @property
     def categorized_channel_names(self) -> Dict[str, List[str]]:
@@ -348,8 +351,22 @@ class Mixer(object):
         gen = next(g for g in self.generators if g.name == target_gen)
         if enable and gen not in ch.connected_generators:
             ch.connected_generators.append(gen)
+            if self.debug:
+                print(
+                    "DEBUG configureSignalPath: connected {} -> {}".format(
+                        target_gen, target_chan
+                    ),
+                    flush=True,
+                )
         elif not enable and gen in ch.connected_generators:
             ch.connected_generators.remove(gen)
+            if self.debug:
+                print(
+                    "DEBUG configureSignalPath: disconnected {} -> {}".format(
+                        target_gen, target_chan
+                    ),
+                    flush=True,
+                )
 
     def configureSignalMatrix(
         self, target_gen: str, target_chans: Tuple[str] | List[str]
@@ -372,6 +389,27 @@ class Mixer(object):
         for ch in self.mix_channels:
             ch.tick(ts)
 
+        if self.debug:
+            self.debug_tick += 1
+            if self.debug_tick % 500 == 1:
+                nonzero = [
+                    "{} = {:.2f} (gens: {})".format(
+                        ch.name,
+                        ch.value(),
+                        ", ".join(g.name for g in ch.connected_generators),
+                    )
+                    for ch in self.mix_channels
+                    if ch.value() != 0.0
+                ]
+                print(
+                    "DEBUG runChannelMix tick {}: {} nonzero channels{}".format(
+                        self.debug_tick,
+                        len(nonzero),
+                        ": " + "; ".join(nonzero) if nonzero else "",
+                    ),
+                    flush=True,
+                )
+
         # Sample fft generator outputs into the rolling history buffer when
         # the fft_dmx modal is open (heartbeat-driven). Skipped otherwise so
         # we don't pay the per-tick cost.
@@ -382,6 +420,11 @@ class Mixer(object):
                     continue
                 hist[1:] = hist[0:-1]
                 hist[0] = gen.value(ts)
+                if self.debug and self.debug_tick % 500 == 1:
+                    print(
+                        "DEBUG fft_gen_history: {} = {:.4f}".format(name, hist[0]),
+                        flush=True,
+                    )
 
     def runOutputMix(self) -> None:
         for ch in self.mix_channels:

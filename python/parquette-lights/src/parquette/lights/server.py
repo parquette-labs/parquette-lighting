@@ -279,34 +279,6 @@ def run(
         min_regularity=0.4,
     )
 
-    if audio_interface is not None:
-        needle = audio_interface.lower()
-        match_idx: Optional[int] = None
-        match_name: Optional[str] = None
-        for i, port in enumerate(audio_capture.list_audio_ports()):
-            if int(port["maxInputChannels"]) <= 0:
-                continue
-            name = str(port["name"])
-            if needle in name.lower():
-                match_idx = i
-                match_name = name
-                break
-        if match_idx is None:
-            print(
-                "No audio input device matched '{}'".format(audio_interface),
-                flush=True,
-            )
-        else:
-            print(
-                "Auto-connecting audio interface '{}' (index {})".format(
-                    match_name, match_idx
-                ),
-                flush=True,
-            )
-            audio_capture.setup_audio(match_idx)
-            audio_capture.start_audio()
-            fft_manager.start_fft()
-
     initialAmp: float = 200
     initialPeriod: int = 3500
 
@@ -406,6 +378,38 @@ def run(
     # user knobs (duty/amp/mult/manual_offset/lpf_alpha) stay independent.
     fft_manager.bpms = [bpm_red, bpm_wash]
 
+    if audio_interface is not None:
+        needle = audio_interface.lower()
+        match_idx: Optional[int] = None
+        match_name: Optional[str] = None
+        for i, port in enumerate(audio_capture.list_audio_ports()):
+            if int(port["maxInputChannels"]) <= 0:
+                continue
+            name = str(port["name"])
+            if needle in name.lower():
+                match_idx = i
+                match_name = name
+                break
+        if match_idx is None:
+            print(
+                "No audio input device matched '{}'".format(audio_interface),
+                flush=True,
+            )
+        else:
+            print(
+                "Auto-connecting audio interface '{}' (index {})".format(
+                    match_name, match_idx
+                ),
+                flush=True,
+            )
+            audio_capture.setup_audio(match_idx)
+            audio_capture.start_audio()
+            fft_manager.start_fft()
+
+    if debug:
+        fft1.debug = True
+        fft2.debug = True
+
     mixer = Mixer(
         osc=osc,
         dmx=dmx,
@@ -413,6 +417,7 @@ def run(
         spots=spotlights,
         washes=washes,
         history_len=666 * 6,
+        debug=debug,
     )
 
     session = SessionStore(session_file)
@@ -598,6 +603,17 @@ def run(
         print("Restoring session state", flush=True)
         presets.load_current_selection(restored.get("current_presets") or {})
         mixer.load_current_masters(restored.get("masters") or {})
+
+    if debug:
+        print("DEBUG channel generator connections after restore:", flush=True)
+        for ch in mixer.mix_channels:
+            if ch.connected_generators:
+                print(
+                    "  {}: [{}]".format(
+                        ch.name, ", ".join(g.name for g in ch.connected_generators)
+                    ),
+                    flush=True,
+                )
 
     print("Sync front end", flush=True)
     presets.sync()

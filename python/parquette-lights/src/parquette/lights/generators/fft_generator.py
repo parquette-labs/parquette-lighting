@@ -29,6 +29,9 @@ class FFTGenerator(Generator):
         # Single-pole EMA on value() output. 1.0 = no filtering.
         self.lpf_alpha = lpf_alpha
         self._lpf_state = offset
+        self.debug = False
+        self.debug_fwd_tick = 0
+        self.debug_val_tick = 0
 
     def set_bounds(self, low, high):
         low = constrain(low, 0, 1)
@@ -60,6 +63,24 @@ class FFTGenerator(Generator):
                 self.memory[0][i] = 0
             else:
                 self.memory[0][i] -= self.thres
+
+        if self.debug:
+            self.debug_fwd_tick += 1
+            if self.debug_fwd_tick % 500 == 1:
+                mem_sum = sum(self.memory[0])
+                print(
+                    "DEBUG {}.forward: tick={}, millis={:.0f}, subdivisions={}, "
+                    "memory_length={}, memory[0] sum={:.4f}, thres={}".format(
+                        self.name,
+                        self.debug_fwd_tick,
+                        millis,
+                        self.subdivisions,
+                        self.memory_length,
+                        mem_sum,
+                        self.thres,
+                    ),
+                    flush=True,
+                )
 
     def value(self, millis: float = -1) -> float:
         if millis == -1:
@@ -96,6 +117,37 @@ class FFTGenerator(Generator):
             raw = 0.0
         else:
             raw = fft_sum * self.amp / (end_ix - start_ix) + self.offset
+
+        if self.debug:
+            self.debug_val_tick += 1
+            if self.debug_val_tick % 500 == 1:
+                stamp_age = (
+                    millis - self.stamps[best_index]
+                    if self.stamps[best_index] > 0
+                    else -1
+                )
+                print(
+                    "DEBUG {}.value: tick={}, millis={:.0f}, best_index={}, "
+                    "stamp_age={:.0f}ms, start_ix={}, end_ix={}, fft_sum={:.4f}, "
+                    "raw={:.4f}, amp={}, offset={}, fft_bounds={}, subdivisions={}, "
+                    "mem_len={}".format(
+                        self.name,
+                        self.debug_val_tick,
+                        millis,
+                        best_index,
+                        stamp_age,
+                        start_ix,
+                        end_ix,
+                        fft_sum,
+                        raw,
+                        self.amp,
+                        self.offset,
+                        self.fft_bounds,
+                        self.subdivisions,
+                        len(self.memory[best_index]),
+                    ),
+                    flush=True,
+                )
 
         alpha = self.lpf_alpha
         if alpha >= 1.0:
