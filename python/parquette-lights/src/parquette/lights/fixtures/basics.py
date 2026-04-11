@@ -1,21 +1,56 @@
-from typing import List, Callable, Optional
+from typing import Callable, List, Optional
 from ..dmx import DMXManager, DMXListOrValue, DMXValue
-from ..util.math import value_map
+from ..util.math import constrain, value_map
 
-ControlTarget = Callable[[DMXValue], None]
+
+class MixTarget:
+    """Wraps a fixture control method with optional additive accumulation.
+
+    The fixture is always updated on every call. When accumulate=True, the
+    value is added to a running total and the total is sent. When
+    accumulate=False (default), the accumulator is cleared first and just
+    the given value is sent.
+    """
+
+    def __init__(self, target: Callable[[int], None], name: str) -> None:
+        self.target = target
+        self.name = name
+        self.accumulator: float = 0.0
+
+    def __call__(self, value: float, accumulate: bool = False) -> None:
+        if accumulate:
+            self.accumulator += value
+            self.target(int(constrain(self.accumulator, 0, 255)))
+        else:
+            self.accumulator = 0.0
+            self.target(int(constrain(value, 0, 255)))
 
 
 class Fixture(object):
-    def __init__(self, dmx: DMXManager, addr: int, num_chans: int = 1):
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        num_chans: int = 1,
+        category: str = "",
+    ):
+        self.name = name
         self.dmx = dmx
         self.addr = addr
         self.num_chans = num_chans
+        self.category = category
+        self.wrapped_targets: List[MixTarget] = []
+
+    def set_mix_targets(self, *targets: Callable[[int], None]) -> None:
+        self.wrapped_targets = [MixTarget(t, t.__name__) for t in targets]
 
     def off(self) -> None:
         self.set(0)
 
-    def mix_targets(self) -> List[ControlTarget]:
-        return []
+    def mix_targets(self) -> List[MixTarget]:
+        return self.wrapped_targets
 
     def set(self, val: DMXListOrValue, chan_offset=None) -> None:
         if isinstance(val, list):
@@ -42,9 +77,20 @@ class Fixture(object):
 
 
 class LightFixture(Fixture):
-    def __init__(self, dmx: DMXManager, addr: int, num_chans: int = 1):
-        super().__init__(dmx=dmx, addr=addr, num_chans=num_chans)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        num_chans: int = 1,
+        category: str = "",
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=num_chans, category=category
+        )
         self._dimming: DMXValue = 0
+        self.set_mix_targets(self.dimming)
 
     def dimming(self, val: DMXValue) -> None:
         self._dimming = val
@@ -56,13 +102,10 @@ class LightFixture(Fixture):
     def off(self) -> None:
         self.dimming(0)
 
-    def mix_targets(self) -> List[ControlTarget]:
-        return [self.dimming]
-
 
 class RGBLight(LightFixture):
-    def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx, addr=addr, num_chans=3)
+    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
+        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=3, category=category)
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
@@ -94,8 +137,8 @@ class RGBLight(LightFixture):
 
 
 class RGBWLight(LightFixture):
-    def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx, addr=addr, num_chans=4)
+    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
+        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=4, category=category)
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255

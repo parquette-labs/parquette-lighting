@@ -14,7 +14,7 @@ def build(deps: ParamDeps) -> List[OSCParam]:
         SignalPatchParam(
             osc,
             "/signal_patchbay/plants",
-            ["ceil_1", "ceil_2", "ceil_3"],
+            ["ceil_1.dimming", "ceil_2.dimming", "ceil_3.dimming"],
             deps.mixer,
         ),
         OSCParam.bind(osc, "/sin_plants_amp", sin_plants, "amp"),

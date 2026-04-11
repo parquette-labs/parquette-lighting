@@ -202,7 +202,7 @@ def run(
     if entec_auto is not None:
         dmx.setup_dmx(entec_auto)
 
-    front_spot = YRXY200Spot(dmx, addr=21)
+    front_spot = YRXY200Spot(name="spot_1", dmx=dmx, addr=21, category="spots_light")
     front_spot.dimming(255)
     front_spot.strobe(False)
     # front_spot.shutter(False)
@@ -216,7 +216,7 @@ def run(
     front_spot.pan(0)
     front_spot.tilt(0)
 
-    back_spot = YRXY200Spot(dmx, addr=200)
+    back_spot = YRXY200Spot(name="spot_2", dmx=dmx, addr=200, category="spots_light")
     back_spot.dimming(255)
     back_spot.strobe(False)
     # back_spot.shutter(False)
@@ -236,28 +236,28 @@ def run(
         spot.color_swap_fade_time = spot_color_fade
         spot.color_swap_mechanical_time = spot_mechanical_time
 
-    washfl = RGBLight(dmx, 104)
+    washfl = RGBLight(name="wash_1", dmx=dmx, addr=104, category="washes")
     washfl.rgb(0, 0, 0)
 
-    washfr = RGBLight(dmx, 107)
+    washfr = RGBLight(name="wash_2", dmx=dmx, addr=107, category="washes")
     washfr.rgb(0, 0, 0)
 
-    washml = RGBLight(dmx, 110)
+    washml = RGBLight(name="wash_3", dmx=dmx, addr=110, category="washes")
     washml.rgb(0, 0, 0)
 
-    washmr = RGBLight(dmx, 113)
+    washmr = RGBLight(name="wash_4", dmx=dmx, addr=113, category="washes")
     washmr.rgb(0, 0, 0)
 
-    washbl = RGBLight(dmx, 120)
+    washbl = RGBLight(name="wash_5", dmx=dmx, addr=120, category="washes")
     washbl.rgb(0, 0, 0)
 
-    washbr = RGBLight(dmx, 123)
+    washbr = RGBLight(name="wash_6", dmx=dmx, addr=123, category="washes")
     washbr.rgb(0, 0, 0)
 
-    washceilf = RGBWLight(dmx, 100)
+    washceilf = RGBWLight(name="wash_7", dmx=dmx, addr=100, category="washes")
     washceilf.rgbw(0, 0, 0, 0)
 
-    washceilr = RGBWLight(dmx, 116)
+    washceilr = RGBWLight(name="wash_8", dmx=dmx, addr=116, category="washes")
     washceilr.rgbw(0, 0, 0, 0)
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]

@@ -22,8 +22,18 @@ class Spot(LightFixture):
     pattern_channel: DMXControlChannel
     prisim_channel: DMXControlChannel
 
-    def __init__(self, dmx: DMXManager, *, addr: int, num_chans: int = 1):
-        super().__init__(dmx, addr=addr, num_chans=num_chans)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        num_chans: int = 1,
+        category: str = ""
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=num_chans, category=category
+        )
 
         self._pan: DMXValue = 0
         self._tilt: DMXValue = 0
@@ -346,8 +356,8 @@ class YRXY200Spot(Spot):
         EFFECT_SELECTION = 24
         RANDOM_SELECTION = 32
 
-    def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx=dmx, addr=addr, num_chans=15)
+    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
+        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=15, category=category)
 
         # Conservative default for the physical color wheel settle time. Tune
         # against the fixture if it ends up too fast (visible color swap mid
@@ -799,8 +809,8 @@ class YRXY200Spot(Spot):
 
 
 class PinSpot(LightFixture):
-    def __init__(self, dmx: DMXManager, addr: int):
-        super().__init__(dmx=dmx, addr=addr, num_chans=6)
+    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
+        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=6, category=category)
 
     def dimming(self, val: DMXValue) -> None:
         self.rgbw(val, val, val, val)

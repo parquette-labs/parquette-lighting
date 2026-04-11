@@ -18,7 +18,7 @@ def append_to(exposed: Dict[str, List[OSCParam]], deps: ParamDeps) -> None:
         # faders, so its slider needs to trigger a debounced save on
         # every change. Other channel levels live in preset pickles
         # via PresetManager and don't need an on_change hook.
-        on_change = session.save if ch.name == "sodium" else None
+        on_change = session.save if ch.name == "sodium.dimming" else None
         exposed[ch.category].append(
             OSCParam(
                 osc,

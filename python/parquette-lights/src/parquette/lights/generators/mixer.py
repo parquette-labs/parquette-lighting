@@ -2,7 +2,6 @@ from typing import (
     Any,
     List,
     Tuple,
-    cast,
     Dict,
     Optional,
 )
@@ -13,10 +12,9 @@ import math
 from . import Generator
 from .chanmap import (
     MixChannel,
-    FixtureType,
+    MixTarget,
     FixedMapper,
-    RedsMapper,
-    WashMapper,
+    StutterMapper,
 )
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
@@ -47,18 +45,39 @@ class Mixer(object):
 
         return property(getter, setter)
 
+    @staticmethod
+    def make_stutter_period_property(backing_name: str, mappers_attr: str) -> property:
+        backing_field = backing_name + "_val"
+
+        def getter(self: "Mixer") -> int:
+            return getattr(self, backing_field)
+
+        def setter(self: "Mixer", value: int) -> None:
+            setattr(self, backing_field, value)
+            for mapper in getattr(self, mappers_attr):
+                mapper.stutter_period = value
+
+        return property(getter, setter)
+
     reds_master = make_master_property("reds_master", "reds")
     plants_master = make_master_property("plants_master", "plants")
     booth_master = make_master_property("booth_master", "booth")
     spots_master = make_master_property("spots_master", "spots_light")
     washes_master = make_master_property("washes_master", "washes")
 
+    reds_stutter_period = make_stutter_period_property(
+        "reds_stutter_period", "reds_stutter_mappers"
+    )
+    washes_stutter_period = make_stutter_period_property(
+        "washes_stutter_period", "washes_stutter_mappers"
+    )
+
     def save_current_masters(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
 
         # Sodium persists via SessionStore alongside the masters so the
         # room comes back up with the same house-light state.
-        data["sodium"] = self.getChannelLevel("sodium")
+        data["sodium"] = self.getChannelLevel("sodium.dimming")
         return data
 
     def load_current_masters(self, data: Dict[str, Any]) -> None:
@@ -66,7 +85,7 @@ class Mixer(object):
             if attr in self.MASTER_ATTRS:
                 setattr(self, attr, value)
             elif attr == "sodium":
-                self.setChannelLevel("sodium", value)
+                self.setChannelLevel("sodium.dimming", value)
 
     def __init__(
         self,
@@ -87,191 +106,224 @@ class Mixer(object):
         self.history_ticks = math.ceil(history_len * 1000 / 20)
         impulse_gen = next(g for g in generators if g.name == "impulse")
 
-        # Build DMX fixture groups
-        self.dmx_mappings: Dict[str, List[FixtureType]] = {
-            "left": [
-                LightFixture(dmx, 4),
-                LightFixture(dmx, 3),
-                LightFixture(dmx, 2),
-                LightFixture(dmx, 1),
-            ],
-            "right": [
-                LightFixture(dmx, 5),
-                LightFixture(dmx, 6),
-                LightFixture(dmx, 7),
-                LightFixture(dmx, 8),
-            ],
-            "front": [LightFixture(dmx, 12), LightFixture(dmx, 9)],
-            "under": [LightFixture(dmx, 10), LightFixture(dmx, 11)],
-            "spot": cast(list[FixtureType], [LightFixture(dmx, 13)] + spots),
-            "wash": cast(list[FixtureType], washes),
-            "sodium": [LightFixture(dmx, 20)],
-            "ceil": [
-                LightFixture(dmx, 18),
-                LightFixture(dmx, 19),
-                LightFixture(dmx, 17),
-            ],
-        }
-
-        # Create group mappers (held on Mixer for mode/stutter changes via OSC)
-        self.reds_mapper = RedsMapper(
-            left=self.dmx_mappings["left"],
-            right=self.dmx_mappings["right"],
-            front=self.dmx_mappings["front"],
+        # Build named fixtures for groups managed by the mixer
+        left = [
+            LightFixture(name="left_1", dmx=dmx, addr=4, category="reds"),
+            LightFixture(name="left_2", dmx=dmx, addr=3, category="reds"),
+            LightFixture(name="left_3", dmx=dmx, addr=2, category="reds"),
+            LightFixture(name="left_4", dmx=dmx, addr=1, category="reds"),
+        ]
+        right = [
+            LightFixture(name="right_1", dmx=dmx, addr=5, category="reds"),
+            LightFixture(name="right_2", dmx=dmx, addr=6, category="reds"),
+            LightFixture(name="right_3", dmx=dmx, addr=7, category="reds"),
+            LightFixture(name="right_4", dmx=dmx, addr=8, category="reds"),
+        ]
+        front = [
+            LightFixture(name="front_1", dmx=dmx, addr=12, category="reds"),
+            LightFixture(name="front_2", dmx=dmx, addr=9, category="reds"),
+        ]
+        under = [
+            LightFixture(name="under_1", dmx=dmx, addr=10, category="booth"),
+            LightFixture(name="under_2", dmx=dmx, addr=11, category="booth"),
+        ]
+        ceil = [
+            LightFixture(name="ceil_1", dmx=dmx, addr=18, category="plants"),
+            LightFixture(name="ceil_2", dmx=dmx, addr=19, category="plants"),
+            LightFixture(name="ceil_3", dmx=dmx, addr=17, category="plants"),
+        ]
+        tung_spot = LightFixture(
+            name="tung_spot", dmx=dmx, addr=13, category="spots_light"
         )
-        self.wash_mapper = WashMapper(fixtures=self.dmx_mappings["wash"])
+        sodium = LightFixture(name="sodium", dmx=dmx, addr=20, category="non-saved")
 
-        self.mix_channels: List[MixChannel] = [
-            # reds
+        # Flat list of every fixture for the accumulator clear/commit cycle
+        self.all_fixtures: List[LightFixture] = (
+            left
+            + right
+            + front
+            + under
+            + ceil
+            + [tung_spot]
+            + list(spots)
+            + list(washes)
+            + [sodium]
+        )
+
+        # Auto-generate a FixedMapper channel for every mix_target on every
+        # fixture. Categories that receive impulse get it connected.
+        impulse_categories = {"washes", "non-saved"}
+        self.fixture_targets: Dict[str, List[MixTarget]] = {}
+        self.mix_channels: List[MixChannel] = []
+
+        index = 0
+        for fixture in self.all_fixtures:
+            targets: List[MixTarget] = []
+            for target in fixture.mix_targets():
+                targets.append(target)
+
+                chan_name = "{}.{}".format(fixture.name, target.name)
+                impulse = (
+                    impulse_gen if fixture.category in impulse_categories else None
+                )
+                ch = MixChannel(
+                    chan_name,
+                    fixture.category,
+                    index,
+                    self.history_ticks,
+                    impulse_generator=impulse,
+                    mapper=FixedMapper(target),
+                )
+                self.mix_channels.append(ch)
+                index += 1
+            self.fixture_targets[fixture.name] = targets
+
+        # Stutter channels for reds — paired groups front-to-back
+        reds_fwd_groups: List[List[MixTarget]] = [
+            [
+                self.mix_target_for_fixture("front_1"),
+                self.mix_target_for_fixture("front_2"),
+            ],
+            [
+                self.mix_target_for_fixture("left_1"),
+                self.mix_target_for_fixture("right_1"),
+            ],
+            [
+                self.mix_target_for_fixture("left_2"),
+                self.mix_target_for_fixture("right_2"),
+            ],
+            [
+                self.mix_target_for_fixture("left_3"),
+                self.mix_target_for_fixture("right_3"),
+            ],
+            [
+                self.mix_target_for_fixture("left_4"),
+                self.mix_target_for_fixture("right_4"),
+            ],
+        ]
+        reds_zig_groups: List[List[MixTarget]] = [
+            [self.mix_target_for_fixture("front_1")],
+            [self.mix_target_for_fixture("front_2")],
+            [self.mix_target_for_fixture("left_1")],
+            [self.mix_target_for_fixture("right_1")],
+            [self.mix_target_for_fixture("left_2")],
+            [self.mix_target_for_fixture("right_2")],
+            [self.mix_target_for_fixture("left_3")],
+            [self.mix_target_for_fixture("right_3")],
+            [self.mix_target_for_fixture("left_4")],
+            [self.mix_target_for_fixture("right_4")],
+        ]
+
+        self.reds_fwd_mapper = StutterMapper(reds_fwd_groups)
+        self.reds_back_mapper = StutterMapper(list(reversed(reds_fwd_groups)))
+        self.reds_zig_mapper = StutterMapper(reds_zig_groups)
+
+        # Stutter channels for washes — wall washes only, ceiling excluded
+        washes_fwd_groups: List[List[MixTarget]] = [
+            [
+                self.mix_target_for_fixture("wash_1"),
+                self.mix_target_for_fixture("wash_2"),
+            ],
+            [
+                self.mix_target_for_fixture("wash_3"),
+                self.mix_target_for_fixture("wash_4"),
+            ],
+            [
+                self.mix_target_for_fixture("wash_5"),
+                self.mix_target_for_fixture("wash_6"),
+            ],
+        ]
+
+        self.washes_fwd_mapper = StutterMapper(washes_fwd_groups)
+        self.washes_back_mapper = StutterMapper(list(reversed(washes_fwd_groups)))
+
+        self.reds_stutter_mappers: List[StutterMapper] = [
+            self.reds_fwd_mapper,
+            self.reds_back_mapper,
+            self.reds_zig_mapper,
+        ]
+        self.washes_stutter_mappers: List[StutterMapper] = [
+            self.washes_fwd_mapper,
+            self.washes_back_mapper,
+        ]
+
+        # Mono channels — single input drives all targets in a group equally
+        all_reds_targets = [
+            self.mix_target_for_fixture(n)
+            for n in [
+                "front_1",
+                "front_2",
+                "left_1",
+                "left_2",
+                "left_3",
+                "left_4",
+                "right_1",
+                "right_2",
+                "right_3",
+                "right_4",
+            ]
+        ]
+        all_wall_wash_targets = [
+            self.mix_target_for_fixture(n)
+            for n in ["wash_1", "wash_2", "wash_3", "wash_4", "wash_5", "wash_6"]
+        ]
+
+        special_channels: List[MixChannel] = [
             MixChannel(
-                "chan_1", "reds", 0, self.history_ticks, mapper=self.reds_mapper
-            ),
-            MixChannel(
-                "chan_2", "reds", 1, self.history_ticks, mapper=self.reds_mapper
-            ),
-            MixChannel(
-                "chan_3", "reds", 2, self.history_ticks, mapper=self.reds_mapper
-            ),
-            MixChannel(
-                "chan_4", "reds", 3, self.history_ticks, mapper=self.reds_mapper
-            ),
-            MixChannel(
-                "chan_5", "reds", 4, self.history_ticks, mapper=self.reds_mapper
-            ),
-            # plants
-            MixChannel(
-                "ceil_1",
-                "plants",
-                5,
+                "reds_fwd",
+                "reds",
+                index,
                 self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["ceil"][0]),
+                mapper=self.reds_fwd_mapper,
             ),
             MixChannel(
-                "ceil_2",
-                "plants",
-                6,
+                "reds_back",
+                "reds",
+                index + 1,
                 self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["ceil"][1]),
+                mapper=self.reds_back_mapper,
             ),
             MixChannel(
-                "ceil_3",
-                "plants",
-                7,
+                "reds_zig",
+                "reds",
+                index + 2,
                 self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["ceil"][2]),
-            ),
-            # booth
-            MixChannel(
-                "under_1",
-                "booth",
-                8,
-                self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["under"][0]),
+                mapper=self.reds_zig_mapper,
             ),
             MixChannel(
-                "under_2",
-                "booth",
-                9,
-                self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["under"][1]),
-            ),
-            # spots
-            MixChannel(
-                "tung_spot",
-                "spots_light",
-                10,
-                self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["spot"][0]),
-            ),
-            MixChannel(
-                "spot_1",
-                "spots_light",
-                11,
-                self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["spot"][1]),
-            ),
-            MixChannel(
-                "spot_2",
-                "spots_light",
-                12,
-                self.history_ticks,
-                mapper=FixedMapper(self.dmx_mappings["spot"][2]),
-            ),
-            # washes (impulse connected)
-            MixChannel(
-                "wash_1",
+                "washes_fwd",
                 "washes",
-                13,
+                index + 3,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
+                mapper=self.washes_fwd_mapper,
             ),
             MixChannel(
-                "wash_2",
+                "washes_back",
                 "washes",
-                14,
+                index + 4,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
+                mapper=self.washes_back_mapper,
+            ),
+            # Mono channels
+            MixChannel(
+                "reds_mono",
+                "reds",
+                index + 5,
+                self.history_ticks,
+                mapper=FixedMapper(*all_reds_targets),
             ),
             MixChannel(
-                "wash_3",
+                "washes_mono",
                 "washes",
-                15,
+                index + 6,
                 self.history_ticks,
                 impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            MixChannel(
-                "wash_4",
-                "washes",
-                16,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            MixChannel(
-                "wash_5",
-                "washes",
-                17,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            MixChannel(
-                "wash_6",
-                "washes",
-                18,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            MixChannel(
-                "wash_7",
-                "washes",
-                19,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            MixChannel(
-                "wash_8",
-                "washes",
-                20,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=self.wash_mapper,
-            ),
-            # non-saved
-            MixChannel(
-                "sodium",
-                "non-saved",
-                21,
-                self.history_ticks,
-                impulse_generator=impulse_gen,
-                mapper=FixedMapper(self.dmx_mappings["sodium"][0]),
+                mapper=FixedMapper(*all_wall_wash_targets),
             ),
         ]
+        self.mix_channels.extend(special_channels)
 
         self.channel_lookup: Dict[str, MixChannel] = {
             ch.name: ch for ch in self.mix_channels
@@ -283,6 +335,8 @@ class Mixer(object):
         self.washes_master = 1.0
         self.booth_master = 1.0
         self.plants_master = 1.0
+        self.reds_stutter_period = 500
+        self.washes_stutter_period = 500
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
@@ -326,6 +380,12 @@ class Mixer(object):
 
     def getChannelLevel(self, chan_name: str) -> float:
         return self.channel_lookup[chan_name].offset
+
+    def mix_target_for_fixture(self, fixture_name: str, index: int = 0) -> MixTarget:
+        return self.fixture_targets[fixture_name][index]
+
+    def all_mix_targets(self) -> List[MixTarget]:
+        return [mt for targets in self.fixture_targets.values() for mt in targets]
 
     def clearSignalMatrix(self, chan_name: Optional[str] = None) -> None:
         if chan_name is None:
@@ -417,8 +477,13 @@ class Mixer(object):
                     )
 
     def runOutputMix(self) -> None:
+        # Clear all accumulators and zero all fixtures
+        for mt in self.all_mix_targets():
+            mt(0)
+        # Each channel contributes via accumulation
         for ch in self.mix_channels:
             ch.map_output()
+        # After all channels mapped, fixtures hold their final accumulated totals
 
         # Virtual synth visualizer output: forward selected source channel's
         # history to frontend over OSC, not bound to any DMX fixture.
