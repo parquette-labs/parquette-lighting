@@ -51,3 +51,4 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - Code written should use mypy typing hints
 - If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.
 - Always try and write object oriented, reusable code. Breakup functions and classes if they are becoming too large. We are trying to make maintable code.
+- When writting comments do not reference claude plans or dialogue with claude in the comment. Instead write comments that will make sense to someone reading the code with no prior context.

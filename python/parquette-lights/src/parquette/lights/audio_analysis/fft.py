@@ -89,7 +89,7 @@ class FFTManager(object):
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self.rms_ss: deque = deque()
 
-        # C6: executor created once here; stop_fft waits for in-flight future but
+        # Executor created once; stop_fft waits for in-flight future but
         # does not shut down or recreate the executor
         self._beat_executor = ThreadPoolExecutor(max_workers=1)
         self._beat_future: Optional[Future] = None
