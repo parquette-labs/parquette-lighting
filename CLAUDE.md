@@ -1,4 +1,4 @@
-	# CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -42,12 +42,12 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 
 - Python ≥ 3.10, formatted with black, linted with pylint (config: `pylintrc`), typed with mypy.
 - When editing fixtures or generators, keep DMX channel layout and OSC parameter names consistent — both the layout JSON and `params.pickle` reference them by name.
-- Changes to presets must be committed via `params.pickle` to persist across deploys.
-- Avoid using _ before variable and function names (to denote private etc)
-- When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manage so they can be saved and sync'd with the front end
-- When creating parameters assume you need a front end UI element (slider or similar) in the associated tab (most misc configration should go in fft dmx) and that UI element should also have a text area under it with a name and a real time value
+- Changes to presets are committed via `params.pickle` to persist across deploys, but the presets are configured by the user. We are not very concerned with schema migration issues for the params, they can just be rebuilt if needed.
+- Don't use _ named variables and function, assume all functions and variable are public
+- When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manager so they can be saved and sync'd with the front end
+- When creating parameters assume you need a front end UI element (slider or similar) in the associated tab and that UI element should also have a text area under it with a name and a real time value
 - Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code
 - When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors
 - Code written should use mypy typing hints
-- If you don't see a bug don't make changes guessing at the solution, describe possible debugging approaches but don't implement anything unless told.
-- Don't use _ named variables and function, assume all functions and variable are public
+- If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.
+- Always try and write object oriented, reusable code. Breakup functions and classes if they are becoming too large. We are trying to make maintable code.
