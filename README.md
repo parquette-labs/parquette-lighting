@@ -12,6 +12,20 @@
 	* `poetry sync`
 	* `poetry run server`
 
+# Git pre-commit hooks
+
+The repo ships a pre-commit hook in `scripts/git-hooks/pre-commit` that strips
+default/auto fields from `open-stage-control/layout-config.json` before each
+commit so the file stays compact and loads fast. It only runs when the layout file is
+staged, and re-stages it after running `poetry run poe strip-osc-layout`.
+
+Install it into your local clone with:
+
+```
+cp scripts/git-hooks/pre-commit "$(git rev-parse --git-path hooks)/pre-commit"
+chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
+```
+
 # Launchd setup
 
 * in `launchd/`
