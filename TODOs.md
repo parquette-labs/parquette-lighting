@@ -19,6 +19,7 @@
 * Some type of spatial mapping or better approach that is more generic for the spatial movements
 * Overall and per light brightness and color mapping and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
+* Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
 
 # Feedback
 * "Softer" strobes
@@ -27,4 +28,3 @@
 * Mode randomizer
 
 # WIP
-Currently we manually define mapping targets (things that our Channels can push values) inside of our ChannelMapper implementations. We do this by assuming the dimmer function exists. Instead we have a concept of mix_targets for every fixture that define all the things you could target on that fixture with automated values from channels

@@ -305,6 +305,7 @@ class Mixer(object):
         }
         self.fft_viz_until: float = 0.0
         self.synth_visualizer_until: float = 0.0
+        self.fixture_visualizer_until: float = 0.0
 
         # Synth visualizer mirrors the history of a selected source channel.
         # Set via /synth_visualizer_source OSC param. Empty string means off.
@@ -331,6 +332,13 @@ class Mixer(object):
 
     def synth_visualizer_active(self) -> bool:
         return time.time() < self.synth_visualizer_until
+
+    def set_fixture_visualizer(self, enable: bool) -> None:
+        if enable:
+            self.fixture_visualizer_until = time.time() + 2.0
+
+    def fixture_visualizer_active(self) -> bool:
+        return time.time() < self.fixture_visualizer_until
 
     def setChannelLevel(self, chan_name: str, level: float) -> None:
         self.channel_lookup[chan_name].offset = level
@@ -453,6 +461,10 @@ class Mixer(object):
         if self.fft_viz_active():
             self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))
             self.osc.send_osc("/fftgen_2_history", list(self.fft_gen_history["fft_2"]))
+
+        if self.fixture_visualizer_active():
+            for fixture in self.all_fixtures:
+                fixture.send_visualizer()
 
     def updateDMX(self) -> None:
         self.dmx.submit()

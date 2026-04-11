@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import threading
 import time
 from typing import cast, List, Optional
@@ -8,6 +10,7 @@ from enum import Enum
 from ..util.math import constrain, value_map
 from .basics import LightFixture
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
+from ..osc import OSCManager
 
 
 class Spot(LightFixture):
@@ -29,10 +32,16 @@ class Spot(LightFixture):
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str = ""
+        category: str = "",
+        osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=num_chans, category=category
+            name=name,
+            dmx=dmx,
+            addr=addr,
+            num_chans=num_chans,
+            category=category,
+            osc=osc,
         )
 
         self._pan: DMXValue = 0
@@ -356,8 +365,18 @@ class YRXY200Spot(Spot):
         EFFECT_SELECTION = 24
         RANDOM_SELECTION = 32
 
-    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
-        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=15, category=category)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        category: str = "",
+        osc: Optional[OSCManager] = None,
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=15, category=category, osc=osc
+        )
 
         # Conservative default for the physical color wheel settle time. Tune
         # against the fixture if it ends up too fast (visible color swap mid
@@ -809,8 +828,18 @@ class YRXY200Spot(Spot):
 
 
 class PinSpot(LightFixture):
-    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
-        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=6, category=category)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        category: str = "",
+        osc: Optional[OSCManager] = None,
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=6, category=category, osc=osc
+        )
 
     def dimming(self, val: DMXValue) -> None:
         self.rgbw(val, val, val, val)

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from typing import Callable, List, Optional
 from ..dmx import DMXManager, DMXListOrValue, DMXValue
+from ..osc import OSCManager
 from ..util.math import constrain, value_map
 
 
@@ -35,12 +38,14 @@ class Fixture(object):
         addr: int,
         num_chans: int = 1,
         category: str = "",
+        osc: Optional[OSCManager] = None,
     ):
         self.name = name
         self.dmx = dmx
         self.addr = addr
         self.num_chans = num_chans
         self.category = category
+        self.osc = osc
         self.wrapped_targets: List[MixTarget] = []
 
     def set_mix_targets(self, *targets: Callable[[int], None]) -> None:
@@ -85,9 +90,15 @@ class LightFixture(Fixture):
         addr: int,
         num_chans: int = 1,
         category: str = "",
+        osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=num_chans, category=category
+            name=name,
+            dmx=dmx,
+            addr=addr,
+            num_chans=num_chans,
+            category=category,
+            osc=osc,
         )
         self._dimming: DMXValue = 0
         self.set_mix_targets(self.dimming)
@@ -95,6 +106,10 @@ class LightFixture(Fixture):
     def dimming(self, val: DMXValue) -> None:
         self._dimming = val
         self.set(val)
+
+    def send_visualizer(self) -> None:
+        if self.osc is not None:
+            self.osc.send_osc("/visualizer/{}".format(self.name), self._dimming)
 
     def on(self) -> None:
         self.dimming(255)
@@ -104,8 +119,18 @@ class LightFixture(Fixture):
 
 
 class RGBLight(LightFixture):
-    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
-        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=3, category=category)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        category: str = "",
+        osc: Optional[OSCManager] = None,
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=3, category=category, osc=osc
+        )
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
@@ -137,8 +162,18 @@ class RGBLight(LightFixture):
 
 
 class RGBWLight(LightFixture):
-    def __init__(self, *, name: str, dmx: DMXManager, addr: int, category: str = ""):
-        super().__init__(name=name, dmx=dmx, addr=addr, num_chans=4, category=category)
+    def __init__(
+        self,
+        *,
+        name: str,
+        dmx: DMXManager,
+        addr: int,
+        category: str = "",
+        osc: Optional[OSCManager] = None,
+    ):
+        super().__init__(
+            name=name, dmx=dmx, addr=addr, num_chans=4, category=category, osc=osc
+        )
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
