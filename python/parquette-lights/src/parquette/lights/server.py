@@ -5,7 +5,7 @@ import time
 
 import click
 
-from .fixtures import RGBWLight, RGBLight, YRXY200Spot, Spot
+from .fixtures import LightFixture, RGBWLight, RGBLight, YRXY200Spot, Spot
 from .fixtures.hazers import RadianceHazer
 
 from .generators import (
@@ -202,6 +202,40 @@ def run(
     if entec_auto is not None:
         dmx.setup_dmx(entec_auto)
 
+    # Reds — simple single-channel dimmers
+    left = [
+        LightFixture(name="left_1", dmx=dmx, addr=4, category="reds"),
+        LightFixture(name="left_2", dmx=dmx, addr=3, category="reds"),
+        LightFixture(name="left_3", dmx=dmx, addr=2, category="reds"),
+        LightFixture(name="left_4", dmx=dmx, addr=1, category="reds"),
+    ]
+    right = [
+        LightFixture(name="right_1", dmx=dmx, addr=5, category="reds"),
+        LightFixture(name="right_2", dmx=dmx, addr=6, category="reds"),
+        LightFixture(name="right_3", dmx=dmx, addr=7, category="reds"),
+        LightFixture(name="right_4", dmx=dmx, addr=8, category="reds"),
+    ]
+    front = [
+        LightFixture(name="front_1", dmx=dmx, addr=12, category="reds"),
+        LightFixture(name="front_2", dmx=dmx, addr=9, category="reds"),
+    ]
+
+    # Booth
+    under = [
+        LightFixture(name="under_1", dmx=dmx, addr=10, category="booth"),
+        LightFixture(name="under_2", dmx=dmx, addr=11, category="booth"),
+    ]
+
+    # Plants
+    ceil = [
+        LightFixture(name="ceil_1", dmx=dmx, addr=18, category="plants"),
+        LightFixture(name="ceil_2", dmx=dmx, addr=19, category="plants"),
+        LightFixture(name="ceil_3", dmx=dmx, addr=17, category="plants"),
+    ]
+
+    # Spots
+    tung_spot = LightFixture(name="tung_spot", dmx=dmx, addr=13, category="spots_light")
+
     front_spot = YRXY200Spot(name="spot_1", dmx=dmx, addr=21, category="spots_light")
     front_spot.dimming(255)
     front_spot.strobe(False)
@@ -236,6 +270,7 @@ def run(
         spot.color_swap_fade_time = spot_color_fade
         spot.color_swap_mechanical_time = spot_mechanical_time
 
+    # Washes
     washfl = RGBLight(name="wash_1", dmx=dmx, addr=104, category="washes")
     washfl.rgb(0, 0, 0)
 
@@ -261,6 +296,22 @@ def run(
     washceilr.rgbw(0, 0, 0, 0)
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
+
+    # Sodium
+    sodium = LightFixture(name="sodium", dmx=dmx, addr=20, category="non-saved")
+
+    # All fixtures in mixer order
+    fixtures: List[LightFixture] = (
+        left
+        + right
+        + front
+        + under
+        + ceil
+        + [tung_spot]
+        + spotlights
+        + washes
+        + [sodium]
+    )
 
     hazer = RadianceHazer(dmx, addr=250, debug=debug_hazer)
 
@@ -414,8 +465,7 @@ def run(
         osc=osc,
         dmx=dmx,
         generators=generators,
-        spots=spotlights,
-        washes=washes,
+        fixtures=fixtures,
         history_len=666 * 6,
         debug=debug,
     )

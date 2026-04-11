@@ -18,7 +18,7 @@ from .chanmap import (
 )
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
-from ..fixtures import LightFixture, Spot
+from ..fixtures import LightFixture
 
 
 class Mixer(object):
@@ -72,6 +72,10 @@ class Mixer(object):
         "washes_stutter_period", "washes_stutter_mappers"
     )
 
+    @property
+    def channel_lookup(self) -> Dict[str, MixChannel]:
+        return {ch.name: ch for ch in self.mix_channels}
+
     def save_current_masters(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
 
@@ -93,62 +97,18 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
-        spots: List[Spot],
-        washes: List[LightFixture],
+        fixtures: List[LightFixture],
         history_len: float,
         debug: bool = False,
     ) -> None:
         self.osc = osc
         self.dmx = dmx
         self.generators = generators
+        self.all_fixtures = fixtures
         self.debug = debug
 
         self.history_ticks = math.ceil(history_len * 1000 / 20)
         impulse_gen = next(g for g in generators if g.name == "impulse")
-
-        # Build named fixtures for groups managed by the mixer
-        left = [
-            LightFixture(name="left_1", dmx=dmx, addr=4, category="reds"),
-            LightFixture(name="left_2", dmx=dmx, addr=3, category="reds"),
-            LightFixture(name="left_3", dmx=dmx, addr=2, category="reds"),
-            LightFixture(name="left_4", dmx=dmx, addr=1, category="reds"),
-        ]
-        right = [
-            LightFixture(name="right_1", dmx=dmx, addr=5, category="reds"),
-            LightFixture(name="right_2", dmx=dmx, addr=6, category="reds"),
-            LightFixture(name="right_3", dmx=dmx, addr=7, category="reds"),
-            LightFixture(name="right_4", dmx=dmx, addr=8, category="reds"),
-        ]
-        front = [
-            LightFixture(name="front_1", dmx=dmx, addr=12, category="reds"),
-            LightFixture(name="front_2", dmx=dmx, addr=9, category="reds"),
-        ]
-        under = [
-            LightFixture(name="under_1", dmx=dmx, addr=10, category="booth"),
-            LightFixture(name="under_2", dmx=dmx, addr=11, category="booth"),
-        ]
-        ceil = [
-            LightFixture(name="ceil_1", dmx=dmx, addr=18, category="plants"),
-            LightFixture(name="ceil_2", dmx=dmx, addr=19, category="plants"),
-            LightFixture(name="ceil_3", dmx=dmx, addr=17, category="plants"),
-        ]
-        tung_spot = LightFixture(
-            name="tung_spot", dmx=dmx, addr=13, category="spots_light"
-        )
-        sodium = LightFixture(name="sodium", dmx=dmx, addr=20, category="non-saved")
-
-        # Flat list of every fixture for the accumulator clear/commit cycle
-        self.all_fixtures: List[LightFixture] = (
-            left
-            + right
-            + front
-            + under
-            + ceil
-            + [tung_spot]
-            + list(spots)
-            + list(washes)
-            + [sodium]
-        )
 
         # Auto-generate a FixedMapper channel for every mix_target on every
         # fixture. Categories that receive impulse get it connected.
@@ -325,9 +285,6 @@ class Mixer(object):
         ]
         self.mix_channels.extend(special_channels)
 
-        self.channel_lookup: Dict[str, MixChannel] = {
-            ch.name: ch for ch in self.mix_channels
-        }
         # Setting masters after mix_channels are built propagates to channels
         # via the property setters
         self.reds_master = 1.0

@@ -1329,7 +1329,7 @@
             "type": "fader",
             "top": 10,
             "left": 430,
-            "id": "chan_levels/sodium",
+            "id": "chan_levels/sodium.dimming",
             "interaction": true,
             "width": 70,
             "height": 290,
@@ -1779,7 +1779,7 @@
             "type": "fader",
             "top": 40,
             "left": 100,
-            "id": "chan_levels/tung_spot",
+            "id": "chan_levels/tung_spot.dimming",
             "interaction": true,
             "width": 250,
             "height": 40,
@@ -2704,11 +2704,20 @@
               "bpm_red"
             ],
             "outputs": [
-              "chan_1",
-              "chan_2",
-              "chan_3",
-              "chan_4",
-              "chan_5"
+              "left_1.dimming",
+              "left_2.dimming",
+              "left_3.dimming",
+              "left_4.dimming",
+              "right_1.dimming",
+              "right_2.dimming",
+              "right_3.dimming",
+              "right_4.dimming",
+              "front_1.dimming",
+              "front_2.dimming",
+              "reds_mono",
+              "reds_fwd",
+              "reds_back",
+              "reds_zig"
             ],
             "exclusive": false
           },
@@ -2867,9 +2876,9 @@
               "bpm_red"
             ],
             "outputs": [
-              "ceil_1",
-              "ceil_2",
-              "ceil_3"
+              "ceil_1.dimming",
+              "ceil_2.dimming",
+              "ceil_3.dimming"
             ],
             "exclusive": false
           },
@@ -2893,8 +2902,8 @@
               "bpm_red"
             ],
             "outputs": [
-              "under_1",
-              "under_2"
+              "under_1.dimming",
+              "under_2.dimming"
             ],
             "exclusive": false
           },
@@ -2917,10 +2926,9 @@
               "bpm_red"
             ],
             "outputs": [
-              "tung_spot",
-              "spot_1",
-              "spot_2",
-              "spot_3"
+              "tung_spot.dimming",
+              "spot_1.dimming",
+              "spot_2.dimming"
             ],
             "exclusive": false
           },
@@ -2944,14 +2952,17 @@
               "bpm_wash"
             ],
             "outputs": [
-              "wash_1",
-              "wash_2",
-              "wash_3",
-              "wash_4",
-              "wash_5",
-              "wash_6",
-              "wash_7",
-              "wash_8"
+              "wash_1.dimming",
+              "wash_2.dimming",
+              "wash_3.dimming",
+              "wash_4.dimming",
+              "wash_5.dimming",
+              "wash_6.dimming",
+              "wash_7.dimming",
+              "wash_8.dimming",
+              "washes_mono",
+              "washes_fwd",
+              "washes_back"
             ],
             "exclusive": false
           },
@@ -3088,7 +3099,7 @@
                 "type": "fader",
                 "top": 29,
                 "left": 120,
-                "id": "stutter_period_wash",
+                "id": "washes_stutter_period",
                 "interaction": true,
                 "width": "auto",
                 "height": 234,
@@ -3122,36 +3133,11 @@
                 "interaction": false,
                 "width": 60,
                 "height": 54,
-                "value": "Stutter Period Wash @{stutter_period_wash}",
+                "value": "Stutter Period Wash @{washes_stutter_period}",
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
-              },
-              {
-                "type": "switch",
-                "top": 20,
-                "left": 190,
-                "id": "wash_mode_switch",
-                "interaction": true,
-                "width": 130,
-                "height": 360,
-                "layout": "vertical",
-                "gridTemplate": "",
-                "value": "",
-                "default": "",
-                "address": "auto",
-                "decimals": 2,
-                "bypass": false,
-                "onValue": "// set('output_patchbay/chan_1', []);\n// set('output_patchbay/chan_2', []);\n// set('output_patchbay/chan_3', []);\n// set('output_patchbay/chan_4', []);\n// set('output_patchbay/chan_5', []);\n// set('output_patchbay/chan_6', []);\n// set('output_patchbay/chan_7', []);\n// set('output_patchbay/chan_8', []);\n// set('output_patchbay/chan_9', []);\n// set('output_patchbay/chan_10', []);\n// set('output_patchbay/chan_spot', []);\n// switch(get(id)) {\n//   case \"MONO\": {\n//     set('output_patchbay/chan_1', [\n//       \"left_1\",\n//       \"left_2\",\n//       \"left_3\",\n//       \"left_4\",\n//       \"right_1\",\n//       \"right_2\",\n//       \"right_3\",\n//       \"right_4\",\n//       \"front_1\",\n//       \"front_2\",\n//       \"spot\"\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"HEX\": {\n//     set('output_patchbay/chan_1', [\n//       \"front_1\",\n//       \"front_2\",\n//     ])\n//     set('output_patchbay/chan_2', [\n//       \"left_1\",\n//       \"right_1\",\n//     ])\n//     set('output_patchbay/chan_3', [\n//       \"left_2\",\n//       \"right_2\",\n//     ])\n//     set('output_patchbay/chan_4', [\n//       \"left_3\",\n//       \"right_3\",\n//     ])\n//     set('output_patchbay/chan_5', [\n//       \"left_4\",\n//       \"right_4\",\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"DECA\": {\n//     console.log(\"DECA\");\n//     break;\n//   }\n//   case \"FWD\": {\n//     console.log(\"FWD\");\n//     break;\n//   }\n//   case \"BACK\": {\n//     console.log(\"BACK\");\n//     break;\n//   }\n//   case \"ZIG\": {\n//     console.log(\"ZIG\");\n//     break;\n//   }\n// }",
-                "wrap": false,
-                "mode": "tap",
-                "values": {
-                  "Mono + Ceil": "MONO",
-                  "Unique": "UNIQUE",
-                  "Forward": "FWD",
-                  "Back": "BACK"
-                }
               },
               {
                 "type": "button",
@@ -3338,7 +3324,7 @@
                 "interaction": false,
                 "width": 60,
                 "height": 54.486486486486484,
-                "value": "Stutter Period @{stutter_period}",
+                "value": "Stutter Period @{reds_stutter_period}",
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
@@ -3348,7 +3334,7 @@
                 "type": "fader",
                 "top": 28.756756756756758,
                 "left": 120,
-                "id": "stutter_period",
+                "id": "reds_stutter_period",
                 "interaction": true,
                 "width": "auto",
                 "height": 234.48648648648648,
@@ -3373,32 +3359,6 @@
                 "logScale": true,
                 "sensitivity": 1,
                 "steps": ""
-              },
-              {
-                "type": "switch",
-                "top": 20,
-                "left": 190,
-                "id": "mode_switch",
-                "interaction": true,
-                "width": 120.00000000000001,
-                "height": 360,
-                "layout": "vertical",
-                "gridTemplate": "",
-                "value": "",
-                "default": "",
-                "address": "auto",
-                "decimals": 2,
-                "bypass": false,
-                "onValue": "// set('output_patchbay/chan_1', []);\n// set('output_patchbay/chan_2', []);\n// set('output_patchbay/chan_3', []);\n// set('output_patchbay/chan_4', []);\n// set('output_patchbay/chan_5', []);\n// set('output_patchbay/chan_6', []);\n// set('output_patchbay/chan_7', []);\n// set('output_patchbay/chan_8', []);\n// set('output_patchbay/chan_9', []);\n// set('output_patchbay/chan_10', []);\n// set('output_patchbay/chan_spot', []);\n// switch(get(id)) {\n//   case \"MONO\": {\n//     set('output_patchbay/chan_1', [\n//       \"left_1\",\n//       \"left_2\",\n//       \"left_3\",\n//       \"left_4\",\n//       \"right_1\",\n//       \"right_2\",\n//       \"right_3\",\n//       \"right_4\",\n//       \"front_1\",\n//       \"front_2\",\n//       \"spot\"\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"HEX\": {\n//     set('output_patchbay/chan_1', [\n//       \"front_1\",\n//       \"front_2\",\n//     ])\n//     set('output_patchbay/chan_2', [\n//       \"left_1\",\n//       \"right_1\",\n//     ])\n//     set('output_patchbay/chan_3', [\n//       \"left_2\",\n//       \"right_2\",\n//     ])\n//     set('output_patchbay/chan_4', [\n//       \"left_3\",\n//       \"right_3\",\n//     ])\n//     set('output_patchbay/chan_5', [\n//       \"left_4\",\n//       \"right_4\",\n//     ])\n//     set('output_patchbay/chan_spot', ['spot']);\n//     break;\n//   }\n//   case \"DECA\": {\n//     console.log(\"DECA\");\n//     break;\n//   }\n//   case \"FWD\": {\n//     console.log(\"FWD\");\n//     break;\n//   }\n//   case \"BACK\": {\n//     console.log(\"BACK\");\n//     break;\n//   }\n//   case \"ZIG\": {\n//     console.log(\"ZIG\");\n//     break;\n//   }\n// }",
-                "wrap": false,
-                "mode": "tap",
-                "values": {
-                  "Mono": "MONO",
-                  "5 Channel": "PENTA",
-                  "Forward": "FWD",
-                  "Back": "BACK",
-                  "ZigZag": "ZIG"
-                }
               }
             ],
             "tabs": [],
@@ -3910,28 +3870,40 @@
                 "bypass": false,
                 "values": {
                   "Off": "",
-                  "Chan 1": "chan_1",
-                  "Chan 2": "chan_2",
-                  "Chan 3": "chan_3",
-                  "Chan 4": "chan_4",
-                  "Chan 5": "chan_5",
-                  "Ceil 1": "ceil_1",
-                  "Ceil 2": "ceil_2",
-                  "Ceil 3": "ceil_3",
-                  "Under 1": "under_1",
-                  "Under 2": "under_2",
-                  "Tung Spot": "tung_spot",
-                  "Spot 1": "spot_1",
-                  "Spot 2": "spot_2",
-                  "Wash 1": "wash_1",
-                  "Wash 2": "wash_2",
-                  "Wash 3": "wash_3",
-                  "Wash 4": "wash_4",
-                  "Wash 5": "wash_5",
-                  "Wash 6": "wash_6",
-                  "Wash 7": "wash_7",
-                  "Wash 8": "wash_8",
-                  "Sodium": "sodium"
+                  "Left 1": "left_1.dimming",
+                  "Left 2": "left_2.dimming",
+                  "Left 3": "left_3.dimming",
+                  "Left 4": "left_4.dimming",
+                  "Right 1": "right_1.dimming",
+                  "Right 2": "right_2.dimming",
+                  "Right 3": "right_3.dimming",
+                  "Right 4": "right_4.dimming",
+                  "Front 1": "front_1.dimming",
+                  "Front 2": "front_2.dimming",
+                  "Reds Mono": "reds_mono",
+                  "Reds Fwd": "reds_fwd",
+                  "Reds Back": "reds_back",
+                  "Reds Zig": "reds_zig",
+                  "Ceil 1": "ceil_1.dimming",
+                  "Ceil 2": "ceil_2.dimming",
+                  "Ceil 3": "ceil_3.dimming",
+                  "Under 1": "under_1.dimming",
+                  "Under 2": "under_2.dimming",
+                  "Tung Spot": "tung_spot.dimming",
+                  "Spot 1": "spot_1.dimming",
+                  "Spot 2": "spot_2.dimming",
+                  "Wash 1": "wash_1.dimming",
+                  "Wash 2": "wash_2.dimming",
+                  "Wash 3": "wash_3.dimming",
+                  "Wash 4": "wash_4.dimming",
+                  "Wash 5": "wash_5.dimming",
+                  "Wash 6": "wash_6.dimming",
+                  "Wash 7": "wash_7.dimming",
+                  "Wash 8": "wash_8.dimming",
+                  "Wash Mono": "washes_mono",
+                  "Wash Fwd": "washes_fwd",
+                  "Wash Back": "washes_back",
+                  "Sodium": "sodium.dimming"
                 },
                 "gridTemplate": "",
                 "wrap": false
@@ -4270,73 +4242,217 @@
             "bypass": true
           },
           {
-            "type": "matrix",
+            "type": "panel",
             "top": 20,
             "left": 100,
-            "id": "chan_levels",
+            "id": "reds_chan_levels_panel",
             "interaction": true,
-            "width": 370,
-            "height": 280,
-            "value": "",
-            "default": "",
-            "address": "auto",
-            "decimals": 2,
-            "bypass": false,
+            "width": 460,
+            "height": 330,
             "layout": "horizontal",
-            "justify": "start",
-            "gridTemplate": "",
-            "contain": true,
             "scroll": true,
             "innerPadding": true,
+            "contain": true,
             "variables": "@{parent.variables}",
-            "traversing": false,
-            "widgets": [],
-            "tabs": [],
-            "widgetType": "fader",
-            "quantity": 5,
-            "props": {
-              "label": "#{$+1}",
-              "address": "/chan_levels/chan_#{$+1}",
-              "range": {
-                "min": 0,
-                "max": 255
+            "widgets": [
+              {
+                "type": "fader",
+                "id": "chan_levels/left_1.dimming",
+                "label": "L1",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
               },
-              "value": 0,
-              "snap": true
-            }
-          },
-          {
-            "type": "matrix",
-            "top": 300,
-            "left": 100,
-            "id": "chan_levels_labels",
-            "interaction": true,
-            "width": 370,
-            "height": 50,
-            "layout": "horizontal",
-            "gridTemplate": "",
-            "value": "",
-            "default": "",
-            "address": "auto",
-            "decimals": 2,
-            "bypass": false,
-            "justify": "start",
-            "contain": true,
-            "scroll": true,
-            "innerPadding": true,
-            "variables": "@{parent.variables}",
-            "traversing": false,
-            "widgets": [],
-            "tabs": [],
-            "widgetType": "textarea",
-            "quantity": 5,
-            "props": {
-              "label": "#{$}",
-              "value": "chan_#{$+1} #{@{chan_levels}[$].toFixed(2)}",
-              "alphaStroke": 0,
-              "alphaFillOn": 0,
-              "interaction": false
-            }
+              {
+                "type": "fader",
+                "id": "chan_levels/left_2.dimming",
+                "label": "L2",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/left_3.dimming",
+                "label": "L3",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/left_4.dimming",
+                "label": "L4",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/right_1.dimming",
+                "label": "R1",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/right_2.dimming",
+                "label": "R2",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/right_3.dimming",
+                "label": "R3",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/right_4.dimming",
+                "label": "R4",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/front_1.dimming",
+                "label": "F1",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/front_2.dimming",
+                "label": "F2",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/reds_mono",
+                "label": "Mono",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/reds_fwd",
+                "label": "Fwd",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/reds_back",
+                "label": "Bck",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/reds_zig",
+                "label": "Zig",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 35,
+                "height": 280
+              }
+            ],
+            "tabs": []
           },
           {
             "type": "panel",
@@ -4365,7 +4481,7 @@
                 "type": "fader",
                 "top": 0,
                 "left": 0,
-                "id": "chan_levels/under_1",
+                "id": "chan_levels/under_1.dimming",
                 "interaction": true,
                 "width": 60,
                 "height": 280,
@@ -4409,7 +4525,7 @@
                 "type": "fader",
                 "top": 0,
                 "left": 70,
-                "id": "chan_levels/under_2",
+                "id": "chan_levels/under_2.dimming",
                 "interaction": true,
                 "width": 60,
                 "height": 280,
@@ -4567,7 +4683,7 @@
                 "type": "fader",
                 "top": 0,
                 "left": 0,
-                "id": "chan_levels/ceil_1",
+                "id": "chan_levels/ceil_1.dimming",
                 "interaction": true,
                 "width": 60,
                 "height": 280,
@@ -4611,7 +4727,7 @@
                 "type": "fader",
                 "top": 0,
                 "left": 70,
-                "id": "chan_levels/ceil_2",
+                "id": "chan_levels/ceil_2.dimming",
                 "interaction": true,
                 "width": 60,
                 "height": 280,
@@ -4655,7 +4771,7 @@
                 "type": "fader",
                 "top": 0,
                 "left": 140,
-                "id": "chan_levels/ceil_3",
+                "id": "chan_levels/ceil_3.dimming",
                 "interaction": true,
                 "width": 60,
                 "height": 280,
@@ -4860,73 +4976,175 @@
             "steps": ""
           },
           {
-            "type": "matrix",
+            "type": "panel",
             "top": 1050,
             "left": 20,
-            "id": "washes_offests",
+            "id": "washes_chan_levels_panel",
             "interaction": true,
             "width": 600,
-            "height": 280,
-            "value": "",
-            "default": "",
-            "address": "auto",
-            "decimals": 2,
-            "bypass": false,
+            "height": 330,
             "layout": "horizontal",
-            "justify": "start",
-            "gridTemplate": "",
-            "contain": true,
             "scroll": true,
             "innerPadding": true,
+            "contain": true,
             "variables": "@{parent.variables}",
-            "traversing": false,
-            "widgets": [],
-            "tabs": [],
-            "widgetType": "fader",
-            "quantity": 8,
-            "props": {
-              "label": "#{$+1}",
-              "address": "/chan_levels/wash_#{$+1}",
-              "range": {
-                "min": 0,
-                "max": 255
+            "widgets": [
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_1.dimming",
+                "label": "W1",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
               },
-              "value": 0,
-              "snap": true
-            }
-          },
-          {
-            "type": "matrix",
-            "top": 1330,
-            "left": 20,
-            "id": "wash_levels_labels",
-            "interaction": true,
-            "width": 600,
-            "height": 50,
-            "layout": "horizontal",
-            "gridTemplate": "",
-            "value": "",
-            "default": "",
-            "address": "auto",
-            "decimals": 2,
-            "bypass": false,
-            "justify": "start",
-            "contain": true,
-            "scroll": true,
-            "innerPadding": true,
-            "variables": "@{parent.variables}",
-            "traversing": false,
-            "widgets": [],
-            "tabs": [],
-            "widgetType": "textarea",
-            "quantity": 8,
-            "props": {
-              "label": "#{$}",
-              "value": "wash_#{$+1} #{@{washes_offests}[$].toFixed(2)}",
-              "alphaStroke": 0,
-              "alphaFillOn": 0,
-              "interaction": false
-            }
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_2.dimming",
+                "label": "W2",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_3.dimming",
+                "label": "W3",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_4.dimming",
+                "label": "W4",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_5.dimming",
+                "label": "W5",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_6.dimming",
+                "label": "W6",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_7.dimming",
+                "label": "W7",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/wash_8.dimming",
+                "label": "W8",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/washes_mono",
+                "label": "Mono",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/washes_fwd",
+                "label": "Fwd",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              },
+              {
+                "type": "fader",
+                "id": "chan_levels/washes_back",
+                "label": "Bck",
+                "address": "auto",
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "value": 0,
+                "snap": true,
+                "width": 50,
+                "height": 280
+              }
+            ],
+            "tabs": []
           }
         ],
         "tabs": [],
