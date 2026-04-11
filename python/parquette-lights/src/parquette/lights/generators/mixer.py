@@ -56,9 +56,8 @@ class Mixer(object):
     def save_current_masters(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
 
-        # Sodium is technically a channel level (lives under "non-saved" in
-        # the categorized_channel_names map) but we persist it alongside the
-        # masters so the room comes back up with the same house-light state.
+        # Sodium persists via SessionStore alongside the masters so the
+        # room comes back up with the same house-light state.
         data["sodium"] = self.getChannelLevel("sodium")
         return data
 
@@ -277,8 +276,6 @@ class Mixer(object):
         self.channel_lookup: Dict[str, MixChannel] = {
             ch.name: ch for ch in self.mix_channels
         }
-        self.channel_names: List[str] = [ch.name for ch in self.mix_channels]
-
         # Setting masters after mix_channels are built propagates to channels
         # via the property setters
         self.reds_master = 1.0
@@ -302,13 +299,6 @@ class Mixer(object):
         # Set via /synth_visualizer_source OSC param. Empty string means off.
         self.synth_visualizer_source: str = ""
         self.debug_tick: int = 0
-
-    @property
-    def categorized_channel_names(self) -> Dict[str, List[str]]:
-        result: Dict[str, List[str]] = {}
-        for ch in self.mix_channels:
-            result.setdefault(ch.category, []).append(ch.name)
-        return result
 
     def set_fft_viz(self, enable: bool) -> None:
         # Heartbeat-driven: each /set_fft_viz with value=1 extends the window

@@ -26,7 +26,7 @@ class OSCManager(object):
             self._debug_handler = self.dispatcher.map(
                 "*", lambda addr, *args: self.print_osc(" in", addr, *args)
             )
-        elif not self._debug_handler is None:
+        elif self._debug_handler is not None:
             self.dispatcher.unmap("*", self._debug_handler)
 
     def set_local(self, local_ip: str, local_port: int) -> None:
@@ -47,7 +47,7 @@ class OSCManager(object):
             else:
                 self.print_osc("out", address, args)
 
-        if not self.client is None:
+        if self.client is not None:
             self.client.send_message(address, args)
 
     def serve(self, threaded: bool = False) -> None:
@@ -61,7 +61,7 @@ class OSCManager(object):
             self.server.serve_forever()
 
     def close(self) -> None:
-        if not self.server is None:
+        if self.server is not None:
             self.server.shutdown()
 
 
@@ -140,12 +140,9 @@ class OSCParam(object):
     @classmethod
     def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:
         for obj in objs:
-            # TODO I assume this is hacky and can be nicer
             try:
-                _field = getattr(obj.__class__, field)
-                # this is some trash surely the pylint is a warning I'm doing garbage, but fix later
+                descriptor = getattr(obj.__class__, field)
                 # pylint: disable-next=unnecessary-dunder-call
-                _field.__set__(obj, value)
-
+                descriptor.__set__(obj, value)
             except AttributeError:
                 obj.__dict__[field] = value

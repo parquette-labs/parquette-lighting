@@ -199,7 +199,7 @@ def run(
     dmx = DMXManager(osc, art_net_ip)
     dmx.use_art_net = boot_art_net
     dmx.art_net_auto_send(art_net_auto)
-    if not entec_auto is None:
+    if entec_auto is not None:
         dmx.setup_dmx(entec_auto)
 
     front_spot = YRXY200Spot(dmx, addr=21)
@@ -546,7 +546,6 @@ def run(
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
     osc.dispatcher.map("/class", lambda addr, args: class_lights())
-    osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
         "/impulse_punch",
         lambda addr, *args: impulse.punch(),

@@ -117,7 +117,7 @@ class PresetManager(object):
         if not self.enable_save_clear:
             return
 
-        if not category in self.stored_presets:
+        if category not in self.stored_presets:
             # we have never any data for this preset category, no-op
             print(
                 "You're requesting to clear a category of preset that doesn't exist, likley something is wrong in your front end. The passed category is \"{}\"".format(
@@ -126,7 +126,7 @@ class PresetManager(object):
             )
             return
 
-        if not category in self.current_presets:
+        if category not in self.current_presets:
             print(
                 'You\'re requesting to clear a preset, but no preset is selected currently for the category "{}"'.format(
                     category
@@ -142,7 +142,7 @@ class PresetManager(object):
             del self.stored_presets[category][category_preset]
 
             # write out the cleared data
-            with open("./params.pickle", "wb") as f:  # type: ignore
+            with open(self.filename, "wb") as f:
                 pickle.dump(self.stored_presets, f)
 
     def save(self, category: str) -> None:
@@ -155,7 +155,7 @@ class PresetManager(object):
         if category == "non-saved":
             return
 
-        if not category in self.exposed_params:
+        if category not in self.exposed_params:
             # we have never any data for this preset category, no-op
             print(
                 "You're requesting to a save a preset for a category that doesn't exist, likely something is wrong in your front end. The passed category is \"{}\"".format(
@@ -164,7 +164,7 @@ class PresetManager(object):
             )
             return
 
-        if not category in self.current_presets:
+        if category not in self.current_presets:
             print(
                 'You\'re requesting to save a preset, but no preset is selected currently for the category "{}"'.format(
                     category
@@ -175,7 +175,7 @@ class PresetManager(object):
 
         category_preset = self.current_presets[category]
 
-        if not category in self.stored_presets:
+        if category not in self.stored_presets:
             self.stored_presets[category] = {}
 
         self.stored_presets[category][category_preset] = []
@@ -193,7 +193,7 @@ class PresetManager(object):
             )
             pprint.pp(self.stored_presets[category][category_preset])
 
-        with open("./params.pickle", "wb") as f:  # type: ignore
+        with open(self.filename, "wb") as f:
             pickle.dump(self.stored_presets, f)
 
     def sync(self):
@@ -207,7 +207,7 @@ class PresetManager(object):
         self.osc.send_osc("/enable_save", int(self.enable_save_clear))
 
     def select(self, category: str, category_preset: str, sync: bool = True) -> None:
-        if not category in self.exposed_params:
+        if category not in self.exposed_params:
             # there are no valid exposed params in this category to control
             print(
                 "You're requesting to a select a preset for a category that doesn't exist, likely something is wrong in your front end. The passed category is \"{}\"".format(
@@ -221,11 +221,11 @@ class PresetManager(object):
         if self.session is not None:
             self.session.save()
 
-        if not category in self.stored_presets:
+        if category not in self.stored_presets:
             # Someone is creating a new preset, nothing to load
             return
 
-        if not category_preset in self.stored_presets[category]:
+        if category_preset not in self.stored_presets[category]:
             # Someone is creating a new preset, nothing to load
             return
 
