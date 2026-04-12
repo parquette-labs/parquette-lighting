@@ -72,6 +72,9 @@ class LoopGenerator(Generator):
         self.playback_start = time.time() * 1000
 
     def value(self, millis: float) -> float:
+        if self.recording and self.record_buffer:
+            return self.record_buffer[-1] * self.amp + self.offset
+
         if self.loop_length == 0:
             return self.offset
 
