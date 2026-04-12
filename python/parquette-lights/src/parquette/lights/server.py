@@ -277,28 +277,32 @@ def run(
         spot.color_swap_mechanical_time = spot_mechanical_time
 
     # Washes
-    washfl = RGBLight(name="wash_1", dmx=dmx, addr=104, category="washes", osc=osc)
+    washfl = RGBLight(name="wash_fl", dmx=dmx, addr=104, category="washes", osc=osc)
     washfl.rgb(0, 0, 0)
 
-    washfr = RGBLight(name="wash_2", dmx=dmx, addr=107, category="washes", osc=osc)
+    washfr = RGBLight(name="wash_fr", dmx=dmx, addr=107, category="washes", osc=osc)
     washfr.rgb(0, 0, 0)
 
-    washml = RGBLight(name="wash_3", dmx=dmx, addr=110, category="washes", osc=osc)
+    washml = RGBLight(name="wash_ml", dmx=dmx, addr=110, category="washes", osc=osc)
     washml.rgb(0, 0, 0)
 
-    washmr = RGBLight(name="wash_4", dmx=dmx, addr=113, category="washes", osc=osc)
+    washmr = RGBLight(name="wash_mr", dmx=dmx, addr=113, category="washes", osc=osc)
     washmr.rgb(0, 0, 0)
 
-    washbl = RGBLight(name="wash_5", dmx=dmx, addr=120, category="washes", osc=osc)
+    washbl = RGBLight(name="wash_bl", dmx=dmx, addr=120, category="washes", osc=osc)
     washbl.rgb(0, 0, 0)
 
-    washbr = RGBLight(name="wash_6", dmx=dmx, addr=123, category="washes", osc=osc)
+    washbr = RGBLight(name="wash_br", dmx=dmx, addr=123, category="washes", osc=osc)
     washbr.rgb(0, 0, 0)
 
-    washceilf = RGBWLight(name="wash_7", dmx=dmx, addr=100, category="washes", osc=osc)
+    washceilf = RGBWLight(
+        name="wash_ceil_f", dmx=dmx, addr=100, category="washes", osc=osc
+    )
     washceilf.rgbw(0, 0, 0, 0)
 
-    washceilr = RGBWLight(name="wash_8", dmx=dmx, addr=116, category="washes", osc=osc)
+    washceilr = RGBWLight(
+        name="wash_ceil_r", dmx=dmx, addr=116, category="washes", osc=osc
+    )
     washceilr.rgbw(0, 0, 0, 0)
 
     washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
@@ -582,7 +586,7 @@ def run(
     )
 
     def all_black():
-        mixer.setChannelLevel("sodium", 0)
+        mixer.channel_lookup["sodium.dimming"].offset = 0
 
         presets.select_all("Off")
 
@@ -596,7 +600,7 @@ def run(
         mixer.booth_master = 1
         mixer.plants_master = 1
 
-        mixer.setChannelLevel("sodium", 255)
+        mixer.channel_lookup["sodium.dimming"].offset = 255
 
         presets.select_all("Static")
 
@@ -607,7 +611,7 @@ def run(
         mixer.booth_master = 0
         mixer.plants_master = 0.5
 
-        mixer.setChannelLevel("sodium", 0)
+        mixer.channel_lookup["sodium.dimming"].offset = 0
 
         if dmx.passthrough:
             set_dmx_passthrough(False)

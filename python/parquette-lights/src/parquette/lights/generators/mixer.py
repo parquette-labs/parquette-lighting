@@ -81,7 +81,7 @@ class Mixer(object):
 
         # Sodium persists via SessionStore alongside the masters so the
         # room comes back up with the same house-light state.
-        data["sodium"] = self.getChannelLevel("sodium.dimming")
+        data["sodium"] = self.channel_lookup["sodium.dimming"].offset
         return data
 
     def load_current_masters(self, data: Dict[str, Any]) -> None:
@@ -89,7 +89,7 @@ class Mixer(object):
             if attr in self.MASTER_ATTRS:
                 setattr(self, attr, value)
             elif attr == "sodium":
-                self.setChannelLevel("sodium.dimming", value)
+                self.channel_lookup["sodium.dimming"].offset = value
 
     def __init__(
         self,
@@ -189,16 +189,16 @@ class Mixer(object):
         # Stutter channels for washes — wall washes only, ceiling excluded
         washes_fwd_groups: List[List[MixTarget]] = [
             [
-                self.mix_target_for_fixture("wash_1"),
-                self.mix_target_for_fixture("wash_2"),
+                self.mix_target_for_fixture("wash_fl"),
+                self.mix_target_for_fixture("wash_fr"),
             ],
             [
-                self.mix_target_for_fixture("wash_3"),
-                self.mix_target_for_fixture("wash_4"),
+                self.mix_target_for_fixture("wash_ml"),
+                self.mix_target_for_fixture("wash_mr"),
             ],
             [
-                self.mix_target_for_fixture("wash_5"),
-                self.mix_target_for_fixture("wash_6"),
+                self.mix_target_for_fixture("wash_bl"),
+                self.mix_target_for_fixture("wash_br"),
             ],
         ]
 
@@ -233,7 +233,7 @@ class Mixer(object):
         ]
         all_wall_wash_targets = [
             self.mix_target_for_fixture(n)
-            for n in ["wash_1", "wash_2", "wash_3", "wash_4", "wash_5", "wash_6"]
+            for n in ["wash_fl", "wash_fr", "wash_ml", "wash_mr", "wash_bl", "wash_br"]
         ]
 
         special_channels: List[MixChannel] = [
@@ -347,12 +347,6 @@ class Mixer(object):
 
     def fixture_visualizer_active(self) -> bool:
         return time.time() < self.fixture_visualizer_until
-
-    def setChannelLevel(self, chan_name: str, level: float) -> None:
-        self.channel_lookup[chan_name].offset = level
-
-    def getChannelLevel(self, chan_name: str) -> float:
-        return self.channel_lookup[chan_name].offset
 
     def mix_target_for_fixture(self, fixture_name: str, index: int = 0) -> MixTarget:
         return self.fixture_targets[fixture_name][index]

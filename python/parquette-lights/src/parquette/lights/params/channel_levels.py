@@ -5,10 +5,10 @@ from .deps import ParamDeps
 
 
 def append_to(exposed: Dict[str, List[OSCParam]], deps: ParamDeps) -> None:
-    """Append per-channel-level OSCParams to their owning category lists.
+    """Append per-channel offset OSCParams to their owning category lists.
 
     Iterates mix_channels directly; each channel knows its own category.
-    We generate one OSCParam per channel under `/chan_levels/{name}`.
+    Binds directly to each MixChannel's offset attribute.
     """
     osc = deps.osc
     mixer = deps.mixer
@@ -20,11 +20,11 @@ def append_to(exposed: Dict[str, List[OSCParam]], deps: ParamDeps) -> None:
         # via PresetManager and don't need an on_change hook.
         on_change = session.save if ch.name == "sodium.dimming" else None
         exposed[ch.category].append(
-            OSCParam(
+            OSCParam.bind(
                 osc,
-                "/chan_levels/{}".format(ch.name),
-                lambda chan=ch.name: mixer.getChannelLevel(chan),
-                lambda addr, args: mixer.setChannelLevel(addr.split("/")[2], args),
+                "/mix_chan_offset/{}".format(ch.name),
+                ch,
+                "offset",
                 on_change=on_change,
             )
         )
