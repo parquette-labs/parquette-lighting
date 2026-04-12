@@ -4379,7 +4379,20 @@
               "max": 1
             },
             "logScale": true,
-            "value": 1
+            "value": 1,
+            "design": "default",
+            "horizontal": false,
+            "pips": false,
+            "dashed": false,
+            "gradient": [],
+            "touchZone": "all",
+            "spring": false,
+            "doubleTap": false,
+            "sensitivity": 1,
+            "steps": "",
+            "default": "",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -4391,7 +4404,11 @@
             "value": "reds master @{reds_master}",
             "alphaStroke": 0,
             "alphaFillOn": 0,
-            "bypass": true
+            "bypass": true,
+            "id": "textarea_1",
+            "default": "",
+            "address": "auto",
+            "decimals": 2
           },
           {
             "type": "panel",
@@ -4414,7 +4431,11 @@
                 "value": "Reds",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_2",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4430,7 +4451,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4442,7 +4477,11 @@
                 "value": "left_1 @{mix_chan_offset/left_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_3",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4458,7 +4497,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4470,7 +4523,11 @@
                 "value": "left_2 @{mix_chan_offset/left_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_4",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4486,7 +4543,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4498,7 +4569,11 @@
                 "value": "left_3 @{mix_chan_offset/left_3.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_5",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4514,7 +4589,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4526,7 +4615,11 @@
                 "value": "left_4 @{mix_chan_offset/left_4.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_6",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4542,7 +4635,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4554,7 +4661,11 @@
                 "value": "right_1 @{mix_chan_offset/right_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_7",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4570,7 +4681,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4582,7 +4707,11 @@
                 "value": "right_2 @{mix_chan_offset/right_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_8",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4598,7 +4727,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4610,7 +4753,11 @@
                 "value": "right_3 @{mix_chan_offset/right_3.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_9",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4626,7 +4773,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4638,7 +4799,11 @@
                 "value": "right_4 @{mix_chan_offset/right_4.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_10",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4654,7 +4819,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4666,7 +4845,11 @@
                 "value": "front_1 @{mix_chan_offset/front_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_11",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4682,7 +4865,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4694,7 +4891,11 @@
                 "value": "front_2 @{mix_chan_offset/front_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_12",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4710,7 +4911,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4722,7 +4937,11 @@
                 "value": "reds_mono @{mix_chan_offset/reds_mono}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_13",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4738,7 +4957,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4750,7 +4983,11 @@
                 "value": "reds_fwd @{mix_chan_offset/reds_fwd}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_14",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4766,7 +5003,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4778,7 +5029,11 @@
                 "value": "reds_back @{mix_chan_offset/reds_back}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_15",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4794,7 +5049,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4806,10 +5075,26 @@
                 "value": "reds_zig @{mix_chan_offset/reds_zig}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_16",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "fader",
@@ -4826,7 +5111,20 @@
               "max": 1
             },
             "logScale": true,
-            "value": 1
+            "value": 1,
+            "design": "default",
+            "horizontal": false,
+            "pips": false,
+            "dashed": false,
+            "gradient": [],
+            "touchZone": "all",
+            "spring": false,
+            "doubleTap": false,
+            "sensitivity": 1,
+            "steps": "",
+            "default": "",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -4838,7 +5136,11 @@
             "value": "booth master @{booth_master}",
             "alphaStroke": 0,
             "alphaFillOn": 0,
-            "bypass": true
+            "bypass": true,
+            "id": "textarea_17",
+            "default": "",
+            "address": "auto",
+            "decimals": 2
           },
           {
             "type": "panel",
@@ -4861,7 +5163,11 @@
                 "value": "Booth",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_18",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4877,7 +5183,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4889,7 +5209,11 @@
                 "value": "under_1 @{mix_chan_offset/under_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_19",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4905,7 +5229,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -4917,10 +5255,26 @@
                 "value": "under_2 @{mix_chan_offset/under_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_20",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "fader",
@@ -4937,7 +5291,20 @@
               "max": 1
             },
             "logScale": true,
-            "value": 1
+            "value": 1,
+            "design": "default",
+            "horizontal": false,
+            "pips": false,
+            "dashed": false,
+            "gradient": [],
+            "touchZone": "all",
+            "spring": false,
+            "doubleTap": false,
+            "sensitivity": 1,
+            "steps": "",
+            "default": "",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -4949,7 +5316,11 @@
             "value": "plants master @{plants_master}",
             "alphaStroke": 0,
             "alphaFillOn": 0,
-            "bypass": true
+            "bypass": true,
+            "id": "textarea_21",
+            "default": "",
+            "address": "auto",
+            "decimals": 2
           },
           {
             "type": "panel",
@@ -4972,7 +5343,11 @@
                 "value": "Plants",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_22",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -4988,7 +5363,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5000,7 +5389,11 @@
                 "value": "ceil_1 @{mix_chan_offset/ceil_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_23",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5016,7 +5409,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5028,7 +5435,11 @@
                 "value": "ceil_2 @{mix_chan_offset/ceil_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_24",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5044,7 +5455,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5056,10 +5481,26 @@
                 "value": "ceil_3 @{mix_chan_offset/ceil_3.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_25",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "fader",
@@ -5076,7 +5517,20 @@
               "max": 1
             },
             "logScale": true,
-            "value": 1
+            "value": 1,
+            "design": "default",
+            "horizontal": false,
+            "pips": false,
+            "dashed": false,
+            "gradient": [],
+            "touchZone": "all",
+            "spring": false,
+            "doubleTap": false,
+            "sensitivity": 1,
+            "steps": "",
+            "default": "",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -5088,7 +5542,11 @@
             "value": "spots master @{spots_master}",
             "alphaStroke": 0,
             "alphaFillOn": 0,
-            "bypass": true
+            "bypass": true,
+            "id": "textarea_26",
+            "default": "",
+            "address": "auto",
+            "decimals": 2
           },
           {
             "type": "panel",
@@ -5111,7 +5569,11 @@
                 "value": "Spots Light",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_27",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5127,7 +5589,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5139,7 +5615,11 @@
                 "value": "tung_spot @{mix_chan_offset/tung_spot.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_28",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5155,7 +5635,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5167,7 +5661,11 @@
                 "value": "spot_1 @{mix_chan_offset/spot_1.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_29",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5183,7 +5681,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5195,10 +5707,26 @@
                 "value": "spot_2 @{mix_chan_offset/spot_2.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_30",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "panel",
@@ -5221,7 +5749,11 @@
                 "value": "Spots Position",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_31",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5237,7 +5769,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5249,7 +5795,11 @@
                 "value": "spot_1.pan @{mix_chan_offset/spot_1.pan}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_32",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5265,7 +5815,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5277,7 +5841,11 @@
                 "value": "spot_1.tilt @{mix_chan_offset/spot_1.tilt}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_33",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5293,7 +5861,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5305,7 +5887,11 @@
                 "value": "spot_2.pan @{mix_chan_offset/spot_2.pan}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_34",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5321,7 +5907,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5333,10 +5933,26 @@
                 "value": "spot_2.tilt @{mix_chan_offset/spot_2.tilt}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_35",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "panel",
@@ -5359,7 +5975,11 @@
                 "value": "Non-saved",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_36",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5375,7 +5995,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5387,10 +6021,26 @@
                 "value": "sodium @{mix_chan_offset/sodium.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_37",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "fader",
@@ -5407,7 +6057,20 @@
               "max": 1
             },
             "logScale": true,
-            "value": 1
+            "value": 1,
+            "design": "default",
+            "horizontal": false,
+            "pips": false,
+            "dashed": false,
+            "gradient": [],
+            "touchZone": "all",
+            "spring": false,
+            "doubleTap": false,
+            "sensitivity": 1,
+            "steps": "",
+            "default": "",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -5419,7 +6082,11 @@
             "value": "washes master @{washes_master}",
             "alphaStroke": 0,
             "alphaFillOn": 0,
-            "bypass": true
+            "bypass": true,
+            "id": "textarea_38",
+            "default": "",
+            "address": "auto",
+            "decimals": 2
           },
           {
             "type": "panel",
@@ -5442,7 +6109,11 @@
                 "value": "Washes",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_39",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5458,7 +6129,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5470,7 +6155,11 @@
                 "value": "wash_fl @{mix_chan_offset/wash_fl.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_40",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5486,7 +6175,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5498,7 +6201,11 @@
                 "value": "wash_fr @{mix_chan_offset/wash_fr.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_41",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5514,7 +6221,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5526,7 +6247,11 @@
                 "value": "wash_ml @{mix_chan_offset/wash_ml.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_42",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5542,7 +6267,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5554,7 +6293,11 @@
                 "value": "wash_mr @{mix_chan_offset/wash_mr.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_43",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5570,7 +6313,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5582,7 +6339,11 @@
                 "value": "wash_bl @{mix_chan_offset/wash_bl.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_44",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5598,7 +6359,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5610,7 +6385,11 @@
                 "value": "wash_br @{mix_chan_offset/wash_br.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_45",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5626,7 +6405,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5638,7 +6431,11 @@
                 "value": "wash_ceil_f @{mix_chan_offset/wash_ceil_f.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_46",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5654,7 +6451,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5666,7 +6477,11 @@
                 "value": "wash_ceil_r @{mix_chan_offset/wash_ceil_r.dimming}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_47",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5682,7 +6497,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5694,7 +6523,11 @@
                 "value": "washes_mono @{mix_chan_offset/washes_mono}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_48",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5710,7 +6543,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5722,7 +6569,11 @@
                 "value": "washes_fwd @{mix_chan_offset/washes_fwd}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_49",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5738,7 +6589,21 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 0
+                "value": 0,
+                "design": "default",
+                "horizontal": false,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5750,10 +6615,26 @@
                 "value": "washes_back @{mix_chan_offset/washes_back}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_50",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           },
           {
             "type": "panel",
@@ -5775,10 +6656,14 @@
                 "value": "Wash Color Target",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_51",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
-                "type": "input",
+                "type": "rgb",
                 "id": "wash_rgb_picker",
                 "left": 10,
                 "top": 30,
@@ -5786,7 +6671,21 @@
                 "height": 55,
                 "address": "/wash_color",
                 "interaction": true,
-                "typeTags": "iii"
+                "snap": false,
+                "spring": false,
+                "range": {
+                  "min": 0,
+                  "max": 255
+                },
+                "alpha": false,
+                "rangeAlpha": {
+                  "min": 0,
+                  "max": 1
+                },
+                "value": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5798,7 +6697,11 @@
                 "value": "RGB",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_52",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               },
               {
                 "type": "fader",
@@ -5815,7 +6718,20 @@
                   "min": 0,
                   "max": 255
                 },
-                "value": 255
+                "value": 255,
+                "design": "default",
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "spring": false,
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 2,
+                "bypass": false
               },
               {
                 "type": "textarea",
@@ -5827,13 +6743,45 @@
                 "value": "White @{wash_w}",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "bypass": true
+                "bypass": true,
+                "id": "textarea_53",
+                "default": "",
+                "address": "auto",
+                "decimals": 2
               }
             ],
-            "tabs": []
+            "tabs": [],
+            "justify": "start",
+            "gridTemplate": "",
+            "contain": true,
+            "scroll": true,
+            "innerPadding": true,
+            "tabsPosition": "top",
+            "variables": "@{parent.variables}",
+            "traversing": false,
+            "value": "",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false
           }
         ],
-        "tabs": []
+        "tabs": [],
+        "interaction": true,
+        "layout": "default",
+        "justify": "start",
+        "gridTemplate": "",
+        "contain": true,
+        "scroll": true,
+        "innerPadding": true,
+        "tabsPosition": "top",
+        "variables": "@{parent.variables}",
+        "traversing": false,
+        "value": "",
+        "default": "",
+        "address": "auto",
+        "decimals": 2,
+        "bypass": false
       },
       {
         "type": "tab",
@@ -7334,17 +8282,17 @@
                 "type": "textarea",
                 "value": "left_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_1",
+                "id": "viz_label_left_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "left_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7406,17 +8354,17 @@
                 "type": "textarea",
                 "value": "left_2.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_2",
+                "id": "viz_label_left_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "left_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7478,17 +8426,17 @@
                 "type": "textarea",
                 "value": "left_3.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_3",
+                "id": "viz_label_left_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "left_3.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7550,17 +8498,17 @@
                 "type": "textarea",
                 "value": "left_4.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_4",
+                "id": "viz_label_left_4",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "left_4.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7622,17 +8570,17 @@
                 "type": "textarea",
                 "value": "right_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_5",
+                "id": "viz_label_right_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "right_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7694,17 +8642,17 @@
                 "type": "textarea",
                 "value": "right_2.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_6",
+                "id": "viz_label_right_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "right_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7766,17 +8714,17 @@
                 "type": "textarea",
                 "value": "right_3.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_7",
+                "id": "viz_label_right_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "right_3.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7838,17 +8786,17 @@
                 "type": "textarea",
                 "value": "right_4.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_8",
+                "id": "viz_label_right_4",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "right_4.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7910,17 +8858,17 @@
                 "type": "textarea",
                 "value": "front_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_9",
+                "id": "viz_label_front_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "front_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -7982,17 +8930,17 @@
                 "type": "textarea",
                 "value": "front_2.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_10",
+                "id": "viz_label_front_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "front_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8054,17 +9002,17 @@
                 "type": "textarea",
                 "value": "under_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_11",
+                "id": "viz_label_under_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "under_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8126,17 +9074,17 @@
                 "type": "textarea",
                 "value": "under_2.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_12",
+                "id": "viz_label_under_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "under_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8198,17 +9146,17 @@
                 "type": "textarea",
                 "value": "ceil_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_13",
+                "id": "viz_label_ceil_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "ceil_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8269,18 +9217,18 @@
               {
                 "type": "textarea",
                 "value": "ceil_2.dimming",
-                "interaction": false,
-                "width": 50,
+                "interaction": true,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_14",
+                "id": "viz_label_ceil_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "ceil_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8342,17 +9290,17 @@
                 "type": "textarea",
                 "value": "ceil_3.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_15",
+                "id": "viz_label_ceil_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "ceil_3.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8414,17 +9362,17 @@
                 "type": "textarea",
                 "value": "tung_spot.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_16",
+                "id": "viz_label_tung_spot",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "tung_spot.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8486,17 +9434,17 @@
                 "type": "textarea",
                 "value": "spot_1.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_17",
+                "id": "viz_label_spot_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "spot_1.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8558,17 +9506,17 @@
                 "type": "textarea",
                 "value": "spot_2.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_18",
+                "id": "viz_label_spot_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "spot_2.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8630,17 +9578,17 @@
                 "type": "textarea",
                 "value": "wash_fl.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_19",
+                "id": "viz_label_wash_fl",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_fl.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8702,17 +9650,17 @@
                 "type": "textarea",
                 "value": "wash_fr.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_20",
+                "id": "viz_label_wash_fr",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_fr.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8774,17 +9722,17 @@
                 "type": "textarea",
                 "value": "wash_ml.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_21",
+                "id": "viz_label_wash_ml",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_ml.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8846,17 +9794,17 @@
                 "type": "textarea",
                 "value": "wash_mr.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_22",
+                "id": "viz_label_wash_mr",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_mr.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8918,17 +9866,17 @@
                 "type": "textarea",
                 "value": "wash_bl.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_23",
+                "id": "viz_label_wash_bl",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_bl.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -8990,17 +9938,17 @@
                 "type": "textarea",
                 "value": "wash_br.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_24",
+                "id": "viz_label_wash_br",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_br.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -9062,17 +10010,17 @@
                 "type": "textarea",
                 "value": "wash_ceil_f.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_25",
+                "id": "viz_label_wash_ceil_f",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_ceil_f.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -9134,17 +10082,17 @@
                 "type": "textarea",
                 "value": "wash_ceil_r.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_26",
+                "id": "viz_label_wash_ceil_r",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "wash_ceil_r.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -9206,17 +10154,17 @@
                 "type": "textarea",
                 "value": "sodium.dimming",
                 "interaction": false,
-                "width": 50,
+                "width": 100,
                 "height": 50,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_27",
+                "id": "viz_label_sodium",
                 "left": "auto",
                 "top": "auto",
-                "default": "",
+                "default": "sodium.dimming",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -9285,17 +10233,17 @@
                 "type": "textarea",
                 "value": "spot_1 pan/tilt",
                 "interaction": false,
-                "width": 180,
+                "width": 100,
                 "height": 30,
                 "top": 185,
                 "left": 0,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_28",
-                "default": "",
+                "id": "viz_label_spot_1_pantilt",
+                "default": "spot_1 pan/tilt",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
@@ -9364,17 +10312,17 @@
                 "type": "textarea",
                 "value": "spot_2 pan/tilt",
                 "interaction": false,
-                "width": 180,
+                "width": 100,
                 "height": 30,
                 "top": 185,
                 "left": 0,
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
-                "id": "textarea_29",
-                "default": "",
+                "id": "viz_label_spot_2_pantilt",
+                "default": "spot_2 pan/tilt",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false
+                "bypass": true
               }
             ],
             "interaction": true,
