@@ -4,6 +4,7 @@
 
 # Notes/Ideas/TODOs
 
+* Visualizer doesn't pause
 * Way to program movement patterns for the spots
 * BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode
 * The BPM confidence is kinda bouncy, I want it quick to come on but not too bouncy

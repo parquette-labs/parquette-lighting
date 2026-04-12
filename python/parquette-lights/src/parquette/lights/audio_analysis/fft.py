@@ -48,7 +48,7 @@ class FFTManager(object):
         *,
         energy_threshold: float = 100.0,
         tempo_alpha: float = 0.25,
-        debug_timeout: int = 30,
+        debug_timeout: int = 2,
         rms_window_secs: float = 1.0,
         debug: bool = False,
         onset_envelope_floor: float = 2.0,
