@@ -52,3 +52,4 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.
 - Always try and write object oriented, reusable code. Breakup functions and classes if they are becoming too large. We are trying to make maintable code.
 - When writting comments do not reference claude plans or dialogue with claude in the comment. Instead write comments that will make sense to someone reading the code with no prior context.
+- When editing the front end don't change the position of existing UI elements, always check their position because the user may have adjusted it since last edits, and keep that position. New UI elements should be at the bottom not overlapping anything else. If using pannels assume that the pannel needs some internal margin.
