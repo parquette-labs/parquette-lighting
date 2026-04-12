@@ -373,6 +373,22 @@ def run(
         offset=0,
         shape=WaveGenerator.Shape.SIN,
     )
+    sin_spot = WaveGenerator(
+        name="sin_spot",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_spot_pos = WaveGenerator(
+        name="sin_spot_pos",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
 
     sq1 = WaveGenerator(
         name="sq_1",
@@ -422,6 +438,8 @@ def run(
         sin_plants,
         sin_booth,
         sin_wash,
+        sin_spot,
+        sin_spot_pos,
         sq1,
         sq2,
         sq3,
@@ -504,6 +522,8 @@ def run(
         sin_plants=sin_plants,
         sin_booth=sin_booth,
         sin_wash=sin_wash,
+        sin_spot=sin_spot,
+        sin_spot_pos=sin_spot_pos,
         sq1=sq1,
         sq2=sq2,
         sq3=sq3,
@@ -648,6 +668,18 @@ def run(
     osc.dispatcher.map(
         "/snap_sin_wash_to_bpm",
         lambda addr, *args: make_snap_handler([sin_wash], "/period_wash", bpm_wash)(),
+    )
+    osc.dispatcher.map(
+        "/snap_sin_spot_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sin_spot], "/sin_spot_period", bpm_red
+        )(),
+    )
+    osc.dispatcher.map(
+        "/snap_sin_spot_pos_to_bpm",
+        lambda addr, *args: make_snap_handler(
+            [sin_spot_pos], "/sin_spot_pos_period", bpm_red
+        )(),
     )
 
     client_tracker = ClientTracker(osc)

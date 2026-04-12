@@ -446,6 +446,16 @@ class YRXY200Spot(Spot):
             ],
         )
 
+        self.set_mix_targets(self.dimming, self.pan, self.tilt)
+
+    def send_visualizer(self) -> None:
+        super().send_visualizer()
+        if self.osc is not None:
+            self.osc.send_osc(
+                "/visualizer/{}/pantilt".format(self.name),
+                [self._pan, self._tilt],
+            )
+
     def shutter(self, close_shutter: bool) -> None:
         self.strobe_enabled = False
         self.strobe_rate(0)

@@ -23,13 +23,17 @@ def fix_pantilt_wedge(fixture: Any, args: Tuple[Any, ...], fine: bool = False) -
 # pylint: disable=protected-access
 def build_lights(deps: ParamDeps) -> List[OSCParam]:
     osc = deps.osc
+    sin_spot = deps.sin_spot
+
     params: List[OSCParam] = [
         SignalPatchParam(
             osc,
             "/signal_patchbay/spots_lights",
             ["tung_spot.dimming", "spot_1.dimming", "spot_2.dimming"],
             deps.mixer,
-        )
+        ),
+        OSCParam.bind(osc, "/sin_spot_amp", sin_spot, "amp"),
+        OSCParam.bind(osc, "/sin_spot_period", sin_spot, "period"),
     ]
 
     for i, fixture in enumerate(deps.spotlights):
@@ -74,7 +78,25 @@ def build_lights(deps: ParamDeps) -> List[OSCParam]:
 
 def build_position(deps: ParamDeps) -> List[OSCParam]:
     osc = deps.osc
-    params: List[OSCParam] = []
+    sin_spot_pos = deps.sin_spot_pos
+
+    # Build the list of pan/tilt channel names from spotlights
+    pos_chan_names = []
+    for fixture in deps.spotlights:
+        pos_chan_names.append("{}.pan".format(fixture.name))
+        pos_chan_names.append("{}.tilt".format(fixture.name))
+
+    params: List[OSCParam] = [
+        SignalPatchParam(
+            osc,
+            "/signal_patchbay/spots_position",
+            pos_chan_names,
+            deps.mixer,
+        ),
+        OSCParam.bind(osc, "/sin_spot_pos_amp", sin_spot_pos, "amp"),
+        OSCParam.bind(osc, "/sin_spot_pos_period", sin_spot_pos, "period"),
+    ]
+
     for i, fixture in enumerate(deps.spotlights):
         params.append(
             OSCParam(

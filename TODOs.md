@@ -4,6 +4,7 @@
 
 # Notes/Ideas/TODOs
 
+* chan offsets are per mix chan
 * Use the mix targets on fixtures to generate the end targets in the patchbays automatically
 * Add position mixtargets for the spots
 * BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode
@@ -20,6 +21,7 @@
 * Overall and per light brightness and color mapping and limits
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
+* cateogry concepts for the generators
 
 # Feedback
 * "Softer" strobes
