@@ -121,6 +121,8 @@ class Mixer(object):
         target_category_overrides: Dict[str, str] = {
             "pan": "spots_position",
             "tilt": "spots_position",
+            "pan_fine": "spots_position",
+            "tilt_fine": "spots_position",
         }
 
         index = 0

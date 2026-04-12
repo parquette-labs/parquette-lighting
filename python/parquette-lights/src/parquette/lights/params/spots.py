@@ -1,23 +1,8 @@
-from typing import Any, List, Tuple
+from typing import Any, List
 
 from ..generators import SignalPatchParam
 from ..osc import OSCParam
 from .deps import ParamDeps
-
-
-def fix_pantilt_wedge(fixture: Any, args: Tuple[Any, ...], fine: bool = False) -> None:
-    # Needed because of weirdness with arduino OSC: args may be a single
-    # tuple or two scalars depending on origin.
-    if fine:
-        if len(args) == 1:
-            fixture.pantilt_fine(args[0][0], args[0][1])
-        else:
-            fixture.pantilt_fine(args[0], args[1])
-    else:
-        if len(args) == 1:
-            fixture.pantilt(args[0][0], args[0][1])
-        else:
-            fixture.pantilt(args[0], args[1])
 
 
 # pylint: disable=protected-access
@@ -90,6 +75,8 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
     for fixture in deps.spotlights:
         pos_chan_names.append("{}.pan".format(fixture.name))
         pos_chan_names.append("{}.tilt".format(fixture.name))
+        pos_chan_names.append("{}.pan_fine".format(fixture.name))
+        pos_chan_names.append("{}.tilt_fine".format(fixture.name))
 
     params: List[OSCParam] = [
         SignalPatchParam(
@@ -105,24 +92,30 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
             OSCParam.bind(osc, "/sin_spot_pos_{}_period".format(i), gen, "period")
         )
 
-    for i, fixture in enumerate(deps.spotlights):
+    # XY wrappers for pan/tilt offsets (thin layer over individual offsets)
+    mixer = deps.mixer
+    for fixture in deps.spotlights:
+        pan_ch = mixer.channel_lookup["{}.pan".format(fixture.name)]
+        tilt_ch = mixer.channel_lookup["{}.tilt".format(fixture.name)]
         params.append(
             OSCParam(
                 osc,
-                "/spot_joystick_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._pan, fixture._tilt],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, False
+                "/{}_pantilt_offset".format(fixture.name),
+                lambda pc=pan_ch, tc=tilt_ch: [pc.offset, tc.offset],
+                lambda _, *args, pc=pan_ch, tc=tilt_ch: _handle_pantilt_offset(
+                    pc, tc, args
                 ),
             )
         )
+        pan_fine_ch = mixer.channel_lookup["{}.pan_fine".format(fixture.name)]
+        tilt_fine_ch = mixer.channel_lookup["{}.tilt_fine".format(fixture.name)]
         params.append(
             OSCParam(
                 osc,
-                "/spot_joystick_fine_{}".format(i + 1),
-                lambda fixture=fixture: [fixture._pan_fine, fixture._tilt_fine],
-                lambda _, *args, fixture=fixture: fix_pantilt_wedge(
-                    fixture, args, True
+                "/{}_pantilt_fine_offset".format(fixture.name),
+                lambda pc=pan_fine_ch, tc=tilt_fine_ch: [pc.offset, tc.offset],
+                lambda _, *args, pc=pan_fine_ch, tc=tilt_fine_ch: _handle_pantilt_offset(
+                    pc, tc, args
                 ),
             )
         )
@@ -155,6 +148,15 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
         )
 
     return params
+
+
+def _handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:
+    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+        pan, tilt = args[0][0], args[0][1]
+    else:
+        pan, tilt = args[0], args[1]
+    pan_ch.offset = float(pan)
+    tilt_ch.offset = float(tilt)
 
 
 def _handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:

@@ -18,6 +18,7 @@
 * Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 * Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
 * Cateogry concepts for the generators
+* category for fixtures should be per mix target?
 
 # Feedback
 * "Softer" strobes

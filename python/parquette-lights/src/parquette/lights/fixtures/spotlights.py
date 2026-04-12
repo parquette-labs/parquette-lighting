@@ -446,7 +446,9 @@ class YRXY200Spot(Spot):
             ],
         )
 
-        self.set_mix_targets(self.dimming, self.pan, self.tilt)
+        self.set_mix_targets(
+            self.dimming, self.pan, self.tilt, self.pan_fine, self.tilt_fine
+        )
 
     def send_visualizer(self) -> None:
         super().send_visualizer()
