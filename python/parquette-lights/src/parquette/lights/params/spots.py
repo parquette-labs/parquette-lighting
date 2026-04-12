@@ -28,7 +28,7 @@ def build_lights(deps: ParamDeps) -> List[OSCParam]:
     params: List[OSCParam] = [
         SignalPatchParam(
             osc,
-            "/signal_patchbay/spots_lights",
+            "/signal_patchbay/spots_light",
             ["tung_spot.dimming", "spot_1.dimming", "spot_2.dimming"],
             deps.mixer,
         ),

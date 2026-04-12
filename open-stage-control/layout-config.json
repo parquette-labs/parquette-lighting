@@ -4212,7 +4212,7 @@
             "id": "sin_spot_pos_panel",
             "top": 2070,
             "left": 350,
-            "width": 450,
+            "width": 470,
             "height": 390,
             "interaction": true,
             "layout": "default",
