@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import sys
 import time
@@ -774,12 +774,19 @@ def run(
         ],
         start=1,
     ):
+
+        def make_record_handler(gx: LoopGenerator, gy: LoopGenerator) -> Callable:
+            # pylint: disable-next=unused-argument
+            def handler(addr: str, *args: Any) -> None:
+                ts = time.time() * 1000
+                gx.set_recording(bool(args[0]), ts)
+                gy.set_recording(bool(args[0]), ts)
+
+            return handler
+
         osc.dispatcher.map(
             "/loop_spot_pos_{}_record".format(i),
-            lambda addr, *args, gx=lx, gy=ly: (
-                gx.set_recording(bool(args[0]), time.time() * 1000),
-                gy.set_recording(bool(args[0]), time.time() * 1000),
-            ),
+            make_record_handler(lx, ly),
         )
 
     client_tracker = ClientTracker(osc)
