@@ -13,6 +13,7 @@ from .generators import (
     WaveGenerator,
     ImpulseGenerator,
     BPMGenerator,
+    LoopGenerator,
     Mixer,
 )
 
@@ -167,6 +168,13 @@ from .util.session_store import SessionStore
     type=str,
     help="Auto-connect to an audio input device by name (substring, case-insensitive) and start audio + FFT analysis on boot.",
 )
+@click.option(
+    "--loop-max-samples",
+    default=500,
+    show_default=True,
+    type=int,
+    help="Maximum samples per loop recording (500 = 10s at 50Hz).",
+)
 # pylint: disable-next=too-many-positional-arguments
 def run(
     local_ip: str,
@@ -189,6 +197,7 @@ def run(
     spot_mechanical_time: float,
     session_file: str,
     audio_interface: Optional[str],
+    loop_max_samples: int,
 ) -> None:
     print("Setup", flush=True)
 
@@ -461,6 +470,14 @@ def run(
     bpm_red = BPMGenerator(name="bpm_red", amp=255, offset=0, duty=100)
     bpm_wash = BPMGenerator(name="bpm_wash", amp=255, offset=0, duty=100)
 
+    loop_reds = LoopGenerator(name="loop_reds", max_samples=loop_max_samples)
+    loop_spot_pos_x = LoopGenerator(
+        name="loop_spot_pos_x", max_samples=loop_max_samples
+    )
+    loop_spot_pos_y = LoopGenerator(
+        name="loop_spot_pos_y", max_samples=loop_max_samples
+    )
+
     generators = [
         sin_reds,
         sin_plants,
@@ -479,6 +496,9 @@ def run(
         fft2,
         bpm_red,
         bpm_wash,
+        loop_reds,
+        loop_spot_pos_x,
+        loop_spot_pos_y,
     ]
 
     fft_manager.downstream = [fft1, fft2]
@@ -579,6 +599,10 @@ def run(
         ],
         spotlights=spotlights,
         set_dmx_passthrough=set_dmx_passthrough,
+        loop_reds=loop_reds,
+        loop_spot_pos_x=loop_spot_pos_x,
+        loop_spot_pos_y=loop_spot_pos_y,
+        loop_max_samples=loop_max_samples,
     )
 
     exposed_params = build_exposed_params(deps)
@@ -726,6 +750,21 @@ def run(
             bpm_red,
         )(),
     )
+
+    # Loop generator record triggers (momentary actions, not preset state)
+    osc.dispatcher.map(
+        "/loop_reds_record",
+        lambda addr, *args: loop_reds.set_recording(bool(args[0])),
+    )
+
+    # pylint: disable-next=unused-argument
+    def loop_spot_pos_record(addr: str, *args: Any) -> None:
+        active = bool(args[0])
+        ts = time.time() * 1000
+        loop_spot_pos_x.set_recording(active, ts)
+        loop_spot_pos_y.set_recording(active, ts)
+
+    osc.dispatcher.map("/loop_spot_pos_record", loop_spot_pos_record)
 
     client_tracker = ClientTracker(osc)
     client_tracker.start()

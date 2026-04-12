@@ -9,6 +9,7 @@ from ..generators import (
     BPMGenerator,
     FFTGenerator,
     ImpulseGenerator,
+    LoopGenerator,
     Mixer,
     WaveGenerator,
 )
@@ -49,6 +50,11 @@ class ParamDeps:
     impulse: ImpulseGenerator
     bpm_red: BPMGenerator
     bpm_wash: BPMGenerator
+
+    loop_reds: LoopGenerator
+    loop_spot_pos_x: LoopGenerator
+    loop_spot_pos_y: LoopGenerator
+    loop_max_samples: int
 
     hazer: RadianceHazer
     washceilf: RGBWLight

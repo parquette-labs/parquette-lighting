@@ -126,4 +126,43 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
                 ),
             )
         )
+
+    # Loop generators for spot position (XY pair)
+    loop_x = deps.loop_spot_pos_x
+    loop_y = deps.loop_spot_pos_y
+    params.append(
+        OSCParam(
+            osc,
+            "/loop_spot_pos_input",
+            lambda: [loop_x.input_value, loop_y.input_value],
+            lambda _, *args: _handle_xy_loop_input(loop_x, loop_y, args),
+        )
+    )
+    params.append(OSCParam.bind(osc, "/loop_spot_pos_x_amp", loop_x, "amp"))
+    params.append(OSCParam.bind(osc, "/loop_spot_pos_y_amp", loop_y, "amp"))
+    for axis_gen in [loop_x, loop_y]:
+        params.append(
+            OSCParam(
+                osc,
+                "/{}_samples".format(axis_gen.name),
+                lambda g=axis_gen: g.samples,
+                lambda _, *args, g=axis_gen: g.load_samples(
+                    list(args[0])
+                    if len(args) == 1 and isinstance(args[0], (list, tuple))
+                    else list(args)
+                ),
+            )
+        )
+
     return params
+
+
+def _handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:
+    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+        x, y = args[0][0], args[0][1]
+    else:
+        x, y = args[0], args[1]
+    loop_x.input_value = x
+    loop_y.input_value = y
+    loop_x.record_sample(x)
+    loop_y.record_sample(y)

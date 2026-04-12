@@ -4,5 +4,6 @@ from .impulse_generator import *
 from .wave_generator import *
 from .noise_generator import *
 from .bpm_generator import *
+from .loop_generator import *
 from .chanmap import *
 from .mixer import *

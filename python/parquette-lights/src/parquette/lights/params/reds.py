@@ -1,8 +1,16 @@
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from ..generators import SignalPatchParam
 from ..osc import OSCParam
 from .deps import ParamDeps
+
+if TYPE_CHECKING:
+    from ..generators.loop_generator import LoopGenerator
+
+
+def _handle_loop_input(gen: "LoopGenerator", value: float) -> None:
+    gen.input_value = value
+    gen.record_sample(value)
 
 
 def build(deps: ParamDeps) -> List[OSCParam]:
@@ -10,6 +18,7 @@ def build(deps: ParamDeps) -> List[OSCParam]:
     sin_reds = deps.sin_reds
     mixer = deps.mixer
     bpm_red = deps.bpm_red
+    loop_reds = deps.loop_reds
 
     return [
         SignalPatchParam(
@@ -41,4 +50,22 @@ def build(deps: ParamDeps) -> List[OSCParam]:
         OSCParam.bind(osc, "/bpm_red_lpf_alpha", bpm_red, "lpf_alpha"),
         OSCParam.bind(osc, "/bpm_red_amp", bpm_red, "amp"),
         OSCParam.bind(osc, "/bpm_red_manual_offset", bpm_red, "manual_offset"),
+        # Loop generator for reds
+        OSCParam(
+            osc,
+            "/loop_reds_input",
+            lambda: loop_reds.input_value,
+            lambda _, args: _handle_loop_input(loop_reds, args),
+        ),
+        OSCParam.bind(osc, "/loop_reds_amp", loop_reds, "amp"),
+        OSCParam(
+            osc,
+            "/loop_reds_samples",
+            lambda: loop_reds.samples,
+            lambda _, *args: loop_reds.load_samples(
+                list(args[0])
+                if len(args) == 1 and isinstance(args[0], (list, tuple))
+                else list(args)
+            ),
+        ),
     ]
