@@ -38,7 +38,10 @@ class ParamDeps:
     sin_booth: WaveGenerator
     sin_wash: WaveGenerator
     sin_spot: WaveGenerator
-    sin_spot_pos: WaveGenerator
+    sin_spot_pos_1: WaveGenerator
+    sin_spot_pos_2: WaveGenerator
+    sin_spot_pos_3: WaveGenerator
+    sin_spot_pos_4: WaveGenerator
     sq1: WaveGenerator
     sq2: WaveGenerator
     sq3: WaveGenerator

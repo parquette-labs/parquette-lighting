@@ -385,8 +385,32 @@ def run(
         offset=0,
         shape=WaveGenerator.Shape.SIN,
     )
-    sin_spot_pos = WaveGenerator(
-        name="sin_spot_pos",
+    sin_spot_pos_1 = WaveGenerator(
+        name="sin_spot_pos_1",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_spot_pos_2 = WaveGenerator(
+        name="sin_spot_pos_2",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_spot_pos_3 = WaveGenerator(
+        name="sin_spot_pos_3",
+        amp=initialAmp,
+        period=initialPeriod,
+        phase=0,
+        offset=0,
+        shape=WaveGenerator.Shape.SIN,
+    )
+    sin_spot_pos_4 = WaveGenerator(
+        name="sin_spot_pos_4",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -443,7 +467,10 @@ def run(
         sin_booth,
         sin_wash,
         sin_spot,
-        sin_spot_pos,
+        sin_spot_pos_1,
+        sin_spot_pos_2,
+        sin_spot_pos_3,
+        sin_spot_pos_4,
         sq1,
         sq2,
         sq3,
@@ -527,7 +554,10 @@ def run(
         sin_booth=sin_booth,
         sin_wash=sin_wash,
         sin_spot=sin_spot,
-        sin_spot_pos=sin_spot_pos,
+        sin_spot_pos_1=sin_spot_pos_1,
+        sin_spot_pos_2=sin_spot_pos_2,
+        sin_spot_pos_3=sin_spot_pos_3,
+        sin_spot_pos_4=sin_spot_pos_4,
         sq1=sq1,
         sq2=sq2,
         sq3=sq3,
@@ -553,13 +583,17 @@ def run(
 
     exposed_params = build_exposed_params(deps)
 
-    def make_snap_handler(gens, period_addr, bpm_gen):
+    def make_snap_handler(gens, period_addrs, bpm_gen):
+        if isinstance(period_addrs, str):
+            period_addrs = [period_addrs]
+
         def handler():
             if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:
                 period = bpm_gen.current_period()
                 for gen in gens:
                     gen.period = period
-                osc.send_osc(period_addr, period)
+                for addr in period_addrs:
+                    osc.send_osc(addr, period)
 
         return handler
 
@@ -682,7 +716,14 @@ def run(
     osc.dispatcher.map(
         "/snap_sin_spot_pos_to_bpm",
         lambda addr, *args: make_snap_handler(
-            [sin_spot_pos], "/sin_spot_pos_period", bpm_red
+            [sin_spot_pos_1, sin_spot_pos_2, sin_spot_pos_3, sin_spot_pos_4],
+            [
+                "/sin_spot_pos_1_period",
+                "/sin_spot_pos_2_period",
+                "/sin_spot_pos_3_period",
+                "/sin_spot_pos_4_period",
+            ],
+            bpm_red,
         )(),
     )
 

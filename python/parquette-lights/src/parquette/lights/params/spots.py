@@ -78,7 +78,12 @@ def build_lights(deps: ParamDeps) -> List[OSCParam]:
 
 def build_position(deps: ParamDeps) -> List[OSCParam]:
     osc = deps.osc
-    sin_spot_pos = deps.sin_spot_pos
+    spot_pos_gens = [
+        deps.sin_spot_pos_1,
+        deps.sin_spot_pos_2,
+        deps.sin_spot_pos_3,
+        deps.sin_spot_pos_4,
+    ]
 
     # Build the list of pan/tilt channel names from spotlights
     pos_chan_names = []
@@ -93,9 +98,12 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
             pos_chan_names,
             deps.mixer,
         ),
-        OSCParam.bind(osc, "/sin_spot_pos_amp", sin_spot_pos, "amp"),
-        OSCParam.bind(osc, "/sin_spot_pos_period", sin_spot_pos, "period"),
     ]
+    for i, gen in enumerate(spot_pos_gens, start=1):
+        params.append(OSCParam.bind(osc, "/sin_spot_pos_{}_amp".format(i), gen, "amp"))
+        params.append(
+            OSCParam.bind(osc, "/sin_spot_pos_{}_period".format(i), gen, "period")
+        )
 
     for i, fixture in enumerate(deps.spotlights):
         params.append(
