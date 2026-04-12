@@ -471,11 +471,17 @@ def run(
     bpm_wash = BPMGenerator(name="bpm_wash", amp=255, offset=0, duty=100)
 
     loop_reds = LoopGenerator(name="loop_reds", max_samples=loop_max_samples)
-    loop_spot_pos_x = LoopGenerator(
-        name="loop_spot_pos_x", max_samples=loop_max_samples
+    loop_spot_pos_1_x = LoopGenerator(
+        name="loop_spot_pos_1_x", max_samples=loop_max_samples
     )
-    loop_spot_pos_y = LoopGenerator(
-        name="loop_spot_pos_y", max_samples=loop_max_samples
+    loop_spot_pos_1_y = LoopGenerator(
+        name="loop_spot_pos_1_y", max_samples=loop_max_samples
+    )
+    loop_spot_pos_2_x = LoopGenerator(
+        name="loop_spot_pos_2_x", max_samples=loop_max_samples
+    )
+    loop_spot_pos_2_y = LoopGenerator(
+        name="loop_spot_pos_2_y", max_samples=loop_max_samples
     )
 
     generators = [
@@ -497,8 +503,10 @@ def run(
         bpm_red,
         bpm_wash,
         loop_reds,
-        loop_spot_pos_x,
-        loop_spot_pos_y,
+        loop_spot_pos_1_x,
+        loop_spot_pos_1_y,
+        loop_spot_pos_2_x,
+        loop_spot_pos_2_y,
     ]
 
     fft_manager.downstream = [fft1, fft2]
@@ -600,8 +608,10 @@ def run(
         spotlights=spotlights,
         set_dmx_passthrough=set_dmx_passthrough,
         loop_reds=loop_reds,
-        loop_spot_pos_x=loop_spot_pos_x,
-        loop_spot_pos_y=loop_spot_pos_y,
+        loop_spot_pos_1_x=loop_spot_pos_1_x,
+        loop_spot_pos_1_y=loop_spot_pos_1_y,
+        loop_spot_pos_2_x=loop_spot_pos_2_x,
+        loop_spot_pos_2_y=loop_spot_pos_2_y,
         loop_max_samples=loop_max_samples,
     )
 
@@ -757,14 +767,20 @@ def run(
         lambda addr, *args: loop_reds.set_recording(bool(args[0])),
     )
 
-    # pylint: disable-next=unused-argument
-    def loop_spot_pos_record(addr: str, *args: Any) -> None:
-        active = bool(args[0])
-        ts = time.time() * 1000
-        loop_spot_pos_x.set_recording(active, ts)
-        loop_spot_pos_y.set_recording(active, ts)
-
-    osc.dispatcher.map("/loop_spot_pos_record", loop_spot_pos_record)
+    for i, (lx, ly) in enumerate(
+        [
+            (loop_spot_pos_1_x, loop_spot_pos_1_y),
+            (loop_spot_pos_2_x, loop_spot_pos_2_y),
+        ],
+        start=1,
+    ):
+        osc.dispatcher.map(
+            "/loop_spot_pos_{}_record".format(i),
+            lambda addr, *args, gx=lx, gy=ly: (
+                gx.set_recording(bool(args[0]), time.time() * 1000),
+                gy.set_recording(bool(args[0]), time.time() * 1000),
+            ),
+        )
 
     client_tracker = ClientTracker(osc)
     client_tracker.start()

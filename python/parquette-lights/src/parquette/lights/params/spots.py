@@ -120,32 +120,41 @@ def build_position(deps: ParamDeps) -> List[OSCParam]:
             )
         )
 
-    # Loop generators for spot position (XY pair)
-    loop_x = deps.loop_spot_pos_x
-    loop_y = deps.loop_spot_pos_y
-    params.append(
-        OSCParam(
-            osc,
-            "/loop_spot_pos_input",
-            lambda: [loop_x.input_value, loop_y.input_value],
-            lambda _, *args: _handle_xy_loop_input(loop_x, loop_y, args),
-        )
-    )
-    params.append(OSCParam.bind(osc, "/loop_spot_pos_x_amp", loop_x, "amp"))
-    params.append(OSCParam.bind(osc, "/loop_spot_pos_y_amp", loop_y, "amp"))
-    for axis_gen in [loop_x, loop_y]:
+    # Loop generators for spot position (XY pairs)
+    loop_pairs = [
+        (deps.loop_spot_pos_1_x, deps.loop_spot_pos_1_y, 1),
+        (deps.loop_spot_pos_2_x, deps.loop_spot_pos_2_y, 2),
+    ]
+    for loop_x, loop_y, idx in loop_pairs:
         params.append(
             OSCParam(
                 osc,
-                "/{}_samples".format(axis_gen.name),
-                lambda g=axis_gen: g.samples,
-                lambda _, *args, g=axis_gen: g.load_samples(
-                    list(args[0])
-                    if len(args) == 1 and isinstance(args[0], (list, tuple))
-                    else list(args)
+                "/loop_spot_pos_{}_input".format(idx),
+                lambda lx=loop_x, ly=loop_y: [lx.input_value, ly.input_value],
+                lambda _, *args, lx=loop_x, ly=loop_y: _handle_xy_loop_input(
+                    lx, ly, args
                 ),
             )
         )
+        params.append(
+            OSCParam.bind(osc, "/loop_spot_pos_{}_x_amp".format(idx), loop_x, "amp")
+        )
+        params.append(
+            OSCParam.bind(osc, "/loop_spot_pos_{}_y_amp".format(idx), loop_y, "amp")
+        )
+        for axis_gen in [loop_x, loop_y]:
+            params.append(
+                OSCParam(
+                    osc,
+                    "/{}_samples".format(axis_gen.name),
+                    lambda g=axis_gen: g.samples,
+                    lambda _, *args, g=axis_gen: g.load_samples(
+                        list(args[0])
+                        if len(args) == 1 and isinstance(args[0], (list, tuple))
+                        else list(args)
+                    ),
+                )
+            )
 
     return params
 

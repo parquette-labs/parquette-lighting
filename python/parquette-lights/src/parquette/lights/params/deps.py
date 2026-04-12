@@ -52,8 +52,10 @@ class ParamDeps:
     bpm_wash: BPMGenerator
 
     loop_reds: LoopGenerator
-    loop_spot_pos_x: LoopGenerator
-    loop_spot_pos_y: LoopGenerator
+    loop_spot_pos_1_x: LoopGenerator
+    loop_spot_pos_1_y: LoopGenerator
+    loop_spot_pos_2_x: LoopGenerator
+    loop_spot_pos_2_y: LoopGenerator
     loop_max_samples: int
 
     hazer: RadianceHazer
