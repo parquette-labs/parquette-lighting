@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Dict, List
 
 from ..dmx import DMXManager
 from ..generators.mixer import Mixer
@@ -12,22 +12,15 @@ class NonSavedBuilder(ParamGeneratorBuilder):
         self,
         dmx: DMXManager,
         session: SessionStore,
-        set_dmx_passthrough: Callable[[Any], None],
     ) -> None:
         self.dmx = dmx
         self.session = session
-        self.set_dmx_passthrough = set_dmx_passthrough
 
     def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
         return {
             "non-saved": [
                 # Non-generator infrastructure params
-                OSCParam(
-                    osc,
-                    "/dmx_passthrough",
-                    lambda: self.dmx.passthrough,
-                    lambda _addr, args: self.set_dmx_passthrough(args),
-                ),
+                OSCParam.bind(osc, "/dmx_passthrough", self.dmx, "passthrough"),
                 OSCParam.bind(
                     osc,
                     "/reds_master",

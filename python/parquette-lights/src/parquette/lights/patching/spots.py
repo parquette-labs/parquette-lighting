@@ -3,17 +3,18 @@ from typing import Any, Dict, List
 from ..generators import SignalPatchParam, WaveGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
+from ..fixtures.basics import Fixture
 from ..fixtures.spotlights import Spot
 from ..osc import OSCManager, OSCParam
 from .builder import ParamGeneratorBuilder
 
 
 class SpotsBuilder(ParamGeneratorBuilder):
-    def __init__(self, spotlights: List[Spot], loop_max_samples: int) -> None:
+    def __init__(self, all_fixtures: List[Fixture], loop_max_samples: int) -> None:
         initial_amp: float = 200
         initial_period: int = 3500
 
-        self.spotlights = spotlights
+        self.spotlights = [f for f in all_fixtures if isinstance(f, Spot)]
 
         self.sin_spot = WaveGenerator(
             name="sin_spot",

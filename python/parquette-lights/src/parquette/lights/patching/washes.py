@@ -1,26 +1,26 @@
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
-from ..fixtures.basics import RGBWLight
+from ..fixtures.basics import Fixture, RGBLight, RGBWLight
 from ..osc import OSCManager, OSCParam
 from .builder import ParamGeneratorBuilder
 
 
 class WashesBuilder(ParamGeneratorBuilder):
-    def __init__(
-        self,
-        washceilf: RGBWLight,
-        washceilr: RGBWLight,
-        all_washes: List[Any],
-    ) -> None:
+    def __init__(self, all_fixtures: List[Fixture]) -> None:
         initial_amp: float = 200
         initial_period: int = 3500
 
-        self.washceilf = washceilf
-        self.washceilr = washceilr
-        self.all_washes = all_washes
+        self.all_washes: list[RGBLight] = [
+            f
+            for f in all_fixtures
+            if f.category == "washes" and isinstance(f, RGBLight)
+        ]
+        rgbw_washes = [f for f in self.all_washes if isinstance(f, RGBWLight)]
+        self.washceilf = rgbw_washes[0]
+        self.washceilr = rgbw_washes[1]
 
         self.sin_wash = WaveGenerator(
             name="sin_wash",

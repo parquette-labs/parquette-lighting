@@ -18,7 +18,7 @@ from .chanmap import (
 )
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
-from ..fixtures import LightFixture
+from ..fixtures.basics import Fixture
 
 
 class Mixer(object):
@@ -97,7 +97,7 @@ class Mixer(object):
         osc: OSCManager,
         dmx: DMXManager,
         generators: List[Generator],
-        fixtures: List[LightFixture],
+        fixtures: List[Fixture],
         history_len: float,
         debug: bool = False,
     ) -> None:

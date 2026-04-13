@@ -1,12 +1,9 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import sys
 import time
 
 import click
-
-from .fixtures import LightFixture, RGBWLight, RGBLight, YRXY200Spot, Spot
-from .fixtures.hazers import RadianceHazer
 
 from .generators import LoopGenerator, Mixer
 from .audio_analysis import FFTManager, AudioCapture
@@ -14,6 +11,7 @@ from .audio_analysis import FFTManager, AudioCapture
 from .osc import OSCManager
 from .dmx import DMXManager
 from .patching import create_builders
+from .patching.fixtures import create_fixtures
 from .patching.audio import AudioBuilder
 from .patching.booth import BoothBuilder
 from .patching.plants import PlantsBuilder
@@ -210,119 +208,13 @@ def run(
     if entec_auto is not None:
         dmx.setup_dmx(entec_auto)
 
-    dimmers: List[LightFixture] = [
-        LightFixture(name="left_1", category="reds", dmx=dmx, addr=4, osc=osc),
-        LightFixture(name="left_2", category="reds", dmx=dmx, addr=3, osc=osc),
-        LightFixture(name="left_3", category="reds", dmx=dmx, addr=2, osc=osc),
-        LightFixture(name="left_4", category="reds", dmx=dmx, addr=1, osc=osc),
-        LightFixture(name="right_1", category="reds", dmx=dmx, addr=5, osc=osc),
-        LightFixture(name="right_2", category="reds", dmx=dmx, addr=6, osc=osc),
-        LightFixture(name="right_3", category="reds", dmx=dmx, addr=7, osc=osc),
-        LightFixture(name="right_4", category="reds", dmx=dmx, addr=8, osc=osc),
-        LightFixture(name="front_1", category="reds", dmx=dmx, addr=12, osc=osc),
-        LightFixture(name="front_2", category="reds", dmx=dmx, addr=9, osc=osc),
-        LightFixture(name="under_1", category="booth", dmx=dmx, addr=10, osc=osc),
-        LightFixture(name="under_2", category="booth", dmx=dmx, addr=11, osc=osc),
-        LightFixture(name="ceil_1", category="plants", dmx=dmx, addr=18, osc=osc),
-        LightFixture(name="ceil_2", category="plants", dmx=dmx, addr=19, osc=osc),
-        LightFixture(name="ceil_3", category="plants", dmx=dmx, addr=17, osc=osc),
-    ]
-
-    # Spots
-    tung_spot = LightFixture(
-        name="tung_spot", category="spots_light", dmx=dmx, addr=13, osc=osc
-    )
-
-    front_spot = YRXY200Spot(
-        name="spot_1",
-        category="spots_light",
-        position_category="spots_position",
+    all_fixtures = create_fixtures(
         dmx=dmx,
-        addr=21,
         osc=osc,
+        spot_color_fade=spot_color_fade,
+        spot_mechanical_time=spot_mechanical_time,
+        debug_hazer=debug_hazer,
     )
-    front_spot.dimming(255)
-    front_spot.strobe(False)
-    # front_spot.shutter(False)
-    front_spot.color(0)
-    front_spot.no_pattern()
-    front_spot.prisim(False)
-    front_spot.colorful(False)
-    front_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    front_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    front_spot.scene_speed(0)
-    front_spot.pan(0)
-    front_spot.tilt(0)
-
-    back_spot = YRXY200Spot(
-        name="spot_2",
-        category="spots_light",
-        position_category="spots_position",
-        dmx=dmx,
-        addr=200,
-        osc=osc,
-    )
-    back_spot.dimming(255)
-    back_spot.strobe(False)
-    # back_spot.shutter(False)
-    back_spot.color(0)
-    back_spot.no_pattern()
-    back_spot.prisim(False)
-    back_spot.colorful(False)
-    back_spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
-    back_spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
-    back_spot.scene_speed(0)
-    back_spot.pan(0)
-    back_spot.tilt(0)
-
-    spotlights: List[Spot] = [front_spot, back_spot]
-
-    for spot in spotlights:
-        spot.color_swap_fade_time = spot_color_fade
-        spot.color_swap_mechanical_time = spot_mechanical_time
-
-    # Washes
-    washfl = RGBLight(name="wash_fl", category="washes", dmx=dmx, addr=104, osc=osc)
-    washfl.rgb(0, 0, 0)
-
-    washfr = RGBLight(name="wash_fr", category="washes", dmx=dmx, addr=107, osc=osc)
-    washfr.rgb(0, 0, 0)
-
-    washml = RGBLight(name="wash_ml", category="washes", dmx=dmx, addr=110, osc=osc)
-    washml.rgb(0, 0, 0)
-
-    washmr = RGBLight(name="wash_mr", category="washes", dmx=dmx, addr=113, osc=osc)
-    washmr.rgb(0, 0, 0)
-
-    washbl = RGBLight(name="wash_bl", category="washes", dmx=dmx, addr=120, osc=osc)
-    washbl.rgb(0, 0, 0)
-
-    washbr = RGBLight(name="wash_br", category="washes", dmx=dmx, addr=123, osc=osc)
-    washbr.rgb(0, 0, 0)
-
-    washceilf = RGBWLight(
-        name="wash_ceil_f", category="washes", dmx=dmx, addr=100, osc=osc
-    )
-    washceilf.rgbw(0, 0, 0, 0)
-
-    washceilr = RGBWLight(
-        name="wash_ceil_r", category="washes", dmx=dmx, addr=116, osc=osc
-    )
-    washceilr.rgbw(0, 0, 0, 0)
-
-    washes = [washfl, washfr, washml, washmr, washbl, washbr, washceilf, washceilr]
-
-    # Sodium
-    sodium = LightFixture(
-        name="sodium", category="non-saved", dmx=dmx, addr=20, osc=osc
-    )
-
-    # All fixtures in mixer order
-    fixtures: List[LightFixture] = (
-        dimmers + [tung_spot] + spotlights + washes + [sodium]
-    )
-
-    hazer = RadianceHazer(dmx, addr=250, debug=debug_hazer)
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     audio_capture.dmx = dmx
@@ -341,29 +233,12 @@ def run(
 
     session = SessionStore(session_file)
 
-    def set_dmx_passthrough(value: Any) -> None:
-        if isinstance(value, (list, tuple)):
-            value = value[0] if value else 0
-        enabled = bool(value)
-        dmx.passthrough = enabled
-        if not enabled:
-            # Safety: ensure capture/FFT threads are running after we leave passthrough.
-            if audio_capture.audio_thread is None or not audio_capture.audio_running:
-                audio_capture.start_audio()
-            if fft_manager.fft_thread is None or not fft_manager.fft_running:
-                fft_manager.start_fft()
-
     # Create all patching builders — generators are instantiated in constructors
     builders = create_builders(
+        all_fixtures=all_fixtures,
         fft_manager=fft_manager,
         dmx=dmx,
         session=session,
-        hazer_fixture=hazer,
-        washceilf=washceilf,
-        washceilr=washceilr,
-        all_washes=washes,
-        spotlights=spotlights,
-        set_dmx_passthrough=set_dmx_passthrough,
         loop_max_samples=loop_max_samples,
     )
 
@@ -423,13 +298,13 @@ def run(
         osc=osc,
         dmx=dmx,
         generators=generators,
-        fixtures=fixtures,
+        fixtures=all_fixtures,
         history_len=666 * 6,
         debug=debug,
     )
 
     # Build all params from builders
-    exposed_params: dict[str, list] = {"fft": []}
+    exposed_params: dict[str, list] = {}
     for b in builders:
         for category, params in b.build_params(osc, mixer).items():
             exposed_params.setdefault(category, []).extend(params)
@@ -477,7 +352,7 @@ def run(
 
     def house_lights():
         if dmx.passthrough:
-            set_dmx_passthrough(False)
+            dmx.passthrough = False
 
         mixer.reds_master = 1
         mixer.spots_master = 0
@@ -499,7 +374,7 @@ def run(
         mixer.channel_lookup["sodium.dimming"].offset = 0
 
         if dmx.passthrough:
-            set_dmx_passthrough(False)
+            dmx.passthrough = False
 
         presets.select_all("Class")
 
@@ -521,12 +396,6 @@ def run(
         "/impulse_punch",
         lambda addr, *args: strobes_b.impulse.punch(),
     )
-
-    def reset_spots(reset: bool) -> None:
-        for spot in spotlights:
-            spot.reset(reset)
-
-    osc.dispatcher.map("/reset_spots", lambda addr, args: reset_spots(args))
 
     # Snap-to-BPM action buttons. These are momentary actions, not state, so
     # they're registered directly on the dispatcher (not as OSCParams) and
@@ -648,6 +517,8 @@ def run(
     print("Sync front end", flush=True)
     presets.sync()
 
+    runnable_fixtures = [f for f in all_fixtures if f.runnable]
+
     print("Start compute loop", flush=True)
     try:
         while True:
@@ -656,7 +527,8 @@ def run(
             else:
                 mixer.runChannelMix()
                 mixer.runOutputMix()
-                hazer.tick()
+                for f in runnable_fixtures:
+                    f.run()
                 mixer.updateDMX()
             time.sleep(0.01)
 

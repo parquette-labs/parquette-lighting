@@ -46,6 +46,11 @@ class Spot(LightFixture):
         )
         self.position_category = position_category
 
+        if self.osc is not None:
+            self.osc.dispatcher.map(
+                "/reset_spots", lambda addr, args, s=self: s.reset(args)
+            )
+
         self._pan: DMXValue = 0
         self._tilt: DMXValue = 0
         self._pan_fine: DMXValue = 0

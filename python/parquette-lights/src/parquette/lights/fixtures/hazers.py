@@ -1,17 +1,27 @@
 import time
+from typing import Optional
 
-from parquette.lights.dmx import DMXManager, DMXValue
+from ..dmx import DMXManager, DMXValue
+from ..osc import OSCManager
+from .basics import Fixture
 
 
-class RadianceHazer(object):
-    def __init__(self, dmx: DMXManager, addr: int, *, debug: bool = False):
-        self.dmx = dmx
-        self.addr = addr
-
+class RadianceHazer(Fixture):
+    def __init__(
+        self,
+        *,
+        name: str,
+        category: str,
+        dmx: DMXManager,
+        addr: int,
+        osc: Optional[OSCManager] = None,
+        debug: bool = False,
+    ):
+        super().__init__(
+            name=name, category=category, dmx=dmx, addr=addr, num_chans=2, osc=osc
+        )
+        self.runnable = True
         self.debug = debug
-
-        self._output: DMXValue = 0
-        self._fan: DMXValue = 0
 
         self.target_output: DMXValue = 0
         self.target_fan: DMXValue = 0
@@ -19,7 +29,7 @@ class RadianceHazer(object):
         self.interval: float = 0.0
         self.duration: float = 0.0
 
-    def tick(self) -> None:
+    def run(self) -> None:
         now = time.monotonic()
 
         if self.duration <= 0:
@@ -30,11 +40,9 @@ class RadianceHazer(object):
             on = (now % self.interval) < self.duration
 
         if on:
-            self.output = self.target_output
-            self.fan = self.target_fan
+            self.set([self.target_output, self.target_fan])
         else:
-            self.output = 0
-            self.fan = 0
+            self.set([0, 0])
 
         if self.debug:
             print(
@@ -42,21 +50,3 @@ class RadianceHazer(object):
                     self.dmx.chans[self.addr - 1 : self.addr + 1],
                 )
             )
-
-    @property
-    def output(self) -> DMXValue:
-        return self._output
-
-    @output.setter
-    def output(self, val: DMXValue) -> None:
-        self._output = val
-        self.dmx.set_channel(self.addr, val)
-
-    @property
-    def fan(self) -> DMXValue:
-        return self._fan
-
-    @fan.setter
-    def fan(self, val: DMXValue) -> None:
-        self._fan = val
-        self.dmx.set_channel(self.addr + 1, val)

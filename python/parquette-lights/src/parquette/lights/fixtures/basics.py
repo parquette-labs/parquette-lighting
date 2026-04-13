@@ -55,7 +55,14 @@ class Fixture(object):
         self.num_chans = num_chans
         self.category = category
         self.osc = osc
+        self.runnable: bool = False
         self.wrapped_targets: List[MixTarget] = []
+
+    def run(self) -> None:
+        pass
+
+    def send_visualizer(self) -> None:
+        pass
 
     def set_mix_targets(self, *targets: Callable[[int], None]) -> None:
         self.wrapped_targets = [
