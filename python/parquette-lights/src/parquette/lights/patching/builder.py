@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List
 
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -17,8 +17,6 @@ class ParamGeneratorBuilder:
         return []
 
     # pylint: disable=unused-argument
-    def build_params(
-        self, osc: OSCManager, mixer: Mixer
-    ) -> List[Tuple[str, List[OSCParam]]]:
-        """Return list of (category_key, params) tuples."""
-        return []
+    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        """Return a dict mapping category keys to their OSCParam lists."""
+        return {}

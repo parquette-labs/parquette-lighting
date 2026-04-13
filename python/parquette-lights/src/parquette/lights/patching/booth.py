@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List
 
 from ..generators import SignalPatchParam, WaveGenerator
 from ..generators.generator import Generator
@@ -25,23 +25,18 @@ class BoothBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.sin_booth]
 
-    def build_params(
-        self, osc: OSCManager, mixer: Mixer
-    ) -> List[Tuple[str, List[OSCParam]]]:
-        return [
-            (
-                "booth",
-                [
-                    # Patch params
-                    SignalPatchParam(
-                        osc,
-                        "/signal_patchbay/booth",
-                        ["under_1.dimming", "under_2.dimming"],
-                        mixer,
-                    ),
-                    # Generator params
-                    OSCParam.bind(osc, "/sin_booth_amp", self.sin_booth, "amp"),
-                    OSCParam.bind(osc, "/sin_booth_period", self.sin_booth, "period"),
-                ],
-            )
-        ]
+    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        return {
+            "booth": [
+                # Patch params
+                SignalPatchParam(
+                    osc,
+                    "/signal_patchbay/booth",
+                    ["under_1.dimming", "under_2.dimming"],
+                    mixer,
+                ),
+                # Generator params
+                OSCParam.bind(osc, "/sin_booth_amp", self.sin_booth, "amp"),
+                OSCParam.bind(osc, "/sin_booth_period", self.sin_booth, "period"),
+            ]
+        }

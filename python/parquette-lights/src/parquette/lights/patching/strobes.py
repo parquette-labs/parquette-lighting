@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List
 
 from ..generators import ImpulseGenerator
 from ..generators.generator import Generator
@@ -16,16 +16,11 @@ class StrobesBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.impulse]
 
-    def build_params(
-        self, osc: OSCManager, mixer: Mixer
-    ) -> List[Tuple[str, List[OSCParam]]]:
-        return [
-            (
-                "strobes",
-                [
-                    # Generator params
-                    OSCParam.bind(osc, "/impulse_amp", self.impulse, "amp"),
-                    OSCParam.bind(osc, "/impulse_duty", self.impulse, "duty"),
-                ],
-            )
-        ]
+    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        return {
+            "strobes": [
+                # Generator params
+                OSCParam.bind(osc, "/impulse_amp", self.impulse, "amp"),
+                OSCParam.bind(osc, "/impulse_duty", self.impulse, "duty"),
+            ]
+        }

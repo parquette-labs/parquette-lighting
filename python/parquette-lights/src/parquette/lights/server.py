@@ -431,7 +431,7 @@ def run(
     # Build all params from builders
     exposed_params: dict[str, list] = {"fft": []}
     for b in builders:
-        for category, params in b.build_params(osc, mixer):
+        for category, params in b.build_params(osc, mixer).items():
             exposed_params.setdefault(category, []).extend(params)
 
     def make_snap_handler(gens, period_addrs, bpm_gen):

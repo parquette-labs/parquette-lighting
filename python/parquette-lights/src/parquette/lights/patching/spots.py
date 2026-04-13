@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, Dict, List
 
 from ..generators import SignalPatchParam, WaveGenerator, LoopGenerator
 from ..generators.generator import Generator
@@ -95,9 +95,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         ]
 
     # pylint: disable=protected-access
-    def build_params(
-        self, osc: OSCManager, mixer: Mixer
-    ) -> List[Tuple[str, List[OSCParam]]]:
+    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
         light_params: List[OSCParam] = [
             # Patch params
             SignalPatchParam(
@@ -244,7 +242,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
                     )
                 )
 
-        return [("spots_light", light_params), ("spots_position", pos_params)]
+        return {"spots_light": light_params, "spots_position": pos_params}
 
 
 def _handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:

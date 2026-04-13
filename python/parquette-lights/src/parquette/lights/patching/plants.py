@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List
 
 from ..generators import SignalPatchParam, WaveGenerator
 from ..generators.generator import Generator
@@ -55,37 +55,32 @@ class PlantsBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.sin_plants, self.sq1, self.sq2, self.sq3]
 
-    def build_params(
-        self, osc: OSCManager, mixer: Mixer
-    ) -> List[Tuple[str, List[OSCParam]]]:
-        return [
-            (
-                "plants",
-                [
-                    # Patch params
-                    SignalPatchParam(
-                        osc,
-                        "/signal_patchbay/plants",
-                        ["ceil_1.dimming", "ceil_2.dimming", "ceil_3.dimming"],
-                        mixer,
-                    ),
-                    # Generator params
-                    OSCParam.bind(osc, "/sin_plants_amp", self.sin_plants, "amp"),
-                    OSCParam.bind(osc, "/sin_plants_period", self.sin_plants, "period"),
-                    OSCParam.bind(
-                        osc,
-                        "/sq_amp",
-                        self.sq1,
-                        "amp",
-                        extra=[self.sq2, self.sq3],
-                    ),
-                    OSCParam.bind(
-                        osc,
-                        "/sq_period",
-                        self.sq1,
-                        "period",
-                        extra=[self.sq2, self.sq3],
-                    ),
-                ],
-            )
-        ]
+    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        return {
+            "plants": [
+                # Patch params
+                SignalPatchParam(
+                    osc,
+                    "/signal_patchbay/plants",
+                    ["ceil_1.dimming", "ceil_2.dimming", "ceil_3.dimming"],
+                    mixer,
+                ),
+                # Generator params
+                OSCParam.bind(osc, "/sin_plants_amp", self.sin_plants, "amp"),
+                OSCParam.bind(osc, "/sin_plants_period", self.sin_plants, "period"),
+                OSCParam.bind(
+                    osc,
+                    "/sq_amp",
+                    self.sq1,
+                    "amp",
+                    extra=[self.sq2, self.sq3],
+                ),
+                OSCParam.bind(
+                    osc,
+                    "/sq_period",
+                    self.sq1,
+                    "period",
+                    extra=[self.sq2, self.sq3],
+                ),
+            ]
+        }
