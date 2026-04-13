@@ -33,6 +33,7 @@ class WaveGenerator(Generator):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 0.5,
         period: float = 1000,
         phase: float = 0,
@@ -40,7 +41,14 @@ class WaveGenerator(Generator):
         shape: Shape = Shape.SIN,
         duty: float = 0.5,
     ):
-        super().__init__(name=name, amp=amp, offset=offset, period=period, phase=phase)
+        super().__init__(
+            name=name,
+            category=category,
+            amp=amp,
+            offset=offset,
+            period=period,
+            phase=phase,
+        )
 
         if not isinstance(shape, self.Shape):
             raise TypeError("Shape Enum not provided")

@@ -345,6 +345,7 @@ def run(
 
     sin_reds = WaveGenerator(
         name="sin_red",
+        category="reds",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -353,6 +354,7 @@ def run(
     )
     sin_plants = WaveGenerator(
         name="sin_plants",
+        category="plants",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -361,6 +363,7 @@ def run(
     )
     sin_booth = WaveGenerator(
         name="sin_booth",
+        category="booth",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -369,6 +372,7 @@ def run(
     )
     sin_wash = WaveGenerator(
         name="sin_wash",
+        category="washes",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -377,6 +381,7 @@ def run(
     )
     sin_spot = WaveGenerator(
         name="sin_spot",
+        category="spots_light",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -385,6 +390,7 @@ def run(
     )
     sin_spot_pos_1 = WaveGenerator(
         name="sin_spot_pos_1",
+        category="spots_position",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -393,6 +399,7 @@ def run(
     )
     sin_spot_pos_2 = WaveGenerator(
         name="sin_spot_pos_2",
+        category="spots_position",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -401,6 +408,7 @@ def run(
     )
     sin_spot_pos_3 = WaveGenerator(
         name="sin_spot_pos_3",
+        category="spots_position",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -409,6 +417,7 @@ def run(
     )
     sin_spot_pos_4 = WaveGenerator(
         name="sin_spot_pos_4",
+        category="spots_position",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -418,6 +427,7 @@ def run(
 
     sq1 = WaveGenerator(
         name="sq_1",
+        category="plants",
         amp=initialAmp,
         period=initialPeriod,
         phase=0,
@@ -428,6 +438,7 @@ def run(
 
     sq2 = WaveGenerator(
         name="sq_2",
+        category="plants",
         amp=initialAmp,
         period=initialPeriod,
         phase=476,
@@ -438,6 +449,7 @@ def run(
 
     sq3 = WaveGenerator(
         name="sq_3",
+        category="plants",
         amp=initialAmp,
         period=initialPeriod,
         phase=335,
@@ -448,29 +460,56 @@ def run(
 
     impulse = ImpulseGenerator(
         name="impulse",
+        category="strobes",
         amp=255,
         offset=0,
         duty=100,
     )
 
-    fft1 = FFTGenerator(name="fft_1", amp=1, offset=0, subdivisions=1, memory_length=20)
-    fft2 = FFTGenerator(name="fft_2", amp=1, offset=0, subdivisions=1, memory_length=20)
+    fft1 = FFTGenerator(
+        name="fft_1",
+        category="audio",
+        amp=1,
+        offset=0,
+        subdivisions=1,
+        memory_length=20,
+    )
+    fft2 = FFTGenerator(
+        name="fft_2",
+        category="audio",
+        amp=1,
+        offset=0,
+        subdivisions=1,
+        memory_length=20,
+    )
 
-    bpm_red = BPMGenerator(name="bpm_red", amp=255, offset=0, duty=100)
-    bpm_wash = BPMGenerator(name="bpm_wash", amp=255, offset=0, duty=100)
+    bpm_red = BPMGenerator(name="bpm_red", category="reds", amp=255, offset=0, duty=100)
+    bpm_wash = BPMGenerator(
+        name="bpm_wash", category="washes", amp=255, offset=0, duty=100
+    )
 
-    loop_reds = LoopGenerator(name="loop_reds", max_samples=loop_max_samples)
+    loop_reds = LoopGenerator(
+        name="loop_reds", category="reds", max_samples=loop_max_samples
+    )
     loop_spot_pos_1_x = LoopGenerator(
-        name="loop_spot_pos_1_x", max_samples=loop_max_samples
+        name="loop_spot_pos_1_x",
+        category="spots_position",
+        max_samples=loop_max_samples,
     )
     loop_spot_pos_1_y = LoopGenerator(
-        name="loop_spot_pos_1_y", max_samples=loop_max_samples
+        name="loop_spot_pos_1_y",
+        category="spots_position",
+        max_samples=loop_max_samples,
     )
     loop_spot_pos_2_x = LoopGenerator(
-        name="loop_spot_pos_2_x", max_samples=loop_max_samples
+        name="loop_spot_pos_2_x",
+        category="spots_position",
+        max_samples=loop_max_samples,
     )
     loop_spot_pos_2_y = LoopGenerator(
-        name="loop_spot_pos_2_y", max_samples=loop_max_samples
+        name="loop_spot_pos_2_y",
+        category="spots_position",
+        max_samples=loop_max_samples,
     )
 
     generators = [

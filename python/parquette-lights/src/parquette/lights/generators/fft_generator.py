@@ -14,13 +14,16 @@ class FFTGenerator(Generator):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 1,
         offset: float = 0.5,
         subdivisions: int = 0,
         memory_length: int = 0,
         lpf_alpha: float = 1.0,
     ):
-        super().__init__(name=name, amp=amp, offset=offset, period=0, phase=0)
+        super().__init__(
+            name=name, category=category, amp=amp, offset=offset, period=0, phase=0
+        )
         self.set_subdivisions_and_memory(subdivisions, memory_length)
 
         self.thres = 0

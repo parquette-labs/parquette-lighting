@@ -16,11 +16,14 @@ class LoopGenerator(Generator):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 1.0,
         offset: float = 0.0,
         max_samples: int = 500,
     ) -> None:
-        super().__init__(name=name, amp=amp, offset=offset, period=1000, phase=0)
+        super().__init__(
+            name=name, category=category, amp=amp, offset=offset, period=1000, phase=0
+        )
         self.max_samples: int = max_samples
         self.samples: List[float] = []
         self.loop_length: int = 0

@@ -10,6 +10,7 @@ class BPMGenerator(Generator):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 1,
         offset: float = 0,
         duty: int = 100,
@@ -17,7 +18,9 @@ class BPMGenerator(Generator):
         offset_time: int = 0,
         lpf_alpha: float = 1.0,
     ):
-        super().__init__(name=name, amp=amp, offset=offset, period=0, phase=0)
+        super().__init__(
+            name=name, category=category, amp=amp, offset=offset, period=0, phase=0
+        )
 
         self.offset_time = offset_time
         self.manual_offset = 0

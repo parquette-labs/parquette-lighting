@@ -10,11 +10,14 @@ class NoiseGenerator(Generator):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 1,
         offset: float = 0,
         period: float = 500,
     ):
-        super().__init__(name=name, amp=amp, offset=offset, period=period, phase=0)
+        super().__init__(
+            name=name, category=category, amp=amp, offset=offset, period=period, phase=0
+        )
 
         self.random_base = random.random()
 

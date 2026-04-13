@@ -29,19 +29,19 @@ class Spot(LightFixture):
         self,
         *,
         name: str,
+        category: str,
+        position_category: str,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str,
-        position_category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
             name=name,
+            category=category,
             dmx=dmx,
             addr=addr,
             num_chans=num_chans,
-            category=category,
             osc=osc,
         )
         self.position_category = position_category
@@ -371,19 +371,19 @@ class YRXY200Spot(Spot):
         self,
         *,
         name: str,
-        dmx: DMXManager,
-        addr: int,
         category: str,
         position_category: str,
+        dmx: DMXManager,
+        addr: int,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
             name=name,
+            category=category,
+            position_category=position_category,
             dmx=dmx,
             addr=addr,
             num_chans=15,
-            category=category,
-            position_category=position_category,
             osc=osc,
         )
 
@@ -858,9 +858,9 @@ class PinSpot(LightFixture):
         self,
         *,
         name: str,
+        category: str,
         dmx: DMXManager,
         addr: int,
-        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(

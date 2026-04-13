@@ -43,10 +43,10 @@ class Fixture(object):
         self,
         *,
         name: str,
+        category: str,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str,
         osc: Optional[OSCManager] = None,
     ):
         self.name = name
@@ -97,10 +97,10 @@ class LightFixture(Fixture):
         self,
         *,
         name: str,
+        category: str,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -134,9 +134,9 @@ class RGBLight(LightFixture):
         self,
         *,
         name: str,
+        category: str,
         dmx: DMXManager,
         addr: int,
-        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -177,9 +177,9 @@ class RGBWLight(LightFixture):
         self,
         *,
         name: str,
+        category: str,
         dmx: DMXManager,
         addr: int,
-        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(

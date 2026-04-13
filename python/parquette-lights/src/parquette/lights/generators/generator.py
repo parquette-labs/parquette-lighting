@@ -6,12 +6,14 @@ class Generator(ABC):
         self,
         *,
         name: str,
+        category: str,
         amp: float = 0.5,
         offset: float = 0.5,
         period: float = 1000,
-        phase: float = 0
+        phase: float = 0,
     ):
         self.name = name
+        self.category = category
         self.amp = amp
         self.phase = phase
         self.period = period

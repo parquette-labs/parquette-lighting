@@ -7,6 +7,7 @@ from parquette.lights.generators.bpm_generator import BPMGenerator
 def test_wave_gen_sin():
     wg = WaveGenerator(
         name="sin1",
+        category="test",
         amp=0.5,
         offset=0.5,
         period=1000,
@@ -26,6 +27,7 @@ def test_wave_gen_sin():
 def test_wave_gen_tri():
     wg = WaveGenerator(
         name="tri1",
+        category="test",
         amp=0.5,
         offset=0.5,
         phase=247,
@@ -45,6 +47,7 @@ def test_wave_gen_tri():
 def test_wave_sq():
     wg = WaveGenerator(
         name="sq1",
+        category="test",
         amp=0.5,
         offset=0.5,
         phase=247,
@@ -64,6 +67,7 @@ def test_wave_sq():
 def test_imp():
     imp = ImpulseGenerator(
         name="imp",
+        category="test",
         amp=2,
         offset=0.5,
         duty=300,
@@ -78,6 +82,7 @@ def test_imp():
 def test_noise():
     noise = NoiseGenerator(
         name="rand",
+        category="test",
         amp=1,
         offset=0.5,
         period=1000,
@@ -91,6 +96,7 @@ def test_noise():
 def test_fft():
     fft = FFTGenerator(
         name="fft",
+        category="test",
         amp=1,
         offset=0.5,
         subdivisions=20,
@@ -99,7 +105,9 @@ def test_fft():
 
 
 def test_bpm_valid_gates_output():
-    bpm = BPMGenerator(name="bpm", amp=255, offset=0, duty=500, bpm=120)
+    bpm = BPMGenerator(
+        name="bpm", category="test", amp=255, offset=0, duty=500, bpm=120
+    )
 
     assert bpm.bpm_valid is False
     assert bpm.rms_valid is False

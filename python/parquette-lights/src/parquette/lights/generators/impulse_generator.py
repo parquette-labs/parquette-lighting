@@ -6,9 +6,17 @@ class ImpulseGenerator(Generator):
     _punch_pending: bool
 
     def __init__(
-        self, *, name: str, amp: float = 1, offset: float = 0, duty: float = 100
+        self,
+        *,
+        name: str,
+        category: str,
+        amp: float = 1,
+        offset: float = 0,
+        duty: float = 100,
     ):
-        super().__init__(name=name, amp=amp, offset=offset, period=1, phase=0)
+        super().__init__(
+            name=name, category=category, amp=amp, offset=offset, period=1, phase=0
+        )
 
         self.duty = duty
         self._punch_pending = False
