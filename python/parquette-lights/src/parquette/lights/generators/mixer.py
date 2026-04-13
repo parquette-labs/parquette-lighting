@@ -116,15 +116,6 @@ class Mixer(object):
         self.fixture_targets: Dict[str, List[MixTarget]] = {}
         self.mix_channels: List[MixChannel] = []
 
-        # Non-dimming targets get their own category so they aren't affected
-        # by the dimming master fader.
-        target_category_overrides: Dict[str, str] = {
-            "pan": "spots_position",
-            "tilt": "spots_position",
-            "pan_fine": "spots_position",
-            "tilt_fine": "spots_position",
-        }
-
         index = 0
         for fixture in self.all_fixtures:
             targets: List[MixTarget] = []
@@ -132,7 +123,7 @@ class Mixer(object):
                 targets.append(target)
 
                 chan_name = "{}.{}".format(fixture.name, target.name)
-                category = target_category_overrides.get(target.name, fixture.category)
+                category = target.category
                 impulse = (
                     impulse_gen if fixture.category in impulse_categories else None
                 )

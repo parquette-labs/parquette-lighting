@@ -8,7 +8,7 @@ from enum import Enum
 
 
 from ..util.math import constrain, value_map
-from .basics import LightFixture
+from .basics import LightFixture, MixTarget
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
 from ..osc import OSCManager
 
@@ -32,7 +32,8 @@ class Spot(LightFixture):
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str = "",
+        category: str,
+        position_category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -43,6 +44,7 @@ class Spot(LightFixture):
             category=category,
             osc=osc,
         )
+        self.position_category = position_category
 
         self._pan: DMXValue = 0
         self._tilt: DMXValue = 0
@@ -371,11 +373,18 @@ class YRXY200Spot(Spot):
         name: str,
         dmx: DMXManager,
         addr: int,
-        category: str = "",
+        category: str,
+        position_category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=15, category=category, osc=osc
+            name=name,
+            dmx=dmx,
+            addr=addr,
+            num_chans=15,
+            category=category,
+            position_category=position_category,
+            osc=osc,
         )
 
         # Conservative default for the physical color wheel settle time. Tune
@@ -446,9 +455,14 @@ class YRXY200Spot(Spot):
             ],
         )
 
-        self.set_mix_targets(
-            self.dimming, self.pan, self.tilt, self.pan_fine, self.tilt_fine
-        )
+        pos_cat = self.position_category
+        self.wrapped_targets = [
+            MixTarget(self.dimming, "dimming", self.category),
+            MixTarget(self.pan, "pan", pos_cat),
+            MixTarget(self.tilt, "tilt", pos_cat),
+            MixTarget(self.pan_fine, "pan_fine", pos_cat),
+            MixTarget(self.tilt_fine, "tilt_fine", pos_cat),
+        ]
 
     def send_visualizer(self) -> None:
         super().send_visualizer()
@@ -846,7 +860,7 @@ class PinSpot(LightFixture):
         name: str,
         dmx: DMXManager,
         addr: int,
-        category: str = "",
+        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(

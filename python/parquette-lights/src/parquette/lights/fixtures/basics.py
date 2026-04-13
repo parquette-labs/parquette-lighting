@@ -13,11 +13,20 @@ class MixTarget:
     value is added to a running total and the total is sent. When
     accumulate=False (default), the accumulator is cleared first and just
     the given value is sent.
+
+    Each target carries its own category so the mixer knows which preset
+    group the resulting MixChannel belongs to.
     """
 
-    def __init__(self, target: Callable[[int], None], name: str) -> None:
+    def __init__(
+        self,
+        target: Callable[[int], None],
+        name: str,
+        category: str,
+    ) -> None:
         self.target = target
         self.name = name
+        self.category: str = category
         self.accumulator: float = 0.0
 
     def __call__(self, value: float, accumulate: bool = False) -> None:
@@ -37,7 +46,7 @@ class Fixture(object):
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str = "",
+        category: str,
         osc: Optional[OSCManager] = None,
     ):
         self.name = name
@@ -49,7 +58,9 @@ class Fixture(object):
         self.wrapped_targets: List[MixTarget] = []
 
     def set_mix_targets(self, *targets: Callable[[int], None]) -> None:
-        self.wrapped_targets = [MixTarget(t, t.__name__) for t in targets]
+        self.wrapped_targets = [
+            MixTarget(t, t.__name__, self.category) for t in targets
+        ]
 
     def off(self) -> None:
         self.set(0)
@@ -89,7 +100,7 @@ class LightFixture(Fixture):
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
-        category: str = "",
+        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -125,7 +136,7 @@ class RGBLight(LightFixture):
         name: str,
         dmx: DMXManager,
         addr: int,
-        category: str = "",
+        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -168,7 +179,7 @@ class RGBWLight(LightFixture):
         name: str,
         dmx: DMXManager,
         addr: int,
-        category: str = "",
+        category: str,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
