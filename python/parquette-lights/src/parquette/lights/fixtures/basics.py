@@ -105,10 +105,10 @@ class LightFixture(Fixture):
     ):
         super().__init__(
             name=name,
+            category=category,
             dmx=dmx,
             addr=addr,
             num_chans=num_chans,
-            category=category,
             osc=osc,
         )
         self._dimming: DMXValue = 0
@@ -140,7 +140,7 @@ class RGBLight(LightFixture):
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=3, category=category, osc=osc
+            name=name, category=category, dmx=dmx, addr=addr, num_chans=3, osc=osc
         )
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
@@ -183,7 +183,7 @@ class RGBWLight(LightFixture):
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=4, category=category, osc=osc
+            name=name, category=category, dmx=dmx, addr=addr, num_chans=4, osc=osc
         )
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255

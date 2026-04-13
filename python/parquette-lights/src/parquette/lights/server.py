@@ -212,34 +212,34 @@ def run(
         dmx.setup_dmx(entec_auto)
 
     dimmers: List[LightFixture] = [
-        LightFixture(name="left_1", dmx=dmx, addr=4, category="reds", osc=osc),
-        LightFixture(name="left_2", dmx=dmx, addr=3, category="reds", osc=osc),
-        LightFixture(name="left_3", dmx=dmx, addr=2, category="reds", osc=osc),
-        LightFixture(name="left_4", dmx=dmx, addr=1, category="reds", osc=osc),
-        LightFixture(name="right_1", dmx=dmx, addr=5, category="reds", osc=osc),
-        LightFixture(name="right_2", dmx=dmx, addr=6, category="reds", osc=osc),
-        LightFixture(name="right_3", dmx=dmx, addr=7, category="reds", osc=osc),
-        LightFixture(name="right_4", dmx=dmx, addr=8, category="reds", osc=osc),
-        LightFixture(name="front_1", dmx=dmx, addr=12, category="reds", osc=osc),
-        LightFixture(name="front_2", dmx=dmx, addr=9, category="reds", osc=osc),
-        LightFixture(name="under_1", dmx=dmx, addr=10, category="booth", osc=osc),
-        LightFixture(name="under_2", dmx=dmx, addr=11, category="booth", osc=osc),
-        LightFixture(name="ceil_1", dmx=dmx, addr=18, category="plants", osc=osc),
-        LightFixture(name="ceil_2", dmx=dmx, addr=19, category="plants", osc=osc),
-        LightFixture(name="ceil_3", dmx=dmx, addr=17, category="plants", osc=osc),
+        LightFixture(name="left_1", category="reds", dmx=dmx, addr=4, osc=osc),
+        LightFixture(name="left_2", category="reds", dmx=dmx, addr=3, osc=osc),
+        LightFixture(name="left_3", category="reds", dmx=dmx, addr=2, osc=osc),
+        LightFixture(name="left_4", category="reds", dmx=dmx, addr=1, osc=osc),
+        LightFixture(name="right_1", category="reds", dmx=dmx, addr=5, osc=osc),
+        LightFixture(name="right_2", category="reds", dmx=dmx, addr=6, osc=osc),
+        LightFixture(name="right_3", category="reds", dmx=dmx, addr=7, osc=osc),
+        LightFixture(name="right_4", category="reds", dmx=dmx, addr=8, osc=osc),
+        LightFixture(name="front_1", category="reds", dmx=dmx, addr=12, osc=osc),
+        LightFixture(name="front_2", category="reds", dmx=dmx, addr=9, osc=osc),
+        LightFixture(name="under_1", category="booth", dmx=dmx, addr=10, osc=osc),
+        LightFixture(name="under_2", category="booth", dmx=dmx, addr=11, osc=osc),
+        LightFixture(name="ceil_1", category="plants", dmx=dmx, addr=18, osc=osc),
+        LightFixture(name="ceil_2", category="plants", dmx=dmx, addr=19, osc=osc),
+        LightFixture(name="ceil_3", category="plants", dmx=dmx, addr=17, osc=osc),
     ]
 
     # Spots
     tung_spot = LightFixture(
-        name="tung_spot", dmx=dmx, addr=13, category="spots_light", osc=osc
+        name="tung_spot", category="spots_light", dmx=dmx, addr=13, osc=osc
     )
 
     front_spot = YRXY200Spot(
         name="spot_1",
-        dmx=dmx,
-        addr=21,
         category="spots_light",
         position_category="spots_position",
+        dmx=dmx,
+        addr=21,
         osc=osc,
     )
     front_spot.dimming(255)
@@ -257,10 +257,10 @@ def run(
 
     back_spot = YRXY200Spot(
         name="spot_2",
-        dmx=dmx,
-        addr=200,
         category="spots_light",
         position_category="spots_position",
+        dmx=dmx,
+        addr=200,
         osc=osc,
     )
     back_spot.dimming(255)
@@ -283,31 +283,31 @@ def run(
         spot.color_swap_mechanical_time = spot_mechanical_time
 
     # Washes
-    washfl = RGBLight(name="wash_fl", dmx=dmx, addr=104, category="washes", osc=osc)
+    washfl = RGBLight(name="wash_fl", category="washes", dmx=dmx, addr=104, osc=osc)
     washfl.rgb(0, 0, 0)
 
-    washfr = RGBLight(name="wash_fr", dmx=dmx, addr=107, category="washes", osc=osc)
+    washfr = RGBLight(name="wash_fr", category="washes", dmx=dmx, addr=107, osc=osc)
     washfr.rgb(0, 0, 0)
 
-    washml = RGBLight(name="wash_ml", dmx=dmx, addr=110, category="washes", osc=osc)
+    washml = RGBLight(name="wash_ml", category="washes", dmx=dmx, addr=110, osc=osc)
     washml.rgb(0, 0, 0)
 
-    washmr = RGBLight(name="wash_mr", dmx=dmx, addr=113, category="washes", osc=osc)
+    washmr = RGBLight(name="wash_mr", category="washes", dmx=dmx, addr=113, osc=osc)
     washmr.rgb(0, 0, 0)
 
-    washbl = RGBLight(name="wash_bl", dmx=dmx, addr=120, category="washes", osc=osc)
+    washbl = RGBLight(name="wash_bl", category="washes", dmx=dmx, addr=120, osc=osc)
     washbl.rgb(0, 0, 0)
 
-    washbr = RGBLight(name="wash_br", dmx=dmx, addr=123, category="washes", osc=osc)
+    washbr = RGBLight(name="wash_br", category="washes", dmx=dmx, addr=123, osc=osc)
     washbr.rgb(0, 0, 0)
 
     washceilf = RGBWLight(
-        name="wash_ceil_f", dmx=dmx, addr=100, category="washes", osc=osc
+        name="wash_ceil_f", category="washes", dmx=dmx, addr=100, osc=osc
     )
     washceilf.rgbw(0, 0, 0, 0)
 
     washceilr = RGBWLight(
-        name="wash_ceil_r", dmx=dmx, addr=116, category="washes", osc=osc
+        name="wash_ceil_r", category="washes", dmx=dmx, addr=116, osc=osc
     )
     washceilr.rgbw(0, 0, 0, 0)
 
@@ -315,7 +315,7 @@ def run(
 
     # Sodium
     sodium = LightFixture(
-        name="sodium", dmx=dmx, addr=20, category="non-saved", osc=osc
+        name="sodium", category="non-saved", dmx=dmx, addr=20, osc=osc
     )
 
     # All fixtures in mixer order

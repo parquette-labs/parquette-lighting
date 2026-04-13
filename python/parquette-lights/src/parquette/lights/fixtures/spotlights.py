@@ -864,7 +864,7 @@ class PinSpot(LightFixture):
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
-            name=name, dmx=dmx, addr=addr, num_chans=6, category=category, osc=osc
+            name=name, category=category, dmx=dmx, addr=addr, num_chans=6, osc=osc
         )
 
     def dimming(self, val: DMXValue) -> None:
