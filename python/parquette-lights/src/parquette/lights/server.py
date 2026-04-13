@@ -8,20 +8,19 @@ import click
 from .fixtures import LightFixture, RGBWLight, RGBLight, YRXY200Spot, Spot
 from .fixtures.hazers import RadianceHazer
 
-from .generators import (
-    FFTGenerator,
-    WaveGenerator,
-    ImpulseGenerator,
-    BPMGenerator,
-    LoopGenerator,
-    Mixer,
-)
-
+from .generators import LoopGenerator, Mixer
 from .audio_analysis import FFTManager, AudioCapture
 
 from .osc import OSCManager
 from .dmx import DMXManager
-from .params import ParamDeps, build_exposed_params
+from .patching import create_builders
+from .patching.audio import AudioBuilder
+from .patching.booth import BoothBuilder
+from .patching.plants import PlantsBuilder
+from .patching.reds import RedsBuilder
+from .patching.spots import SpotsBuilder
+from .patching.strobes import StrobesBuilder
+from .patching.washes import WashesBuilder
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
 from .util.session_store import SessionStore
@@ -340,207 +339,53 @@ def run(
         min_regularity=0.4,
     )
 
-    initialAmp: float = 200
-    initialPeriod: int = 3500
+    session = SessionStore(session_file)
 
-    sin_reds = WaveGenerator(
-        name="sin_red",
-        category="reds",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_plants = WaveGenerator(
-        name="sin_plants",
-        category="plants",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_booth = WaveGenerator(
-        name="sin_booth",
-        category="booth",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_wash = WaveGenerator(
-        name="sin_wash",
-        category="washes",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_spot = WaveGenerator(
-        name="sin_spot",
-        category="spots_light",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_spot_pos_1 = WaveGenerator(
-        name="sin_spot_pos_1",
-        category="spots_position",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_spot_pos_2 = WaveGenerator(
-        name="sin_spot_pos_2",
-        category="spots_position",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_spot_pos_3 = WaveGenerator(
-        name="sin_spot_pos_3",
-        category="spots_position",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
-    )
-    sin_spot_pos_4 = WaveGenerator(
-        name="sin_spot_pos_4",
-        category="spots_position",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SIN,
+    def set_dmx_passthrough(value: Any) -> None:
+        if isinstance(value, (list, tuple)):
+            value = value[0] if value else 0
+        enabled = bool(value)
+        dmx.passthrough = enabled
+        if not enabled:
+            # Safety: ensure capture/FFT threads are running after we leave passthrough.
+            if audio_capture.audio_thread is None or not audio_capture.audio_running:
+                audio_capture.start_audio()
+            if fft_manager.fft_thread is None or not fft_manager.fft_running:
+                fft_manager.start_fft()
+
+    # Create all patching builders — generators are instantiated in constructors
+    builders = create_builders(
+        fft_manager=fft_manager,
+        dmx=dmx,
+        session=session,
+        hazer_fixture=hazer,
+        washceilf=washceilf,
+        washceilr=washceilr,
+        all_washes=washes,
+        spotlights=spotlights,
+        set_dmx_passthrough=set_dmx_passthrough,
+        loop_max_samples=loop_max_samples,
     )
 
-    sq1 = WaveGenerator(
-        name="sq_1",
-        category="plants",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=0,
-        offset=0,
-        shape=WaveGenerator.Shape.SQUARE,
-        duty=0.5,
+    # Keep typed refs for snap handlers, fft wiring, etc.
+    reds_b: RedsBuilder = next(b for b in builders if isinstance(b, RedsBuilder))
+    plants_b: PlantsBuilder = next(b for b in builders if isinstance(b, PlantsBuilder))
+    booth_b: BoothBuilder = next(b for b in builders if isinstance(b, BoothBuilder))
+    washes_b: WashesBuilder = next(b for b in builders if isinstance(b, WashesBuilder))
+    spots_b: SpotsBuilder = next(b for b in builders if isinstance(b, SpotsBuilder))
+    audio_b: AudioBuilder = next(b for b in builders if isinstance(b, AudioBuilder))
+    strobes_b: StrobesBuilder = next(
+        b for b in builders if isinstance(b, StrobesBuilder)
     )
 
-    sq2 = WaveGenerator(
-        name="sq_2",
-        category="plants",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=476,
-        offset=0,
-        shape=WaveGenerator.Shape.SQUARE,
-        duty=0.5,
-    )
+    # Collect all generators for mixer
+    generators = []
+    for b in builders:
+        generators.extend(b.generators())
 
-    sq3 = WaveGenerator(
-        name="sq_3",
-        category="plants",
-        amp=initialAmp,
-        period=initialPeriod,
-        phase=335,
-        offset=0,
-        shape=WaveGenerator.Shape.SQUARE,
-        duty=0.5,
-    )
-
-    impulse = ImpulseGenerator(
-        name="impulse",
-        category="strobes",
-        amp=255,
-        offset=0,
-        duty=100,
-    )
-
-    fft1 = FFTGenerator(
-        name="fft_1",
-        category="audio",
-        amp=1,
-        offset=0,
-        subdivisions=1,
-        memory_length=20,
-    )
-    fft2 = FFTGenerator(
-        name="fft_2",
-        category="audio",
-        amp=1,
-        offset=0,
-        subdivisions=1,
-        memory_length=20,
-    )
-
-    bpm_red = BPMGenerator(name="bpm_red", category="reds", amp=255, offset=0, duty=100)
-    bpm_wash = BPMGenerator(
-        name="bpm_wash", category="washes", amp=255, offset=0, duty=100
-    )
-
-    loop_reds = LoopGenerator(
-        name="loop_reds", category="reds", max_samples=loop_max_samples
-    )
-    loop_spot_pos_1_x = LoopGenerator(
-        name="loop_spot_pos_1_x",
-        category="spots_position",
-        max_samples=loop_max_samples,
-    )
-    loop_spot_pos_1_y = LoopGenerator(
-        name="loop_spot_pos_1_y",
-        category="spots_position",
-        max_samples=loop_max_samples,
-    )
-    loop_spot_pos_2_x = LoopGenerator(
-        name="loop_spot_pos_2_x",
-        category="spots_position",
-        max_samples=loop_max_samples,
-    )
-    loop_spot_pos_2_y = LoopGenerator(
-        name="loop_spot_pos_2_y",
-        category="spots_position",
-        max_samples=loop_max_samples,
-    )
-
-    generators = [
-        sin_reds,
-        sin_plants,
-        sin_booth,
-        sin_wash,
-        sin_spot,
-        sin_spot_pos_1,
-        sin_spot_pos_2,
-        sin_spot_pos_3,
-        sin_spot_pos_4,
-        sq1,
-        sq2,
-        sq3,
-        impulse,
-        fft1,
-        fft2,
-        bpm_red,
-        bpm_wash,
-        loop_reds,
-        loop_spot_pos_1_x,
-        loop_spot_pos_1_y,
-        loop_spot_pos_2_x,
-        loop_spot_pos_2_y,
-    ]
-
-    fft_manager.downstream = [fft1, fft2]
-    # FFTManager fans audio-driven tempo updates out to all bpms; per-gen
-    # user knobs (duty/amp/mult/manual_offset/lpf_alpha) stay independent.
-    fft_manager.bpms = [bpm_red, bpm_wash]
+    # Wire FFT manager to its downstream generators
+    fft_manager.downstream = [audio_b.fft1, audio_b.fft2]
+    fft_manager.bpms = [reds_b.bpm_red, washes_b.bpm_wash]
 
     if audio_interface is not None:
         needle = audio_interface.lower()
@@ -571,8 +416,8 @@ def run(
             fft_manager.start_fft()
 
     if debug:
-        fft1.debug = True
-        fft2.debug = True
+        audio_b.fft1.debug = True
+        audio_b.fft2.debug = True
 
     mixer = Mixer(
         osc=osc,
@@ -583,67 +428,11 @@ def run(
         debug=debug,
     )
 
-    session = SessionStore(session_file)
-
-    def set_dmx_passthrough(value: Any) -> None:
-        if isinstance(value, (list, tuple)):
-            value = value[0] if value else 0
-        enabled = bool(value)
-        dmx.passthrough = enabled
-        if not enabled:
-            # Safety: ensure capture/FFT threads are running after we leave passthrough.
-            if audio_capture.audio_thread is None or not audio_capture.audio_running:
-                audio_capture.start_audio()
-            if fft_manager.fft_thread is None or not fft_manager.fft_running:
-                fft_manager.start_fft()
-
-    deps = ParamDeps(
-        osc=osc,
-        dmx=dmx,
-        mixer=mixer,
-        session=session,
-        fft_manager=fft_manager,
-        fft1=fft1,
-        fft2=fft2,
-        sin_reds=sin_reds,
-        sin_plants=sin_plants,
-        sin_booth=sin_booth,
-        sin_wash=sin_wash,
-        sin_spot=sin_spot,
-        sin_spot_pos_1=sin_spot_pos_1,
-        sin_spot_pos_2=sin_spot_pos_2,
-        sin_spot_pos_3=sin_spot_pos_3,
-        sin_spot_pos_4=sin_spot_pos_4,
-        sq1=sq1,
-        sq2=sq2,
-        sq3=sq3,
-        impulse=impulse,
-        bpm_red=bpm_red,
-        bpm_wash=bpm_wash,
-        hazer=hazer,
-        washceilf=washceilf,
-        washceilr=washceilr,
-        all_washes=[
-            washfl,
-            washfr,
-            washml,
-            washmr,
-            washbl,
-            washbr,
-            washceilf,
-            washceilr,
-        ],
-        spotlights=spotlights,
-        set_dmx_passthrough=set_dmx_passthrough,
-        loop_reds=loop_reds,
-        loop_spot_pos_1_x=loop_spot_pos_1_x,
-        loop_spot_pos_1_y=loop_spot_pos_1_y,
-        loop_spot_pos_2_x=loop_spot_pos_2_x,
-        loop_spot_pos_2_y=loop_spot_pos_2_y,
-        loop_max_samples=loop_max_samples,
-    )
-
-    exposed_params = build_exposed_params(deps)
+    # Build all params from builders
+    exposed_params: dict[str, list] = {"fft": []}
+    for b in builders:
+        for category, params in b.build_params(osc, mixer):
+            exposed_params.setdefault(category, []).extend(params)
 
     def make_snap_handler(gens, period_addrs, bpm_gen):
         if isinstance(period_addrs, str):
@@ -730,7 +519,7 @@ def run(
     osc.dispatcher.map("/class", lambda addr, args: class_lights())
     osc.dispatcher.map(
         "/impulse_punch",
-        lambda addr, *args: impulse.punch(),
+        lambda addr, *args: strobes_b.impulse.punch(),
     )
 
     def reset_spots(reset: bool) -> None:
@@ -747,58 +536,71 @@ def run(
     # restored period of the corresponding sine generator.
     osc.dispatcher.map(
         "/snap_sin_red_to_bpm",
-        lambda addr, *args: make_snap_handler([sin_reds], "/sin_red_period", bpm_red)(),
+        lambda addr, *args: make_snap_handler(
+            [reds_b.sin_reds], "/sin_red_period", reds_b.bpm_red
+        )(),
     )
     osc.dispatcher.map(
         "/snap_sin_plants_to_bpm",
         lambda addr, *args: make_snap_handler(
-            [sin_plants], "/sin_plants_period", bpm_red
+            [plants_b.sin_plants], "/sin_plants_period", reds_b.bpm_red
         )(),
     )
     osc.dispatcher.map(
         "/snap_sq_to_bpm",
-        lambda addr, *args: make_snap_handler([sq1, sq2, sq3], "/sq_period", bpm_red)(),
+        lambda addr, *args: make_snap_handler(
+            [plants_b.sq1, plants_b.sq2, plants_b.sq3],
+            "/sq_period",
+            reds_b.bpm_red,
+        )(),
     )
     osc.dispatcher.map(
         "/snap_sin_booth_to_bpm",
         lambda addr, *args: make_snap_handler(
-            [sin_booth], "/sin_booth_period", bpm_red
+            [booth_b.sin_booth], "/sin_booth_period", reds_b.bpm_red
         )(),
     )
     osc.dispatcher.map(
         "/snap_sin_wash_to_bpm",
-        lambda addr, *args: make_snap_handler([sin_wash], "/period_wash", bpm_wash)(),
+        lambda addr, *args: make_snap_handler(
+            [washes_b.sin_wash], "/period_wash", washes_b.bpm_wash
+        )(),
     )
     osc.dispatcher.map(
         "/snap_sin_spot_to_bpm",
         lambda addr, *args: make_snap_handler(
-            [sin_spot], "/sin_spot_period", bpm_red
+            [spots_b.sin_spot], "/sin_spot_period", reds_b.bpm_red
         )(),
     )
     osc.dispatcher.map(
         "/snap_sin_spot_pos_to_bpm",
         lambda addr, *args: make_snap_handler(
-            [sin_spot_pos_1, sin_spot_pos_2, sin_spot_pos_3, sin_spot_pos_4],
+            [
+                spots_b.sin_spot_pos_1,
+                spots_b.sin_spot_pos_2,
+                spots_b.sin_spot_pos_3,
+                spots_b.sin_spot_pos_4,
+            ],
             [
                 "/sin_spot_pos_1_period",
                 "/sin_spot_pos_2_period",
                 "/sin_spot_pos_3_period",
                 "/sin_spot_pos_4_period",
             ],
-            bpm_red,
+            reds_b.bpm_red,
         )(),
     )
 
     # Loop generator record triggers (momentary actions, not preset state)
     osc.dispatcher.map(
         "/loop_reds_record",
-        lambda addr, *args: loop_reds.set_recording(bool(args[0])),
+        lambda addr, *args: reds_b.loop_reds.set_recording(bool(args[0])),
     )
 
     for i, (lx, ly) in enumerate(
         [
-            (loop_spot_pos_1_x, loop_spot_pos_1_y),
-            (loop_spot_pos_2_x, loop_spot_pos_2_y),
+            (spots_b.loop_spot_pos_1_x, spots_b.loop_spot_pos_1_y),
+            (spots_b.loop_spot_pos_2_x, spots_b.loop_spot_pos_2_y),
         ],
         start=1,
     ):
