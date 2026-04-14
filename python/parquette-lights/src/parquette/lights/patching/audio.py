@@ -6,10 +6,10 @@ from ..generators import FFTGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import CategoryBuilder
 
 
-class AudioBuilder(ParamGeneratorBuilder):
+class AudioBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,

@@ -1,29 +1,33 @@
 from typing import Any, Dict, List
 
 from ..category import Category
+from ..dmx import DMXManager
+from ..fixtures import LightFixture, YRXY200Spot
+from ..fixtures.basics import Fixture
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
-from ..fixtures.basics import Fixture
-from ..fixtures.spotlights import Spot
 from ..osc import OSCManager, OSCParam
 from .builder import (
-    ParamGeneratorBuilder,
+    CategoryBuilder,
+    channel_names_for_category,
     register_snap_handler,
     register_loop_record_handler,
 )
 
 
-class SpotsBuilder(ParamGeneratorBuilder):
+class SpotsBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        dmx: DMXManager,
         light_category: Category,
         position_category: Category,
         *,
-        all_fixtures: List[Fixture],
         loop_max_samples: int,
         bpm_red: BPMGenerator,
+        spot_color_fade: float,
+        spot_mechanical_time: float,
     ) -> None:
         self.osc = osc
         self.light_category = light_category
@@ -31,7 +35,42 @@ class SpotsBuilder(ParamGeneratorBuilder):
         initial_amp: float = 200
         initial_period: int = 3500
 
-        self.spotlights = [f for f in all_fixtures if isinstance(f, Spot)]
+        self.tung_spot = LightFixture(
+            name="tung_spot", category=light_category, dmx=dmx, addr=13, osc=osc
+        )
+
+        self.spotlights: List[YRXY200Spot] = [
+            YRXY200Spot(
+                name="spot_1",
+                category=light_category,
+                position_category=position_category,
+                dmx=dmx,
+                addr=21,
+                osc=osc,
+            ),
+            YRXY200Spot(
+                name="spot_2",
+                category=light_category,
+                position_category=position_category,
+                dmx=dmx,
+                addr=200,
+                osc=osc,
+            ),
+        ]
+        for spot in self.spotlights:
+            spot.dimming(255)
+            spot.strobe(False)
+            spot.color(0)
+            spot.no_pattern()
+            spot.prisim(False)
+            spot.colorful(False)
+            spot.self_propelled(YRXY200Spot.YRXY200SelfPropelled.NONE)
+            spot.light_strip_scene(YRXY200Spot.YRXY200RingScene.OFF)
+            spot.scene_speed(0)
+            spot.pan(0)
+            spot.tilt(0)
+            spot.color_swap_fade_time = spot_color_fade
+            spot.color_swap_mechanical_time = spot_mechanical_time
 
         self.sin_spot = WaveGenerator(
             name="sin_spot",
@@ -136,6 +175,9 @@ class SpotsBuilder(ParamGeneratorBuilder):
                 [loop_x, loop_y],
             )
 
+    def fixtures(self) -> List[Fixture]:
+        return [self.tung_spot, *self.spotlights]
+
     def generators(self) -> List[Generator]:
         return [
             self.sin_spot,
@@ -157,7 +199,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
             SignalPatchParam(
                 osc,
                 "/signal_patchbay/spots_light",
-                ["tung_spot.dimming", "spot_1.dimming", "spot_2.dimming"],
+                channel_names_for_category(mixer, self.light_category),
                 mixer,
             ),
             # Generator params
@@ -212,17 +254,13 @@ class SpotsBuilder(ParamGeneratorBuilder):
             self.sin_spot_pos_4,
         ]
 
-        pos_chan_names = []
-        for fixture in self.spotlights:
-            pos_chan_names.append("{}.pan".format(fixture.name))
-            pos_chan_names.append("{}.tilt".format(fixture.name))
-            pos_chan_names.append("{}.pan_fine".format(fixture.name))
-            pos_chan_names.append("{}.tilt_fine".format(fixture.name))
-
         pos_params: List[OSCParam] = [
             # Patch params
             SignalPatchParam(
-                osc, "/signal_patchbay/spots_position", pos_chan_names, mixer
+                osc,
+                "/signal_patchbay/spots_position",
+                channel_names_for_category(mixer, self.position_category),
+                mixer,
             ),
         ]
         for i, gen in enumerate(spot_pos_gens, start=1):

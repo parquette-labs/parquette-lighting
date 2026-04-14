@@ -3,10 +3,9 @@ from typing import List
 from ..audio_analysis import FFTManager
 from ..category import Categories
 from ..dmx import DMXManager
-from ..fixtures.basics import Fixture
 from ..osc import OSCManager
 from ..util.session_store import SessionStore
-from .builder import ParamGeneratorBuilder
+from .builder import CategoryBuilder
 from . import audio, booth, channel_levels, hazer, non_saved, plants, reds, spots
 from . import strobes, washes
 
@@ -14,40 +13,53 @@ from . import strobes, washes
 def create_builders(
     *,
     osc: OSCManager,
-    all_fixtures: List[Fixture],
+    dmx: DMXManager,
     categories: Categories,
     fft_manager: FFTManager,
-    dmx: DMXManager,
     session: SessionStore,
     loop_max_samples: int,
+    spot_color_fade: float,
+    spot_mechanical_time: float,
     debug: bool = False,
-) -> List[ParamGeneratorBuilder]:
+    debug_hazer: bool = False,
+) -> List[CategoryBuilder]:
     fft_manager.bpms = []
 
-    reds_b = reds.RedsBuilder(osc, fft_manager, categories.reds, loop_max_samples)
+    reds_b = reds.RedsBuilder(
+        osc,
+        dmx,
+        fft_manager,
+        categories.reds,
+        loop_max_samples=loop_max_samples,
+    )
 
     return [
         reds_b,
-        plants.PlantsBuilder(osc, categories.plants, reds_b.bpm_red),
-        booth.BoothBuilder(osc, categories.booth, reds_b.bpm_red),
+        plants.PlantsBuilder(osc, dmx, categories.plants, reds_b.bpm_red),
+        booth.BoothBuilder(osc, dmx, categories.booth, reds_b.bpm_red),
         washes.WashesBuilder(
             osc,
+            dmx,
             fft_manager,
             categories.washes,
-            categories.washes_color,
-            all_fixtures=all_fixtures,
+            color_category=categories.washes_color,
         ),
         spots.SpotsBuilder(
             osc,
+            dmx,
             categories.spots_light,
             categories.spots_position,
-            all_fixtures=all_fixtures,
             loop_max_samples=loop_max_samples,
             bpm_red=reds_b.bpm_red,
+            spot_color_fade=spot_color_fade,
+            spot_mechanical_time=spot_mechanical_time,
         ),
         audio.AudioBuilder(osc, categories.audio, fft_manager, debug=debug),
         strobes.StrobesBuilder(osc, categories.strobes),
-        hazer.HazerBuilder(osc, categories.hazer, all_fixtures),
-        non_saved.NonSavedBuilder(osc, categories.non_saved, dmx, session),
+        hazer.HazerBuilder(osc, dmx, categories.hazer, debug=debug_hazer),
+        non_saved.NonSavedBuilder(osc, dmx, categories.non_saved, session),
         channel_levels.ChannelLevelsBuilder(osc, session),
     ]
+
+
+__all__ = ["Categories", "CategoryBuilder", "create_builders"]

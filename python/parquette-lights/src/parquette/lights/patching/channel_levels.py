@@ -4,10 +4,10 @@ from ..category import Category
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
 from ..util.session_store import SessionStore
-from .builder import ParamGeneratorBuilder
+from .builder import CategoryBuilder
 
 
-class ChannelLevelsBuilder(ParamGeneratorBuilder):
+class ChannelLevelsBuilder(CategoryBuilder):
     def __init__(self, osc: OSCManager, session: SessionStore) -> None:
         self.osc = osc
         self.session = session

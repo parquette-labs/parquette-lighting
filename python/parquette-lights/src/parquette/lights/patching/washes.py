@@ -2,23 +2,28 @@ from typing import Dict, List, Union
 
 from ..audio_analysis import FFTManager
 from ..category import Category
+from ..dmx import DMXManager
+from ..fixtures.basics import Fixture, RGBLight, RGBWLight
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
-from ..fixtures.basics import Fixture, RGBLight, RGBWLight
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder, register_snap_handler
+from .builder import (
+    CategoryBuilder,
+    channel_names_for_category,
+    register_snap_handler,
+)
 
 
-class WashesBuilder(ParamGeneratorBuilder):
+class WashesBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        dmx: DMXManager,
         fft_manager: FFTManager,
         category: Category,
-        color_category: Category,
         *,
-        all_fixtures: List[Fixture],
+        color_category: Category,
     ) -> None:
         self.osc = osc
         self.category = category
@@ -26,14 +31,36 @@ class WashesBuilder(ParamGeneratorBuilder):
         initial_amp: float = 200
         initial_period: int = 3500
 
+        washfl = RGBLight(name="wash_fl", category=category, dmx=dmx, addr=104, osc=osc)
+        washfl.rgb(0, 0, 0)
+        washfr = RGBLight(name="wash_fr", category=category, dmx=dmx, addr=107, osc=osc)
+        washfr.rgb(0, 0, 0)
+        washml = RGBLight(name="wash_ml", category=category, dmx=dmx, addr=110, osc=osc)
+        washml.rgb(0, 0, 0)
+        washmr = RGBLight(name="wash_mr", category=category, dmx=dmx, addr=113, osc=osc)
+        washmr.rgb(0, 0, 0)
+        washbl = RGBLight(name="wash_bl", category=category, dmx=dmx, addr=120, osc=osc)
+        washbl.rgb(0, 0, 0)
+        washbr = RGBLight(name="wash_br", category=category, dmx=dmx, addr=123, osc=osc)
+        washbr.rgb(0, 0, 0)
+        self.washceilf = RGBWLight(
+            name="wash_ceil_f", category=category, dmx=dmx, addr=100, osc=osc
+        )
+        self.washceilf.rgbw(0, 0, 0, 0)
+        self.washceilr = RGBWLight(
+            name="wash_ceil_r", category=category, dmx=dmx, addr=116, osc=osc
+        )
+        self.washceilr.rgbw(0, 0, 0, 0)
         self.all_washes: List[Union[RGBLight, RGBWLight]] = [
-            f
-            for f in all_fixtures
-            if f.category is category and isinstance(f, (RGBLight, RGBWLight))
+            washfl,
+            washfr,
+            washml,
+            washmr,
+            washbl,
+            washbr,
+            self.washceilf,
+            self.washceilr,
         ]
-        rgbw_washes = [f for f in self.all_washes if isinstance(f, RGBWLight)]
-        self.washceilf = rgbw_washes[0]
-        self.washceilr = rgbw_washes[1]
 
         self.sin_wash = WaveGenerator(
             name="sin_wash",
@@ -56,6 +83,9 @@ class WashesBuilder(ParamGeneratorBuilder):
             self.bpm_wash,
         )
         fft_manager.bpms.append(self.bpm_wash)
+
+    def fixtures(self) -> List[Fixture]:
+        return list(self.all_washes)
 
     def generators(self) -> List[Generator]:
         return [self.sin_wash, self.bpm_wash]
@@ -94,19 +124,7 @@ class WashesBuilder(ParamGeneratorBuilder):
                 SignalPatchParam(
                     osc,
                     "/signal_patchbay/washes",
-                    [
-                        "wash_fl.dimming",
-                        "wash_fr.dimming",
-                        "wash_ml.dimming",
-                        "wash_mr.dimming",
-                        "wash_bl.dimming",
-                        "wash_br.dimming",
-                        "wash_ceil_f.dimming",
-                        "wash_ceil_r.dimming",
-                        "washes_mono",
-                        "washes_fwd",
-                        "washes_back",
-                    ],
+                    channel_names_for_category(mixer, self.category),
                     mixer,
                 ),
                 # Non-generator params

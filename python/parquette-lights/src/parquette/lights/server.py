@@ -12,7 +12,6 @@ from .category import Category
 from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .patching import Categories, create_builders
-from .patching.fixtures import create_fixtures
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
 from .util.session_store import SessionStore
@@ -205,15 +204,6 @@ def run(
     session = SessionStore(session_file)
     categories = Categories(osc, session)
 
-    all_fixtures = create_fixtures(
-        dmx=dmx,
-        osc=osc,
-        categories=categories,
-        spot_color_fade=spot_color_fade,
-        spot_mechanical_time=spot_mechanical_time,
-        debug_hazer=debug_hazer,
-    )
-
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
     audio_capture.dmx = dmx
     fft_manager = FFTManager(
@@ -229,20 +219,25 @@ def run(
         min_regularity=0.4,
     )
 
-    # Create all patching builders — generators are instantiated in constructors
+    # Create all patching builders — fixtures and generators are instantiated
+    # in their constructors.
     builders = create_builders(
         osc=osc,
-        all_fixtures=all_fixtures,
+        dmx=dmx,
         categories=categories,
         fft_manager=fft_manager,
-        dmx=dmx,
         session=session,
         loop_max_samples=loop_max_samples,
+        spot_color_fade=spot_color_fade,
+        spot_mechanical_time=spot_mechanical_time,
         debug=debug,
+        debug_hazer=debug_hazer,
     )
 
+    all_fixtures = []
     generators = []
     for b in builders:
+        all_fixtures.extend(b.fixtures())
         generators.extend(b.generators())
 
     if audio_interface is not None:

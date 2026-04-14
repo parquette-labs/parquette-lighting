@@ -1,23 +1,35 @@
 from typing import Dict, List
 
 from ..category import Category
+from ..dmx import DMXManager
 from ..fixtures.basics import Fixture
 from ..fixtures.hazers import RadianceHazer
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import CategoryBuilder
 
 
-class HazerBuilder(ParamGeneratorBuilder):
+class HazerBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        dmx: DMXManager,
         category: Category,
-        all_fixtures: List[Fixture],
+        *,
+        debug: bool = False,
     ) -> None:
         self.osc = osc
         self.category = category
-        self.hazer = next(f for f in all_fixtures if isinstance(f, RadianceHazer))
+        self.hazer = RadianceHazer(
+            name="hazer",
+            category=category,
+            dmx=dmx,
+            addr=250,
+            debug=debug,
+        )
+
+    def fixtures(self) -> List[Fixture]:
+        return [self.hazer]
 
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         return {

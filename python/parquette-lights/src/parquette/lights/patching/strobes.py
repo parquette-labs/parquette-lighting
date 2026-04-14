@@ -5,10 +5,10 @@ from ..generators import ImpulseGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import CategoryBuilder
 
 
-class StrobesBuilder(ParamGeneratorBuilder):
+class StrobesBuilder(CategoryBuilder):
     def __init__(self, osc: OSCManager, category: Category) -> None:
         self.osc = osc
         self.category = category

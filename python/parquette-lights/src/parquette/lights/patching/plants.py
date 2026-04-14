@@ -1,17 +1,25 @@
 from typing import Dict, List
 
 from ..category import Category
+from ..dmx import DMXManager
+from ..fixtures import LightFixture
+from ..fixtures.basics import Fixture
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder, register_snap_handler
+from .builder import (
+    CategoryBuilder,
+    channel_names_for_category,
+    register_snap_handler,
+)
 
 
-class PlantsBuilder(ParamGeneratorBuilder):
+class PlantsBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        dmx: DMXManager,
         category: Category,
         bpm_red: BPMGenerator,
     ) -> None:
@@ -19,6 +27,12 @@ class PlantsBuilder(ParamGeneratorBuilder):
         self.category = category
         initial_amp: float = 200
         initial_period: int = 3500
+
+        self.ceils: List[LightFixture] = [
+            LightFixture(name="ceil_1", category=category, dmx=dmx, addr=18, osc=osc),
+            LightFixture(name="ceil_2", category=category, dmx=dmx, addr=19, osc=osc),
+            LightFixture(name="ceil_3", category=category, dmx=dmx, addr=17, osc=osc),
+        ]
 
         self.sin_plants = WaveGenerator(
             name="sin_plants",
@@ -75,6 +89,9 @@ class PlantsBuilder(ParamGeneratorBuilder):
             bpm_red,
         )
 
+    def fixtures(self) -> List[Fixture]:
+        return list(self.ceils)
+
     def generators(self) -> List[Generator]:
         return [self.sin_plants, self.sq1, self.sq2, self.sq3]
 
@@ -86,7 +103,7 @@ class PlantsBuilder(ParamGeneratorBuilder):
                 SignalPatchParam(
                     osc,
                     "/signal_patchbay/plants",
-                    ["ceil_1.dimming", "ceil_2.dimming", "ceil_3.dimming"],
+                    channel_names_for_category(mixer, self.category),
                     mixer,
                 ),
                 # Generator params

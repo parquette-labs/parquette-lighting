@@ -2,12 +2,16 @@ from typing import Dict, List
 
 from ..audio_analysis import FFTManager
 from ..category import Category
+from ..dmx import DMXManager
+from ..fixtures import LightFixture
+from ..fixtures.basics import Fixture
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
 from .builder import (
-    ParamGeneratorBuilder,
+    CategoryBuilder,
+    channel_names_for_category,
     register_snap_handler,
     register_loop_record_handler,
 )
@@ -18,18 +22,33 @@ def _handle_loop_input(gen: LoopGenerator, value: float) -> None:
     gen.record_sample(value)
 
 
-class RedsBuilder(ParamGeneratorBuilder):
+class RedsBuilder(CategoryBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        dmx: DMXManager,
         fft_manager: FFTManager,
         category: Category,
+        *,
         loop_max_samples: int,
     ) -> None:
         self.osc = osc
         self.category = category
         initial_amp: float = 200
         initial_period: int = 3500
+
+        self.dimmers: List[LightFixture] = [
+            LightFixture(name="left_1", category=category, dmx=dmx, addr=4, osc=osc),
+            LightFixture(name="left_2", category=category, dmx=dmx, addr=3, osc=osc),
+            LightFixture(name="left_3", category=category, dmx=dmx, addr=2, osc=osc),
+            LightFixture(name="left_4", category=category, dmx=dmx, addr=1, osc=osc),
+            LightFixture(name="right_1", category=category, dmx=dmx, addr=5, osc=osc),
+            LightFixture(name="right_2", category=category, dmx=dmx, addr=6, osc=osc),
+            LightFixture(name="right_3", category=category, dmx=dmx, addr=7, osc=osc),
+            LightFixture(name="right_4", category=category, dmx=dmx, addr=8, osc=osc),
+            LightFixture(name="front_1", category=category, dmx=dmx, addr=12, osc=osc),
+            LightFixture(name="front_2", category=category, dmx=dmx, addr=9, osc=osc),
+        ]
 
         self.sin_reds = WaveGenerator(
             name="sin_red",
@@ -57,6 +76,9 @@ class RedsBuilder(ParamGeneratorBuilder):
         register_loop_record_handler(osc, "/loop_reds_record", [self.loop_reds])
         fft_manager.bpms.append(self.bpm_red)
 
+    def fixtures(self) -> List[Fixture]:
+        return list(self.dimmers)
+
     def generators(self) -> List[Generator]:
         return [self.sin_reds, self.bpm_red, self.loop_reds]
 
@@ -68,22 +90,7 @@ class RedsBuilder(ParamGeneratorBuilder):
                 SignalPatchParam(
                     osc,
                     "/signal_patchbay/reds",
-                    [
-                        "left_1.dimming",
-                        "left_2.dimming",
-                        "left_3.dimming",
-                        "left_4.dimming",
-                        "right_1.dimming",
-                        "right_2.dimming",
-                        "right_3.dimming",
-                        "right_4.dimming",
-                        "front_1.dimming",
-                        "front_2.dimming",
-                        "reds_mono",
-                        "reds_fwd",
-                        "reds_back",
-                        "reds_zig",
-                    ],
+                    channel_names_for_category(mixer, self.category),
                     mixer,
                 ),
                 # Non-generator params

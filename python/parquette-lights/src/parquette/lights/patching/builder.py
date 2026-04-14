@@ -2,6 +2,7 @@ import time
 from typing import Callable, Dict, List, Sequence, Union
 
 from ..category import Category
+from ..fixtures.basics import Fixture
 from ..generators.bpm_generator import BPMGenerator
 from ..generators.generator import Generator
 from ..generators.loop_generator import LoopGenerator
@@ -9,13 +10,17 @@ from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
 
 
-class ParamGeneratorBuilder:
-    """Base class for category-specific parameter and generator builders.
+class CategoryBuilder:
+    """Base class for category-specific builders.
 
-    Each subclass creates its own generators in __init__, registers any
-    OSC action handlers (snap-to-BPM, loop record, etc.), and builds all
-    OSCParams in build_params.
+    Each subclass creates its own fixtures and generators in __init__,
+    registers any OSC action handlers (snap-to-BPM, loop record, etc.),
+    and builds all OSCParams in build_params.
     """
+
+    def fixtures(self) -> List[Fixture]:
+        """Return all fixtures owned by this builder."""
+        return []
 
     def generators(self) -> List[Generator]:
         """Return all generators owned by this builder."""
@@ -25,6 +30,11 @@ class ParamGeneratorBuilder:
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         """Return a dict mapping Category objects to their OSCParam lists."""
         return {}
+
+
+def channel_names_for_category(mixer: Mixer, category: Category) -> List[str]:
+    """Collect mix_channel names belonging to a category (in mixer order)."""
+    return [ch.name for ch in mixer.mix_channels if ch.category is category]
 
 
 def register_snap_handler(
