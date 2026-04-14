@@ -2034,6 +2034,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_red",
               "fft_1",
@@ -2204,6 +2205,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_plants",
               "fft_1",
@@ -2233,6 +2235,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_booth",
               "fft_1",
@@ -2258,6 +2261,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_spot",
               "fft_1",
@@ -2284,6 +2288,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_wash",
               "fft_1",
@@ -3669,6 +3674,7 @@
             "address": "auto",
             "decimals": 2,
             "bypass": false,
+            "css": ".nodes.inputs, .nodes.outputs { width: 30%; flex: 0 0 30%; } canvas { flex: 1 1 auto; } .patchbaynode-container { white-space: normal; overflow: visible; text-overflow: clip; height: auto; min-height: var(--line-height); } .patchbaynode-container > label { white-space: normal; overflow-wrap: break-word; word-break: break-word; text-overflow: clip; }",
             "inputs": [
               "sin_spot_pos_1",
               "sin_spot_pos_2",

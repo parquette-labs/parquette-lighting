@@ -39,47 +39,139 @@
 * Make text bigger
 * Mode randomizer
 
-# Category information
+# OSC Addresses
 
+⏺ Here's the full catalog of OSC addresses, organized by source file:
 
-1. Fixture creation — patching/fixtures.py
+  dmx.py
 
-Every fixture's category= argument (lines 21-103). Covers: reds, booth, plants, spots_light, spots_position, washes, non-saved, hazer.
+  - /dmx_port_refresh — trigger a refresh of DMX ports (line 109, incoming)
+  - /dmx_port_disconnect — disconnect current port (line 112, incoming)
+  - /dmx_port_name — select DMX port by name (line 116, incoming; outgoing at 142, 231)
+  - /dmx_port_name/values — available DMX port options (line 130, outgoing)
 
-2. Generator creation — builder modules
+  audio_analysis/audio.py
 
-Each builder creates generators with hardcoded categories:
-- patching/reds.py:33, 41, 44 — reds
-- patching/plants.py:18, 27, 37, 47 — plants
-- patching/booth.py:18 — booth
-- patching/washes.py:31, 39 — washes
-- patching/spots.py:32, 41, 50, 59, 68, 77, 82, 87, 92 — spots_light, spots_position
-- patching/audio.py:20, 28 — audio
-- patching/strobes.py:14 — strobes
+  - /audio_debug_frame — debug frame output (line 36, UIDebugFrame)
+  - /audio_port_refresh — refresh audio ports (line 40, incoming)
+  - /audio_port_name — select audio port (line 43 incoming; 94, 152 outgoing)
+  - /audio_port_name/values — available audio ports (line 62, outgoing)
+  - /start_audio — start audio capture (line 45, incoming)
+  - /stop_audio — stop audio capture (line 46, incoming)
 
-3. Builder filters — patching/washes.py:23
+  audio_analysis/fft.py
 
-f.category == "washes" — uses category to filter fixtures.
+  - /fft_debug_frame — debug frame output (line 97, UIDebugFrame)
+  - /start_fft — start FFT thread (line 102, incoming)
+  - /stop_fft — stop FFT thread (line 103, incoming)
+  - /set_fft_viz — enable FFT viz heartbeat (line 105, incoming — also line 347 in server.py)
+  - /fft_viz — FFT spectrum data (lines 485, 489, outgoing)
+  - /fftgen_1_viz, /fftgen_2_viz — FFT generator output values (lines 498, 499, outgoing)
+  - /rms_history_viz — RMS history (line 501, outgoing)
+  - /bpm_history_viz — BPM history (line 502, outgoing)
+  - /raw_bpm_history_viz — raw BPM history (line 504, outgoing)
+  - /harmonic_percussive_viz — harmonic/percussive split (line 507, outgoing)
+  - /business_viz — business metric history (line 510, outgoing)
+  - /regularity_viz — regularity metric history (line 511, outgoing)
+  - /audio_nyquist — sends Nyquist when audio rate is known
 
-4. build_params keys — each builder's return dict
+  category.py
 
-- reds.py:63 → "reds"
-- plants.py:77 → "plants"
-- booth.py:40 → "booth"
-- washes.py:64, 84 → "washes_color", "washes"
-- spots.py:295 → "spots_light", "spots_position"
-- audio.py:54 → "audio"
-- strobes.py:24 → "strobes"
-- hazer.py:17 → "hazer"
-- non_saved.py:24 → "non-saved"
+  - /{category}_master — per-category master fader, bound to Category.master (line 27). Generates: /reds_master, /plants_master, /booth_master, /spots_light_master, /washes_master, /spots_position_master,
+  /washes_color_master, /audio_master, /strobes_master, /hazer_master, /non-saved_master
 
-5. Preset manager — preset_manager.py
+  fixtures/basics.py
 
-- Lines 48-55: hardcoded list of saveable preset categories (reds, plants, booth, spots_light, spots_position, washes, washes_color, hazer)
-- Line 155: if category == "non-saved" — skip marker
+  - /visualizer/{fixture_name} — fixture dimming value for UI (line 131, outgoing)
 
-6. Mixer — generators/mixer.py
+  fixtures/spotlights.py
 
-- Lines 62-66: make_master_property maps a master name to its category (reds_master → "reds", etc.)
-- Line 115: impulse_categories = {"washes", "non-saved"} — which categories get the impulse generator connected
-- Lines 235, 242, 249, 256, 264, 273, 280: "reds" / "washes" literals for stutter channel construction
+  - /reset_spots — reset all spots (line 52, incoming; each Spot self-registers)
+  - /visualizer/{fixture_name}/pantilt — spot pan/tilt values (line 477, outgoing)
+
+  generators/mixer.py
+
+  - /synth_visualizer_history — synth visualizer channel history (line 404, outgoing)
+  - /fftgen_1_history, /fftgen_2_history — FFT gen history buffers (lines 407, 408, outgoing)
+
+  util/client_tracker.py
+
+  - /heartbeat — client heartbeat (default arg, line 20)
+  - /client_count — broadcast client count (default arg, line 21)
+
+  preset_manager.py
+
+  - /save_preset/* — save preset by category (line 36, incoming)
+  - /clear_preset/* — clear preset (line 39, incoming)
+  - /preset_selector/* — select preset by category (line 42, incoming; line 198 outgoing)
+  - /enable_save — save-mode toggle (line 200, outgoing; line 304 in server.py incoming)
+
+  server.py
+
+  - /reload — resync presets (line 302, incoming)
+  - /set_fft_viz, /set_synth_visualizer, /set_fixture_visualizer — visualizer gate heartbeats (lines 347, 350, 354, incoming)
+  - /all_black, /house_lights, /class — scene shortcuts (lines 357–359, incoming)
+
+  patching/strobes.py
+
+  - /impulse_punch — trigger impulse (line 19, incoming)
+  - /impulse_amp, /impulse_duty
+
+  patching/audio.py
+
+  - /fft1_amp, /fft2_amp
+  - /fft_lpf_alpha, /fft_threshold_1, /fft_threshold_2
+  - /fft_bounds_1, /fft_bounds_2
+  - /bpm_energy_threshold, /bpm_tempo_alpha, /onset_envelope_floor, /bpm_business_min, /bpm_regularity_min
+
+  patching/reds.py
+
+  - /snap_sin_red_to_bpm, /sin_red_period
+  - /loop_reds_record, /loop_reds_input, /loop_reds_amp, /loop_reds_samples
+  - /signal_patchbay/reds
+  - /reds_stutter_period
+  - /sin_red_amp
+  - /bpm_red_mult, /bpm_red_duty, /bpm_red_lpf_alpha, /bpm_red_amp, /bpm_red_manual_offset
+
+  patching/plants.py
+
+  - /snap_sin_plants_to_bpm, /sin_plants_period, /sin_plants_amp
+  - /snap_sq_to_bpm, /sq_amp, /sq_period
+  - /signal_patchbay/plants
+
+  patching/booth.py
+
+  - /snap_sin_booth_to_bpm, /sin_booth_period, /sin_booth_amp
+  - /signal_patchbay/booth
+
+  patching/washes.py
+
+  - /snap_sin_wash_to_bpm, /period_wash, /amp_wash
+  - /bpm_wash_amp, /bpm_wash_duty, /bpm_wash_lpf_alpha, /bpm_wash_mult, /bpm_wash_manual_offset
+  - /signal_patchbay/washes, /washes_stutter_period
+  - /wash_w, /wash_color
+
+  patching/spots.py
+
+  - /snap_sin_spot_to_bpm, /sin_spot_period, /sin_spot_amp
+  - /snap_sin_spot_pos_to_bpm
+  - /sin_spot_pos_{1-4}_amp, /sin_spot_pos_{1-4}_period
+  - /loop_spot_pos_{1,2}_record, /loop_spot_pos_{1,2}_input
+  - /loop_spot_pos_{1,2}_x_amp, /loop_spot_pos_{1,2}_y_amp
+  - /{fixture_name}_samples (loop sample data per axis)
+  - /signal_patchbay/spots_light, /signal_patchbay/spots_position
+  - /spot_color_{1,2}, /spot_pattern_{1,2}, /spot_prisim_{1,2}, /spot_prisim_rotation_{1,2}
+  - /{fixture_name}_pantilt_offset, /{fixture_name}_pantilt_fine_offset
+
+  patching/hazer.py
+
+  - /hazer_intensity, /hazer_fan, /hazer_interval, /hazer_duration
+
+  patching/non_saved.py
+
+  - /dmx_passthrough
+  - /synth_visualizer_source
+
+  patching/channel_levels.py
+
+  - /mix_chan_offset/{channel_name} — per-channel offset trim (line 22)
