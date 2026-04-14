@@ -43,22 +43,9 @@ class PresetManager(object):
         self.load()
 
     def all_categories(self) -> Set[str]:
-        all_categories = set(
-            [
-                "reds",
-                "plants",
-                "booth",
-                "spots_light",
-                "spots_position",
-                "washes",
-                "washes_color",
-                "hazer",
-            ]
-        )
-
+        all_categories = {cat for cat in self.exposed_params if cat != "non-saved"}
         for key in self.current_presets:
             all_categories.add(key)
-
         return all_categories
 
     def select_all(self, category_preset: str) -> None:
