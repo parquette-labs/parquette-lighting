@@ -210,13 +210,8 @@ def run(
         osc,
         audio_capture,
         dmx,
-        energy_threshold=100.0,
-        tempo_alpha=0.25,
         rms_window_secs=rms_window,
         debug=debug,
-        onset_envelope_floor=2.0,
-        min_business=0.5,
-        min_regularity=0.4,
     )
 
     # Create all patching builders — fixtures and generators are instantiated
