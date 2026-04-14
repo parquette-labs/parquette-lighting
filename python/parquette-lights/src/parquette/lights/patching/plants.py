@@ -106,20 +106,10 @@ class PlantsBuilder(CategoryBuilder):
                     channel_names_for_category(mixer, self.category),
                     mixer,
                 ),
-                # Generator params
-                OSCParam.bind(osc, "/sin_plants_amp", self.sin_plants, "amp"),
-                OSCParam.bind(osc, "/sin_plants_period", self.sin_plants, "period"),
-                OSCParam.bind(
-                    osc,
-                    "/sq_amp",
-                    [self.sq1, self.sq2, self.sq3],
-                    "amp",
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/sq_period",
-                    [self.sq1, self.sq2, self.sq3],
-                    "period",
-                ),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.sin_plants.standard_params(osc),
+                *self.sq1.standard_params(osc),
+                *self.sq2.standard_params(osc),
+                *self.sq3.standard_params(osc),
             ]
         }

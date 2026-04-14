@@ -134,18 +134,8 @@ class WashesBuilder(CategoryBuilder):
                     mixer,
                     "washes_stutter_period",
                 ),
-                # Generator params
-                OSCParam.bind(osc, "/amp_wash", self.sin_wash, "amp"),
-                OSCParam.bind(osc, "/period_wash", self.sin_wash, "period"),
-                OSCParam.bind(osc, "/bpm_wash_amp", self.bpm_wash, "amp"),
-                OSCParam.bind(osc, "/bpm_wash_duty", self.bpm_wash, "duty"),
-                OSCParam.bind(osc, "/bpm_wash_lpf_alpha", self.bpm_wash, "lpf_alpha"),
-                OSCParam.bind(osc, "/bpm_wash_mult", self.bpm_wash, "bpm_mult"),
-                OSCParam.bind(
-                    osc,
-                    "/bpm_wash_manual_offset",
-                    self.bpm_wash,
-                    "manual_offset",
-                ),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.sin_wash.standard_params(osc),
+                *self.bpm_wash.standard_params(osc),
             ],
         }

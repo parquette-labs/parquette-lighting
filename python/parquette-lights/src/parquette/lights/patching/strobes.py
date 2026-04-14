@@ -24,8 +24,7 @@ class StrobesBuilder(CategoryBuilder):
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         return {
             self.category: [
-                # Generator params
-                OSCParam.bind(self.osc, "/impulse_amp", self.impulse, "amp"),
-                OSCParam.bind(self.osc, "/impulse_duty", self.impulse, "duty"),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.impulse.standard_params(self.osc),
             ]
         }

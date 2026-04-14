@@ -19,7 +19,7 @@ class ChannelLevelsBuilder(CategoryBuilder):
             on_change = self.session.save if ch.name == "sodium.dimming" else None
             param = OSCParam.bind(
                 self.osc,
-                "/mix_chan_offset/{}".format(ch.name),
+                "/chan/{}/offset".format(ch.name),
                 ch,
                 "offset",
                 on_change=on_change,

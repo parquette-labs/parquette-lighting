@@ -59,17 +59,10 @@ class AudioBuilder(CategoryBuilder):
 
         return {
             self.category: [
-                # Generator params
-                OSCParam.bind(osc, "/fft1_amp", self.fft1, "amp"),
-                OSCParam.bind(osc, "/fft2_amp", self.fft2, "amp"),
-                OSCParam.bind(
-                    osc,
-                    "/fft_lpf_alpha",
-                    [self.fft1, self.fft2],
-                    "lpf_alpha",
-                ),
-                OSCParam.bind(osc, "/fft_threshold_1", self.fft1, "thres"),
-                OSCParam.bind(osc, "/fft_threshold_2", self.fft2, "thres"),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.fft1.standard_params(osc),
+                *self.fft2.standard_params(osc),
+                # Custom FFT bounds params (not simple scalar attrs)
                 OSCParam(
                     osc,
                     "/fft_bounds_1",

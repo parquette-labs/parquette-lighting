@@ -202,9 +202,8 @@ class SpotsBuilder(CategoryBuilder):
                 channel_names_for_category(mixer, self.light_category),
                 mixer,
             ),
-            # Generator params
-            OSCParam.bind(osc, "/sin_spot_amp", self.sin_spot, "amp"),
-            OSCParam.bind(osc, "/sin_spot_period", self.sin_spot, "period"),
+            # Standard generator params (/gen/{type}/{name}/{attr})
+            *self.sin_spot.standard_params(osc),
         ]
 
         for i, fixture in enumerate(self.spotlights):
@@ -263,14 +262,9 @@ class SpotsBuilder(CategoryBuilder):
                 mixer,
             ),
         ]
-        for i, gen in enumerate(spot_pos_gens, start=1):
-            # Generator params
-            pos_params.append(
-                OSCParam.bind(osc, "/sin_spot_pos_{}_amp".format(i), gen, "amp")
-            )
-            pos_params.append(
-                OSCParam.bind(osc, "/sin_spot_pos_{}_period".format(i), gen, "period")
-            )
+        for gen in spot_pos_gens:
+            # Standard generator params (/gen/{type}/{name}/{attr})
+            pos_params.extend(gen.standard_params(osc))
 
         for fixture in self.spotlights:
             pan_ch = mixer.channel_lookup["{}.pan".format(fixture.name)]
@@ -305,7 +299,7 @@ class SpotsBuilder(CategoryBuilder):
             (self.loop_spot_pos_2_x, self.loop_spot_pos_2_y, 2),
         ]
         for loop_x, loop_y, idx in loop_pairs:
-            # Generator params
+            # Custom XY input param (paired across x/y loop generators)
             pos_params.append(
                 OSCParam(
                     osc,
@@ -316,12 +310,10 @@ class SpotsBuilder(CategoryBuilder):
                     ),
                 )
             )
-            pos_params.append(
-                OSCParam.bind(osc, "/loop_spot_pos_{}_x_amp".format(idx), loop_x, "amp")
-            )
-            pos_params.append(
-                OSCParam.bind(osc, "/loop_spot_pos_{}_y_amp".format(idx), loop_y, "amp")
-            )
+            # Standard generator params for each axis (/gen/loop/{name}/amp)
+            pos_params.extend(loop_x.standard_params(osc))
+            pos_params.extend(loop_y.standard_params(osc))
+            # Custom sample buffer params
             for axis_gen in [loop_x, loop_y]:
                 pos_params.append(
                     OSCParam(

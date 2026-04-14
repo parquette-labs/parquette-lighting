@@ -3,6 +3,9 @@ from ..category import Category
 
 
 class ImpulseGenerator(Generator):
+    OSC_TYPE = "impulse"
+    STANDARD_ATTRS = ["amp", "duty"]
+
     punch_point: float = 0
     _punch_pending: bool
 

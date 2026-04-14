@@ -80,6 +80,9 @@ class UIDebugFrame(dict):
         return str(result)
 
 
+_MISSING = object()
+
+
 class OSCParam(object):
     # pylint: disable-next=too-many-positional-arguments
     def __init__(
@@ -89,11 +92,14 @@ class OSCParam(object):
         value_lambda: Callable,
         dispatch_lambda: Callable,
         on_change: Optional[Callable[[], None]] = None,
+        default_value: Any = _MISSING,
     ) -> None:
         self.osc = osc
         self.addr = addr
         self.value_lambda = value_lambda
         self.on_change = on_change
+        self.has_default = default_value is not _MISSING
+        self.default_value = default_value if self.has_default else None
 
         def handler(a: str, *osc_args: Any) -> None:
             dispatch_lambda(a, *osc_args)
@@ -103,12 +109,17 @@ class OSCParam(object):
         self.dispatch_lambda = handler
         osc.dispatcher.map(addr, handler)
 
-    def load(self, addr: str, *osc_args: Any) -> None:
+    def load(self, addr: str, *osc_args: Any, sync: bool = True) -> None:
         self.dispatch_lambda(addr, *osc_args)
-        self.sync()
+        if sync:
+            self.sync()
 
     def sync(self) -> None:
         self.osc.send_osc(self.addr, self.value_lambda())
+
+    def is_at_default(self) -> bool:
+        """True if this param has a default and its current value matches it."""
+        return self.has_default and self.value_lambda() == self.default_value
 
     @classmethod
     def bind(
@@ -124,7 +135,9 @@ class OSCParam(object):
 
         `target` may be a single object or a list. The first object is used
         as the getter source; incoming values are written to every target
-        via `obj_param_setter`.
+        via `obj_param_setter`. The primary target's current value at bind
+        time is captured as the default so preset save/load can skip values
+        that match it.
         """
         targets: List[Any] = target if isinstance(target, list) else [target]
         primary = targets[0]
@@ -134,6 +147,7 @@ class OSCParam(object):
             lambda: getattr(primary, field),
             lambda _addr, args: cls.obj_param_setter(args, field, targets),
             on_change=on_change,
+            default_value=getattr(primary, field),
         )
 
     @classmethod

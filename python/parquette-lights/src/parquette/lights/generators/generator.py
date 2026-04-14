@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar, List
 
 from ..category import Category
+from ..osc import OSCManager, OSCParam
 
 
 class Generator(ABC):
+    OSC_TYPE: ClassVar[str] = ""
+    STANDARD_ATTRS: ClassVar[List[str]] = []
+
     def __init__(
         self,
         *,
@@ -24,6 +29,22 @@ class Generator(ABC):
     @abstractmethod
     def value(self, millis: float) -> float:
         pass
+
+    def standard_params(self, osc: OSCManager) -> List[OSCParam]:
+        """Return OSCParam binds for this generator's standard attributes.
+
+        Addresses follow /gen/{type}/{name}/{attribute}. Binds happen for
+        every attribute regardless of whether the frontend UI uses them.
+        """
+        return [
+            OSCParam.bind(
+                osc,
+                "/gen/{}/{}/{}".format(self.OSC_TYPE, self.name, attr),
+                self,
+                attr,
+            )
+            for attr in self.STANDARD_ATTRS
+        ]
 
     @staticmethod
     def reanchor_offset(

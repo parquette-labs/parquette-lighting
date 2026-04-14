@@ -7,6 +7,9 @@ from ..util.math import constrain
 
 
 class FFTGenerator(Generator):
+    OSC_TYPE = "fft"
+    STANDARD_ATTRS = ["amp", "thres", "lpf_alpha"]
+
     stamps: list[float]
     memory: list[list[float]]
     bounds: list[float]

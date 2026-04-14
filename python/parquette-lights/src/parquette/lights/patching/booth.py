@@ -68,8 +68,7 @@ class BoothBuilder(CategoryBuilder):
                     channel_names_for_category(mixer, self.category),
                     mixer,
                 ),
-                # Generator params
-                OSCParam.bind(osc, "/sin_booth_amp", self.sin_booth, "amp"),
-                OSCParam.bind(osc, "/sin_booth_period", self.sin_booth, "period"),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.sin_booth.standard_params(osc),
             ]
         }

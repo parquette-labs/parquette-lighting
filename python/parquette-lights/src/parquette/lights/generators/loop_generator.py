@@ -13,6 +13,9 @@ class LoopGenerator(Generator):
     interpolation and loops continuously at the original recording speed.
     """
 
+    OSC_TYPE = "loop"
+    STANDARD_ATTRS = ["amp"]
+
     def __init__(
         self,
         *,

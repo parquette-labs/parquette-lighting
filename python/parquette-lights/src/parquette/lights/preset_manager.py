@@ -173,7 +173,10 @@ class PresetManager(object):
 
         self.stored_presets[category][category_preset] = []
 
+        # Sparse save — skip any param whose current value matches its default.
         for param in self.exposed_params[cat]:
+            if param.is_at_default():
+                continue
             self.stored_presets[category][category_preset].append(
                 (param.addr, param.value_lambda())
             )
@@ -223,14 +226,21 @@ class PresetManager(object):
             # Someone is creating a new preset, nothing to load
             return
 
+        # Reset every param with a default to its default value. Silent:
+        # no OSC sync per-param — we issue one final sync at the end.
+        for param in self.exposed_params[cat]:
+            if param.has_default:
+                param.load(param.addr, param.default_value, sync=False)
+
+        # Apply the saved overrides on top of the defaults.
         for param_preset in self.stored_presets[category][category_preset]:
             addr, value = param_preset[0], param_preset[1]
             for param in self.exposed_params[cat]:
                 if param.addr == addr:
                     if isinstance(value, (list, tuple)):
-                        param.load(addr, *value)
+                        param.load(addr, *value, sync=False)
                     else:
-                        param.load(addr, value)
+                        param.load(addr, value, sync=False)
 
         if sync:
             self.sync()

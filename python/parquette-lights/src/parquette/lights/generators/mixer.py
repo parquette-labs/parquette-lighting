@@ -1,4 +1,5 @@
 from typing import (
+    Any,
     List,
     Tuple,
     Dict,
@@ -437,7 +438,7 @@ class SignalPatchParam(OSCParam):
             mappings.append(gen_mapping)
         return mappings
 
-    def load(self, addr: str, *args: List[str]) -> None:
+    def load(self, addr: str, *args: Any, sync: bool = True) -> None:
         for chan_name in self.chan_names:
             self.mixer.clearSignalMatrix(chan_name)
 
@@ -446,7 +447,8 @@ class SignalPatchParam(OSCParam):
                 if chan_name in self.chan_names:
                     self.mixer.configureSignalPath(conf[0], chan_name, True)
 
-        self.sync()
+        if sync:
+            self.sync()
 
     def dispatch_patch(self, _: str, *args):
         for chan_name in self.chan_names:

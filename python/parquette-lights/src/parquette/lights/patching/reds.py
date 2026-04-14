@@ -97,23 +97,17 @@ class RedsBuilder(CategoryBuilder):
                 OSCParam.bind(
                     osc, "/reds_stutter_period", mixer, "reds_stutter_period"
                 ),
-                # Generator params
-                OSCParam.bind(osc, "/sin_red_amp", self.sin_reds, "amp"),
-                OSCParam.bind(osc, "/sin_red_period", self.sin_reds, "period"),
-                OSCParam.bind(osc, "/bpm_red_mult", self.bpm_red, "bpm_mult"),
-                OSCParam.bind(osc, "/bpm_red_duty", self.bpm_red, "duty"),
-                OSCParam.bind(osc, "/bpm_red_lpf_alpha", self.bpm_red, "lpf_alpha"),
-                OSCParam.bind(osc, "/bpm_red_amp", self.bpm_red, "amp"),
-                OSCParam.bind(
-                    osc, "/bpm_red_manual_offset", self.bpm_red, "manual_offset"
-                ),
+                # Standard generator params (/gen/{type}/{name}/{attr})
+                *self.sin_reds.standard_params(osc),
+                *self.bpm_red.standard_params(osc),
+                *self.loop_reds.standard_params(osc),
+                # Custom loop params
                 OSCParam(
                     osc,
                     "/loop_reds_input",
                     lambda: self.loop_reds.input_value,
                     lambda _, args: _handle_loop_input(self.loop_reds, args),
                 ),
-                OSCParam.bind(osc, "/loop_reds_amp", self.loop_reds, "amp"),
                 OSCParam(
                     osc,
                     "/loop_reds_samples",
