@@ -9,7 +9,10 @@ from .builder import ParamGeneratorBuilder
 
 
 class AudioBuilder(ParamGeneratorBuilder):
-    def __init__(self, fft_manager: FFTManager) -> None:
+    def __init__(
+        self, osc: OSCManager, fft_manager: FFTManager, *, debug: bool = False
+    ) -> None:
+        self.osc = osc
         self.fft_manager = fft_manager
 
         self.fft1 = FFTGenerator(
@@ -29,10 +32,18 @@ class AudioBuilder(ParamGeneratorBuilder):
             memory_length=20,
         )
 
+        if debug:
+            self.fft1.debug = True
+            self.fft2.debug = True
+
+        fft_manager.downstream = [self.fft1, self.fft2]
+
     def generators(self) -> List[Generator]:
         return [self.fft1, self.fft2]
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
+
         def fft_dispatch_wedge(fft: Any, args: Tuple[Any, ...]) -> None:
             if len(args) == 1:
                 fft.set_bounds(args[0][0], args[0][2])

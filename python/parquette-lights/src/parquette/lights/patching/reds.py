@@ -1,10 +1,15 @@
 from typing import Dict, List
 
+from ..audio_analysis import FFTManager
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import (
+    ParamGeneratorBuilder,
+    register_snap_handler,
+    register_loop_record_handler,
+)
 
 
 def _handle_loop_input(gen: LoopGenerator, value: float) -> None:
@@ -13,7 +18,13 @@ def _handle_loop_input(gen: LoopGenerator, value: float) -> None:
 
 
 class RedsBuilder(ParamGeneratorBuilder):
-    def __init__(self, loop_max_samples: int) -> None:
+    def __init__(
+        self,
+        osc: OSCManager,
+        fft_manager: FFTManager,
+        loop_max_samples: int,
+    ) -> None:
+        self.osc = osc
         initial_amp: float = 200
         initial_period: int = 3500
 
@@ -33,10 +44,21 @@ class RedsBuilder(ParamGeneratorBuilder):
             name="loop_reds", category="reds", max_samples=loop_max_samples
         )
 
+        register_snap_handler(
+            osc,
+            "/snap_sin_red_to_bpm",
+            [self.sin_reds],
+            "/sin_red_period",
+            self.bpm_red,
+        )
+        register_loop_record_handler(osc, "/loop_reds_record", [self.loop_reds])
+        fft_manager.bpms.append(self.bpm_red)
+
     def generators(self) -> List[Generator]:
         return [self.sin_reds, self.bpm_red, self.loop_reds]
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
         return {
             "reds": [
                 # Patch params

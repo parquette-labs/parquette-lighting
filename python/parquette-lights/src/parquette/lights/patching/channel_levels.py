@@ -7,16 +7,17 @@ from .builder import ParamGeneratorBuilder
 
 
 class ChannelLevelsBuilder(ParamGeneratorBuilder):
-    def __init__(self, session: SessionStore) -> None:
+    def __init__(self, osc: OSCManager, session: SessionStore) -> None:
+        self.osc = osc
         self.session = session
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
         """Build per-channel offset params, grouped by each channel's category."""
         by_category: Dict[str, List[OSCParam]] = {}
         for ch in mixer.mix_channels:
             on_change = self.session.save if ch.name == "sodium.dimming" else None
             param = OSCParam.bind(
-                osc,
+                self.osc,
                 "/mix_chan_offset/{}".format(ch.name),
                 ch,
                 "offset",

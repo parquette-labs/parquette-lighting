@@ -1,16 +1,27 @@
 from typing import Any, Dict, List
 
-from ..generators import SignalPatchParam, WaveGenerator, LoopGenerator
+from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..fixtures.basics import Fixture
 from ..fixtures.spotlights import Spot
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import (
+    ParamGeneratorBuilder,
+    register_snap_handler,
+    register_loop_record_handler,
+)
 
 
 class SpotsBuilder(ParamGeneratorBuilder):
-    def __init__(self, all_fixtures: List[Fixture], loop_max_samples: int) -> None:
+    def __init__(
+        self,
+        osc: OSCManager,
+        all_fixtures: List[Fixture],
+        loop_max_samples: int,
+        bpm_red: BPMGenerator,
+    ) -> None:
+        self.osc = osc
         initial_amp: float = 200
         initial_period: int = 3500
 
@@ -82,6 +93,43 @@ class SpotsBuilder(ParamGeneratorBuilder):
             max_samples=loop_max_samples,
         )
 
+        register_snap_handler(
+            osc,
+            "/snap_sin_spot_to_bpm",
+            [self.sin_spot],
+            "/sin_spot_period",
+            bpm_red,
+        )
+        spot_pos_gens = [
+            self.sin_spot_pos_1,
+            self.sin_spot_pos_2,
+            self.sin_spot_pos_3,
+            self.sin_spot_pos_4,
+        ]
+        register_snap_handler(
+            osc,
+            "/snap_sin_spot_pos_to_bpm",
+            spot_pos_gens,
+            [
+                "/sin_spot_pos_1_period",
+                "/sin_spot_pos_2_period",
+                "/sin_spot_pos_3_period",
+                "/sin_spot_pos_4_period",
+            ],
+            bpm_red,
+        )
+
+        loop_pairs = [
+            (self.loop_spot_pos_1_x, self.loop_spot_pos_1_y, 1),
+            (self.loop_spot_pos_2_x, self.loop_spot_pos_2_y, 2),
+        ]
+        for loop_x, loop_y, idx in loop_pairs:
+            register_loop_record_handler(
+                osc,
+                "/loop_spot_pos_{}_record".format(idx),
+                [loop_x, loop_y],
+            )
+
     def generators(self) -> List[Generator]:
         return [
             self.sin_spot,
@@ -96,7 +144,8 @@ class SpotsBuilder(ParamGeneratorBuilder):
         ]
 
     # pylint: disable=protected-access
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
         light_params: List[OSCParam] = [
             # Patch params
             SignalPatchParam(

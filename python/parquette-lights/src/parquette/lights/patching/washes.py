@@ -1,15 +1,19 @@
 from typing import Dict, List
 
+from ..audio_analysis import FFTManager
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..fixtures.basics import Fixture, RGBLight, RGBWLight
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import ParamGeneratorBuilder, register_snap_handler
 
 
 class WashesBuilder(ParamGeneratorBuilder):
-    def __init__(self, all_fixtures: List[Fixture]) -> None:
+    def __init__(
+        self, osc: OSCManager, fft_manager: FFTManager, all_fixtures: List[Fixture]
+    ) -> None:
+        self.osc = osc
         initial_amp: float = 200
         initial_period: int = 3500
 
@@ -35,10 +39,21 @@ class WashesBuilder(ParamGeneratorBuilder):
             name="bpm_wash", category="washes", amp=255, offset=0, duty=100
         )
 
+        register_snap_handler(
+            osc,
+            "/snap_sin_wash_to_bpm",
+            [self.sin_wash],
+            "/period_wash",
+            self.bpm_wash,
+        )
+        fft_manager.bpms.append(self.bpm_wash)
+
     def generators(self) -> List[Generator]:
         return [self.sin_wash, self.bpm_wash]
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
+
         def dispatch_wash_color(_addr: str, *rgb: float) -> None:
             if len(rgb) < 3:
                 return

@@ -1,14 +1,15 @@
 from typing import Dict, List
 
-from ..generators import SignalPatchParam, WaveGenerator
+from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import ParamGeneratorBuilder
+from .builder import ParamGeneratorBuilder, register_snap_handler
 
 
 class PlantsBuilder(ParamGeneratorBuilder):
-    def __init__(self) -> None:
+    def __init__(self, osc: OSCManager, bpm_red: BPMGenerator) -> None:
+        self.osc = osc
         initial_amp: float = 200
         initial_period: int = 3500
 
@@ -52,10 +53,26 @@ class PlantsBuilder(ParamGeneratorBuilder):
             duty=0.5,
         )
 
+        register_snap_handler(
+            osc,
+            "/snap_sin_plants_to_bpm",
+            [self.sin_plants],
+            "/sin_plants_period",
+            bpm_red,
+        )
+        register_snap_handler(
+            osc,
+            "/snap_sq_to_bpm",
+            [self.sq1, self.sq2, self.sq3],
+            "/sq_period",
+            bpm_red,
+        )
+
     def generators(self) -> List[Generator]:
         return [self.sin_plants, self.sq1, self.sq2, self.sq3]
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
         return {
             "plants": [
                 # Patch params

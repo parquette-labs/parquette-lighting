@@ -8,19 +8,22 @@ from .builder import ParamGeneratorBuilder
 
 
 class StrobesBuilder(ParamGeneratorBuilder):
-    def __init__(self) -> None:
+    def __init__(self, osc: OSCManager) -> None:
+        self.osc = osc
         self.impulse = ImpulseGenerator(
             name="impulse", category="strobes", amp=255, offset=0, duty=100
         )
 
+        osc.dispatcher.map("/impulse_punch", lambda addr, *args: self.impulse.punch())
+
     def generators(self) -> List[Generator]:
         return [self.impulse]
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
         return {
             "strobes": [
                 # Generator params
-                OSCParam.bind(osc, "/impulse_amp", self.impulse, "amp"),
-                OSCParam.bind(osc, "/impulse_duty", self.impulse, "duty"),
+                OSCParam.bind(self.osc, "/impulse_amp", self.impulse, "amp"),
+                OSCParam.bind(self.osc, "/impulse_duty", self.impulse, "duty"),
             ]
         }

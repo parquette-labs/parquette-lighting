@@ -1,24 +1,17 @@
-from typing import Any, Callable, Optional
+from typing import Optional
 
 import sys
 import time
 
 import click
 
-from .generators import LoopGenerator, Mixer
+from .generators import Mixer
 from .audio_analysis import FFTManager, AudioCapture
 
 from .osc import OSCManager
 from .dmx import DMXManager
 from .patching import create_builders
 from .patching.fixtures import create_fixtures
-from .patching.audio import AudioBuilder
-from .patching.booth import BoothBuilder
-from .patching.plants import PlantsBuilder
-from .patching.reds import RedsBuilder
-from .patching.spots import SpotsBuilder
-from .patching.strobes import StrobesBuilder
-from .patching.washes import WashesBuilder
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
 from .util.session_store import SessionStore
@@ -235,32 +228,18 @@ def run(
 
     # Create all patching builders — generators are instantiated in constructors
     builders = create_builders(
+        osc=osc,
         all_fixtures=all_fixtures,
         fft_manager=fft_manager,
         dmx=dmx,
         session=session,
         loop_max_samples=loop_max_samples,
+        debug=debug,
     )
 
-    # Keep typed refs for snap handlers, fft wiring, etc.
-    reds_b: RedsBuilder = next(b for b in builders if isinstance(b, RedsBuilder))
-    plants_b: PlantsBuilder = next(b for b in builders if isinstance(b, PlantsBuilder))
-    booth_b: BoothBuilder = next(b for b in builders if isinstance(b, BoothBuilder))
-    washes_b: WashesBuilder = next(b for b in builders if isinstance(b, WashesBuilder))
-    spots_b: SpotsBuilder = next(b for b in builders if isinstance(b, SpotsBuilder))
-    audio_b: AudioBuilder = next(b for b in builders if isinstance(b, AudioBuilder))
-    strobes_b: StrobesBuilder = next(
-        b for b in builders if isinstance(b, StrobesBuilder)
-    )
-
-    # Collect all generators for mixer
     generators = []
     for b in builders:
         generators.extend(b.generators())
-
-    # Wire FFT manager to its downstream generators
-    fft_manager.downstream = [audio_b.fft1, audio_b.fft2]
-    fft_manager.bpms = [reds_b.bpm_red, washes_b.bpm_wash]
 
     if audio_interface is not None:
         needle = audio_interface.lower()
@@ -290,10 +269,6 @@ def run(
             audio_capture.start_audio()
             fft_manager.start_fft()
 
-    if debug:
-        audio_b.fft1.debug = True
-        audio_b.fft2.debug = True
-
     mixer = Mixer(
         osc=osc,
         dmx=dmx,
@@ -306,22 +281,8 @@ def run(
     # Build all params from builders
     exposed_params: dict[str, list] = {}
     for b in builders:
-        for category, params in b.build_params(osc, mixer).items():
+        for category, params in b.build_params(mixer).items():
             exposed_params.setdefault(category, []).extend(params)
-
-    def make_snap_handler(gens, period_addrs, bpm_gen):
-        if isinstance(period_addrs, str):
-            period_addrs = [period_addrs]
-
-        def handler():
-            if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:
-                period = bpm_gen.current_period()
-                for gen in gens:
-                    gen.period = period
-                for addr in period_addrs:
-                    osc.send_osc(addr, period)
-
-        return handler
 
     presets = PresetManager(
         osc,
@@ -332,13 +293,13 @@ def run(
         session=session,
     )
 
-    def _session_snapshot():
+    def session_snapshot():
         return {
             "current_presets": presets.save_current_selection(),
             "masters": mixer.save_current_masters(),
         }
 
-    session.bind(_session_snapshot)
+    session.bind(session_snapshot)
 
     osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
     osc.dispatcher.map(
@@ -392,102 +353,6 @@ def run(
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())
     osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
     osc.dispatcher.map("/class", lambda addr, args: class_lights())
-    osc.dispatcher.map(
-        "/impulse_punch",
-        lambda addr, *args: strobes_b.impulse.punch(),
-    )
-
-    # Snap-to-BPM action buttons. These are momentary actions, not state, so
-    # they're registered directly on the dispatcher (not as OSCParams) and
-    # therefore are never written into preset pickles. Previously they lived
-    # as OSCParams inside saved categories, which meant preset save captured
-    # `/snap_*_to_bpm = 0` and preset load re-fired the snap, clobbering the
-    # restored period of the corresponding sine generator.
-    osc.dispatcher.map(
-        "/snap_sin_red_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [reds_b.sin_reds], "/sin_red_period", reds_b.bpm_red
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sin_plants_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [plants_b.sin_plants], "/sin_plants_period", reds_b.bpm_red
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sq_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [plants_b.sq1, plants_b.sq2, plants_b.sq3],
-            "/sq_period",
-            reds_b.bpm_red,
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sin_booth_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [booth_b.sin_booth], "/sin_booth_period", reds_b.bpm_red
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sin_wash_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [washes_b.sin_wash], "/period_wash", washes_b.bpm_wash
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sin_spot_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [spots_b.sin_spot], "/sin_spot_period", reds_b.bpm_red
-        )(),
-    )
-    osc.dispatcher.map(
-        "/snap_sin_spot_pos_to_bpm",
-        lambda addr, *args: make_snap_handler(
-            [
-                spots_b.sin_spot_pos_1,
-                spots_b.sin_spot_pos_2,
-                spots_b.sin_spot_pos_3,
-                spots_b.sin_spot_pos_4,
-            ],
-            [
-                "/sin_spot_pos_1_period",
-                "/sin_spot_pos_2_period",
-                "/sin_spot_pos_3_period",
-                "/sin_spot_pos_4_period",
-            ],
-            reds_b.bpm_red,
-        )(),
-    )
-
-    # Loop generator record triggers (momentary actions, not preset state)
-    osc.dispatcher.map(
-        "/loop_reds_record",
-        lambda addr, *args: reds_b.loop_reds.set_recording(bool(args[0])),
-    )
-
-    for i, (lx, ly) in enumerate(
-        [
-            (spots_b.loop_spot_pos_1_x, spots_b.loop_spot_pos_1_y),
-            (spots_b.loop_spot_pos_2_x, spots_b.loop_spot_pos_2_y),
-        ],
-        start=1,
-    ):
-
-        def make_record_handler(gx: LoopGenerator, gy: LoopGenerator) -> Callable:
-            # pylint: disable-next=unused-argument
-            def handler(addr: str, *args: Any) -> None:
-                ts = time.time() * 1000
-                gx.set_recording(bool(args[0]), ts)
-                gy.set_recording(bool(args[0]), ts)
-
-            return handler
-
-        osc.dispatcher.map(
-            "/loop_spot_pos_{}_record".format(i),
-            make_record_handler(lx, ly),
-        )
-
     client_tracker = ClientTracker(osc)
     client_tracker.start()
 

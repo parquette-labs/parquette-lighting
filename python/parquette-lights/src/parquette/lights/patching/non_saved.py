@@ -10,13 +10,16 @@ from .builder import ParamGeneratorBuilder
 class NonSavedBuilder(ParamGeneratorBuilder):
     def __init__(
         self,
+        osc: OSCManager,
         dmx: DMXManager,
         session: SessionStore,
     ) -> None:
+        self.osc = osc
         self.dmx = dmx
         self.session = session
 
-    def build_params(self, osc: OSCManager, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+        osc = self.osc
         return {
             "non-saved": [
                 # Non-generator infrastructure params
