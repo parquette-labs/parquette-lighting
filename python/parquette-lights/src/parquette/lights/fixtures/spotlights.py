@@ -7,6 +7,7 @@ from typing import cast, List, Optional
 from enum import Enum
 
 
+from ..category import Category
 from ..util.math import constrain, value_map
 from .basics import LightFixture, MixTarget
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
@@ -29,8 +30,8 @@ class Spot(LightFixture):
         self,
         *,
         name: str,
-        category: str,
-        position_category: str,
+        category: Category,
+        position_category: Category,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
@@ -376,8 +377,8 @@ class YRXY200Spot(Spot):
         self,
         *,
         name: str,
-        category: str,
-        position_category: str,
+        category: Category,
+        position_category: Category,
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,
@@ -863,7 +864,7 @@ class PinSpot(LightFixture):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,

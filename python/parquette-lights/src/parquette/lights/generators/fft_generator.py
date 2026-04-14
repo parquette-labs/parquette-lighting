@@ -2,6 +2,7 @@ import time
 from copy import copy
 import numpy as np
 from .generator import Generator
+from ..category import Category
 from ..util.math import constrain
 
 
@@ -14,7 +15,7 @@ class FFTGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 1,
         offset: float = 0.5,
         subdivisions: int = 0,

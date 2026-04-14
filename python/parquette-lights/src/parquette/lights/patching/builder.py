@@ -1,6 +1,7 @@
 import time
 from typing import Callable, Dict, List, Sequence, Union
 
+from ..category import Category
 from ..generators.bpm_generator import BPMGenerator
 from ..generators.generator import Generator
 from ..generators.loop_generator import LoopGenerator
@@ -21,8 +22,8 @@ class ParamGeneratorBuilder:
         return []
 
     # pylint: disable=unused-argument
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
-        """Return a dict mapping category keys to their OSCParam lists."""
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
+        """Return a dict mapping Category objects to their OSCParam lists."""
         return {}
 
 

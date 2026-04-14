@@ -1,4 +1,4 @@
-from typing import Optional, List, Any, Callable, Sequence
+from typing import Optional, List, Any, Callable, Union
 
 from threading import Thread
 
@@ -115,24 +115,23 @@ class OSCParam(object):
         cls,
         osc: OSCManager,
         addr: str,
-        target: Any,
+        target: Union[Any, List[Any]],
         field: str,
         *,
-        extra: Sequence[Any] = (),
         on_change: Optional[Callable[[], None]] = None,
     ) -> "OSCParam":
         """Bind an OSC address to an attribute on one or more target objects.
 
-        Captures `target.field` for the value getter and uses
-        `obj_param_setter` to write incoming values back to `target` plus any
-        `extra` targets. Replaces the dominant boilerplate pattern of
-        `OSCParam(osc, addr, lambda: o.f, lambda _, a: obj_param_setter(a, "f", [o]))`.
+        `target` may be a single object or a list. The first object is used
+        as the getter source; incoming values are written to every target
+        via `obj_param_setter`.
         """
-        targets = [target, *extra]
+        targets: List[Any] = target if isinstance(target, list) else [target]
+        primary = targets[0]
         return cls(
             osc,
             addr,
-            lambda: getattr(target, field),
+            lambda: getattr(primary, field),
             lambda _addr, args: cls.obj_param_setter(args, field, targets),
             on_change=on_change,
         )

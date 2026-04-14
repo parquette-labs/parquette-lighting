@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Callable, List, Optional
+from ..category import Category
 from ..dmx import DMXManager, DMXListOrValue, DMXValue
 from ..osc import OSCManager
 from ..util.math import constrain, value_map
@@ -22,11 +23,11 @@ class MixTarget:
         self,
         target: Callable[[int], None],
         name: str,
-        category: str,
+        category: Category,
     ) -> None:
         self.target = target
         self.name = name
-        self.category: str = category
+        self.category: Category = category
         self.accumulator: float = 0.0
 
     def __call__(self, value: float, accumulate: bool = False) -> None:
@@ -43,7 +44,7 @@ class Fixture(object):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
@@ -104,7 +105,7 @@ class LightFixture(Fixture):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         num_chans: int = 1,
@@ -141,7 +142,7 @@ class RGBLight(LightFixture):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,
@@ -184,7 +185,7 @@ class RGBWLight(LightFixture):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,

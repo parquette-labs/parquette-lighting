@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from ..category import Category
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
 from ..util.session_store import SessionStore
@@ -11,9 +12,9 @@ class ChannelLevelsBuilder(ParamGeneratorBuilder):
         self.osc = osc
         self.session = session
 
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         """Build per-channel offset params, grouped by each channel's category."""
-        by_category: Dict[str, List[OSCParam]] = {}
+        by_category: Dict[Category, List[OSCParam]] = {}
         for ch in mixer.mix_channels:
             on_change = self.session.save if ch.name == "sodium.dimming" else None
             param = OSCParam.bind(

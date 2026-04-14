@@ -1,6 +1,7 @@
 import time
 from typing import Optional
 
+from ..category import Category
 from ..dmx import DMXManager, DMXValue
 from ..osc import OSCManager
 from .basics import Fixture
@@ -11,7 +12,7 @@ class RadianceHazer(Fixture):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,

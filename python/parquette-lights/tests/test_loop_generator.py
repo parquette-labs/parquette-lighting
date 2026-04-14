@@ -1,17 +1,24 @@
 import pytest
 
+from parquette.lights.category import Category
 from parquette.lights.generators.loop_generator import LoopGenerator
+from parquette.lights.osc import OSCManager
+from parquette.lights.util.session_store import SessionStore
+
+_test_osc = OSCManager()
+_test_session = SessionStore("/tmp/test_session.pickle")
+TEST_CAT = Category("test", _test_osc, _test_session)
 
 
 def test_empty_buffer_returns_offset():
-    gen = LoopGenerator(name="test", category="test", offset=42.0)
+    gen = LoopGenerator(name="test", category=TEST_CAT, offset=42.0)
     assert gen.value(0.0) == 42.0
     assert gen.value(5000.0) == 42.0
 
 
 def test_record_and_playback():
     gen = LoopGenerator(
-        name="test", category="test", amp=1.0, offset=0.0, max_samples=100
+        name="test", category=TEST_CAT, amp=1.0, offset=0.0, max_samples=100
     )
 
     # Record 5 samples over 100ms (20ms ticks)
@@ -32,7 +39,7 @@ def test_record_and_playback():
 
 
 def test_loop_wrapping():
-    gen = LoopGenerator(name="test", category="test", max_samples=100)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
     gen.set_recording(True, ts_ms=0.0)
     gen.record_sample(100.0)
     gen.record_sample(200.0)
@@ -50,7 +57,7 @@ def test_loop_wrapping():
 
 
 def test_linear_interpolation():
-    gen = LoopGenerator(name="test", category="test", max_samples=100)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
     gen.set_recording(True, ts_ms=0.0)
     gen.record_sample(0.0)
     gen.record_sample(100.0)
@@ -63,7 +70,7 @@ def test_linear_interpolation():
 
 
 def test_max_samples_cap():
-    gen = LoopGenerator(name="test", category="test", max_samples=3)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=3)
     gen.set_recording(True, ts_ms=0.0)
     for i in range(10):
         gen.record_sample(float(i))
@@ -74,7 +81,7 @@ def test_max_samples_cap():
 
 
 def test_empty_recording_noop():
-    gen = LoopGenerator(name="test", category="test", max_samples=100)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
     gen.set_recording(True, ts_ms=0.0)
     gen.set_recording(False, ts_ms=100.0)
     # No samples recorded, should stay empty
@@ -84,7 +91,7 @@ def test_empty_recording_noop():
 
 def test_amp_and_offset():
     gen = LoopGenerator(
-        name="test", category="test", amp=2.0, offset=10.0, max_samples=100
+        name="test", category=TEST_CAT, amp=2.0, offset=10.0, max_samples=100
     )
     gen.set_recording(True, ts_ms=0.0)
     gen.record_sample(50.0)
@@ -96,13 +103,13 @@ def test_amp_and_offset():
 
 
 def test_record_sample_ignored_when_not_recording():
-    gen = LoopGenerator(name="test", category="test", max_samples=100)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
     gen.record_sample(42.0)
     assert gen.loop_length == 0
 
 
 def test_load_samples():
-    gen = LoopGenerator(name="test", category="test", max_samples=100)
+    gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
     gen.load_samples([10.0, 20.0, 30.0])
     assert gen.loop_length == 3
     assert gen.samples == [10.0, 20.0, 30.0]

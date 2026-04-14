@@ -1,4 +1,5 @@
 from .generator import Generator
+from ..category import Category
 
 
 class BPMGenerator(Generator):
@@ -10,7 +11,7 @@ class BPMGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 1,
         offset: float = 0,
         duty: int = 100,

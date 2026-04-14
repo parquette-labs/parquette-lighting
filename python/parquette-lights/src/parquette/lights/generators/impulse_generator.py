@@ -1,4 +1,5 @@
 from .generator import Generator
+from ..category import Category
 
 
 class ImpulseGenerator(Generator):
@@ -9,7 +10,7 @@ class ImpulseGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 1,
         offset: float = 0,
         duty: float = 100,

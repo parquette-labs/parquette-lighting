@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from . import Generator
 from ..fixtures.basics import MixTarget
-from ..osc import OSCManager
+from ..category import Category
 from ..util.math import constrain
 
 
@@ -58,11 +58,10 @@ class MixChannel:
     def __init__(
         self,
         name: str,
-        category: str,
+        category: Category,
         index: int,
         history_ticks: int,
         *,
-        osc: OSCManager,
         impulse_generator: Optional[Generator] = None,
         mapper: Optional[ChannelMapper] = None,
     ) -> None:
@@ -73,21 +72,15 @@ class MixChannel:
         self.offset: float = 0.0
         self.impulse_generator = impulse_generator
         self.impulse_connected = impulse_generator is not None
-        self.master_value: float = 1.0
         self.connected_generators: List[Generator] = []
         self.mapper: ChannelMapper = mapper or NoOpMapper()
-
-        osc.dispatcher.map(
-            "/{}_master".format(category),
-            lambda addr, *args: setattr(self, "master_value", float(args[0])),
-        )
 
     def tick(self, ts: float) -> None:
         """Compute current value and push into history."""
         val = self.offset
         for gen in self.connected_generators:
             val += gen.value(ts)
-        val *= self.master_value
+        val *= self.category.master
         if self.impulse_connected and self.impulse_generator is not None:
             val += self.impulse_generator.value(ts)
         self.history[1:] = self.history[0:-1]

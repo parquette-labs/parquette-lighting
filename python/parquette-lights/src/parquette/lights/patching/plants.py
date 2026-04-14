@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from ..category import Category
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -8,14 +9,20 @@ from .builder import ParamGeneratorBuilder, register_snap_handler
 
 
 class PlantsBuilder(ParamGeneratorBuilder):
-    def __init__(self, osc: OSCManager, bpm_red: BPMGenerator) -> None:
+    def __init__(
+        self,
+        osc: OSCManager,
+        category: Category,
+        bpm_red: BPMGenerator,
+    ) -> None:
         self.osc = osc
+        self.category = category
         initial_amp: float = 200
         initial_period: int = 3500
 
         self.sin_plants = WaveGenerator(
             name="sin_plants",
-            category="plants",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -24,7 +31,7 @@ class PlantsBuilder(ParamGeneratorBuilder):
         )
         self.sq1 = WaveGenerator(
             name="sq_1",
-            category="plants",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -34,7 +41,7 @@ class PlantsBuilder(ParamGeneratorBuilder):
         )
         self.sq2 = WaveGenerator(
             name="sq_2",
-            category="plants",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=476,
@@ -44,7 +51,7 @@ class PlantsBuilder(ParamGeneratorBuilder):
         )
         self.sq3 = WaveGenerator(
             name="sq_3",
-            category="plants",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=335,
@@ -71,10 +78,10 @@ class PlantsBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.sin_plants, self.sq1, self.sq2, self.sq3]
 
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
         return {
-            "plants": [
+            self.category: [
                 # Patch params
                 SignalPatchParam(
                     osc,
@@ -88,16 +95,14 @@ class PlantsBuilder(ParamGeneratorBuilder):
                 OSCParam.bind(
                     osc,
                     "/sq_amp",
-                    self.sq1,
+                    [self.sq1, self.sq2, self.sq3],
                     "amp",
-                    extra=[self.sq2, self.sq3],
                 ),
                 OSCParam.bind(
                     osc,
                     "/sq_period",
-                    self.sq1,
+                    [self.sq1, self.sq2, self.sq3],
                     "period",
-                    extra=[self.sq2, self.sq3],
                 ),
             ]
         }

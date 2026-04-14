@@ -1,5 +1,4 @@
 from typing import (
-    Any,
     List,
     Tuple,
     Dict,
@@ -19,6 +18,7 @@ from .chanmap import (
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
 from ..fixtures.basics import Fixture
+from ..category import Categories
 
 
 class Mixer(object):
@@ -47,35 +47,6 @@ class Mixer(object):
     def channel_lookup(self) -> Dict[str, MixChannel]:
         return {ch.name: ch for ch in self.mix_channels}
 
-    def emit_master(self, category: str, value: float) -> None:
-        """Set the master value for every channel in the category and sync
-        the new value to the frontend."""
-        for ch in self.mix_channels:
-            if ch.category == category:
-                ch.master_value = value
-        self.osc.send_osc("/{}_master".format(category), value)
-
-    def save_current_masters(self) -> Dict[str, Any]:
-        data: Dict[str, Any] = {}
-        seen: set = set()
-        for ch in self.mix_channels:
-            if ch.category in seen or ch.category == "non-saved":
-                continue
-            seen.add(ch.category)
-            data["{}_master".format(ch.category)] = ch.master_value
-
-        # Sodium persists via SessionStore alongside the masters so the
-        # room comes back up with the same house-light state.
-        data["sodium"] = self.channel_lookup["sodium.dimming"].offset
-        return data
-
-    def load_current_masters(self, data: Dict[str, Any]) -> None:
-        for attr, value in data.items():
-            if attr.endswith("_master"):
-                self.emit_master(attr[: -len("_master")], value)
-            elif attr == "sodium":
-                self.channel_lookup["sodium.dimming"].offset = value
-
     def __init__(
         self,
         *,
@@ -83,6 +54,7 @@ class Mixer(object):
         dmx: DMXManager,
         generators: List[Generator],
         fixtures: List[Fixture],
+        categories: Categories,
         history_len: float,
         debug: bool = False,
     ) -> None:
@@ -90,6 +62,7 @@ class Mixer(object):
         self.dmx = dmx
         self.generators = generators
         self.all_fixtures = fixtures
+        self.categories = categories
         self.debug = debug
 
         self.history_ticks = math.ceil(history_len * 1000 / 20)
@@ -97,7 +70,7 @@ class Mixer(object):
 
         # Auto-generate a FixedMapper channel for every mix_target on every
         # fixture. Categories that receive impulse get it connected.
-        impulse_categories = {"washes", "non-saved"}
+        impulse_categories = {categories.washes, categories.non_saved}
         self.fixture_targets: Dict[str, List[MixTarget]] = {}
         self.mix_channels: List[MixChannel] = []
 
@@ -108,16 +81,14 @@ class Mixer(object):
                 targets.append(target)
 
                 chan_name = "{}.{}".format(fixture.name, target.name)
-                category = target.category
                 impulse = (
                     impulse_gen if fixture.category in impulse_categories else None
                 )
                 ch = MixChannel(
                     chan_name,
-                    category,
+                    target.category,
                     index,
                     self.history_ticks,
-                    osc=self.osc,
                     impulse_generator=impulse,
                     mapper=FixedMapper(target),
                 )
@@ -218,74 +189,60 @@ class Mixer(object):
         special_channels: List[MixChannel] = [
             MixChannel(
                 "reds_fwd",
-                "reds",
+                categories.reds,
                 index,
                 self.history_ticks,
-                osc=self.osc,
                 mapper=self.reds_fwd_mapper,
             ),
             MixChannel(
                 "reds_back",
-                "reds",
+                categories.reds,
                 index + 1,
                 self.history_ticks,
-                osc=self.osc,
                 mapper=self.reds_back_mapper,
             ),
             MixChannel(
                 "reds_zig",
-                "reds",
+                categories.reds,
                 index + 2,
                 self.history_ticks,
-                osc=self.osc,
                 mapper=self.reds_zig_mapper,
             ),
             MixChannel(
                 "washes_fwd",
-                "washes",
+                categories.washes,
                 index + 3,
                 self.history_ticks,
-                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=self.washes_fwd_mapper,
             ),
             MixChannel(
                 "washes_back",
-                "washes",
+                categories.washes,
                 index + 4,
                 self.history_ticks,
-                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=self.washes_back_mapper,
             ),
             # Mono channels
             MixChannel(
                 "reds_mono",
-                "reds",
+                categories.reds,
                 index + 5,
                 self.history_ticks,
-                osc=self.osc,
                 mapper=FixedMapper(*all_reds_targets),
             ),
             MixChannel(
                 "washes_mono",
-                "washes",
+                categories.washes,
                 index + 6,
                 self.history_ticks,
-                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=FixedMapper(*all_wall_wash_targets),
             ),
         ]
         self.mix_channels.extend(special_channels)
 
-        # Setting masters after mix_channels are built propagates to channels
-        # via the property setters
-        self.reds_master = 1.0
-        self.spots_master = 1.0
-        self.washes_master = 1.0
-        self.booth_master = 1.0
-        self.plants_master = 1.0
         self.reds_stutter_period = 500
         self.washes_stutter_period = 500
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List, Optional
 
 import sys
 import time
@@ -8,9 +8,10 @@ import click
 from .generators import Mixer
 from .audio_analysis import FFTManager, AudioCapture
 
-from .osc import OSCManager
+from .category import Category
+from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
-from .patching import create_builders
+from .patching import Categories, create_builders
 from .patching.fixtures import create_fixtures
 from .preset_manager import PresetManager
 from .util.client_tracker import ClientTracker
@@ -201,9 +202,13 @@ def run(
     if entec_auto is not None:
         dmx.setup_dmx(entec_auto)
 
+    session = SessionStore(session_file)
+    categories = Categories(osc, session)
+
     all_fixtures = create_fixtures(
         dmx=dmx,
         osc=osc,
+        categories=categories,
         spot_color_fade=spot_color_fade,
         spot_mechanical_time=spot_mechanical_time,
         debug_hazer=debug_hazer,
@@ -224,12 +229,11 @@ def run(
         min_regularity=0.4,
     )
 
-    session = SessionStore(session_file)
-
     # Create all patching builders — generators are instantiated in constructors
     builders = create_builders(
         osc=osc,
         all_fixtures=all_fixtures,
+        categories=categories,
         fft_manager=fft_manager,
         dmx=dmx,
         session=session,
@@ -274,12 +278,13 @@ def run(
         dmx=dmx,
         generators=generators,
         fixtures=all_fixtures,
+        categories=categories,
         history_len=666 * 6,
         debug=debug,
     )
 
     # Build all params from builders
-    exposed_params: dict[str, list] = {}
+    exposed_params: Dict[Category, List[OSCParam]] = {}
     for b in builders:
         for category, params in b.build_params(mixer).items():
             exposed_params.setdefault(category, []).extend(params)
@@ -287,6 +292,7 @@ def run(
     presets = PresetManager(
         osc,
         exposed_params,
+        categories,
         presets_file,
         enable_save_clear=enable_save_clear,
         debug=debug,
@@ -294,9 +300,11 @@ def run(
     )
 
     def session_snapshot():
+        masters = categories.save_masters()
+        masters["sodium"] = mixer.channel_lookup["sodium.dimming"].offset
         return {
             "current_presets": presets.save_current_selection(),
-            "masters": mixer.save_current_masters(),
+            "masters": masters,
         }
 
     session.bind(session_snapshot)
@@ -309,33 +317,39 @@ def run(
     def all_black():
         mixer.channel_lookup["sodium.dimming"].offset = 0
 
+        categories.reds.set_master(0)
+        categories.spots_light.set_master(0)
+        categories.washes.set_master(0)
+        categories.booth.set_master(0)
+        categories.plants.set_master(0)
+
         presets.select_all("Off")
 
     def house_lights():
         if dmx.passthrough:
             dmx.passthrough = False
 
-        mixer.emit_master("reds", 1)
-        mixer.emit_master("spots_light", 0)
-        mixer.emit_master("washes", 1)
-        mixer.emit_master("booth", 1)
-        mixer.emit_master("plants", 1)
-
         mixer.channel_lookup["sodium.dimming"].offset = 255
+
+        categories.reds.set_master(1)
+        categories.spots_light.set_master(0)
+        categories.washes.set_master(1)
+        categories.booth.set_master(1)
+        categories.plants.set_master(1)
 
         presets.select_all("Static")
 
     def class_lights():
-        mixer.emit_master("reds", 0.8)
-        mixer.emit_master("spots_light", 0.3)
-        mixer.emit_master("washes", 0.25)
-        mixer.emit_master("booth", 0)
-        mixer.emit_master("plants", 0.5)
+        if dmx.passthrough:
+            dmx.passthrough = False
 
         mixer.channel_lookup["sodium.dimming"].offset = 0
 
-        if dmx.passthrough:
-            dmx.passthrough = False
+        categories.reds.set_master(0.8)
+        categories.spots_light.set_master(0.3)
+        categories.washes.set_master(0.25)
+        categories.booth.set_master(0)
+        categories.plants.set_master(0.5)
 
         presets.select_all("Class")
 
@@ -366,7 +380,10 @@ def run(
     if restored is not None:
         print("Restoring session state", flush=True)
         presets.load_current_selection(restored.get("current_presets") or {})
-        mixer.load_current_masters(restored.get("masters") or {})
+        masters = restored.get("masters") or {}
+        categories.load_masters(masters)
+        if "sodium" in masters:
+            mixer.channel_lookup["sodium.dimming"].offset = masters["sodium"]
 
     if debug:
         print("DEBUG channel generator connections after restore:", flush=True)

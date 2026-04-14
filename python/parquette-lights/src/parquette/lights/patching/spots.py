@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
 
+from ..category import Category
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -17,11 +18,16 @@ class SpotsBuilder(ParamGeneratorBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        light_category: Category,
+        position_category: Category,
+        *,
         all_fixtures: List[Fixture],
         loop_max_samples: int,
         bpm_red: BPMGenerator,
     ) -> None:
         self.osc = osc
+        self.light_category = light_category
+        self.position_category = position_category
         initial_amp: float = 200
         initial_period: int = 3500
 
@@ -29,7 +35,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
 
         self.sin_spot = WaveGenerator(
             name="sin_spot",
-            category="spots_light",
+            category=light_category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -38,7 +44,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         )
         self.sin_spot_pos_1 = WaveGenerator(
             name="sin_spot_pos_1",
-            category="spots_position",
+            category=position_category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -47,7 +53,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         )
         self.sin_spot_pos_2 = WaveGenerator(
             name="sin_spot_pos_2",
-            category="spots_position",
+            category=position_category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -56,7 +62,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         )
         self.sin_spot_pos_3 = WaveGenerator(
             name="sin_spot_pos_3",
-            category="spots_position",
+            category=position_category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -65,7 +71,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         )
         self.sin_spot_pos_4 = WaveGenerator(
             name="sin_spot_pos_4",
-            category="spots_position",
+            category=position_category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -74,22 +80,22 @@ class SpotsBuilder(ParamGeneratorBuilder):
         )
         self.loop_spot_pos_1_x = LoopGenerator(
             name="loop_spot_pos_1_x",
-            category="spots_position",
+            category=position_category,
             max_samples=loop_max_samples,
         )
         self.loop_spot_pos_1_y = LoopGenerator(
             name="loop_spot_pos_1_y",
-            category="spots_position",
+            category=position_category,
             max_samples=loop_max_samples,
         )
         self.loop_spot_pos_2_x = LoopGenerator(
             name="loop_spot_pos_2_x",
-            category="spots_position",
+            category=position_category,
             max_samples=loop_max_samples,
         )
         self.loop_spot_pos_2_y = LoopGenerator(
             name="loop_spot_pos_2_y",
-            category="spots_position",
+            category=position_category,
             max_samples=loop_max_samples,
         )
 
@@ -144,7 +150,7 @@ class SpotsBuilder(ParamGeneratorBuilder):
         ]
 
     # pylint: disable=protected-access
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
         light_params: List[OSCParam] = [
             # Patch params
@@ -292,7 +298,10 @@ class SpotsBuilder(ParamGeneratorBuilder):
                     )
                 )
 
-        return {"spots_light": light_params, "spots_position": pos_params}
+        return {
+            self.light_category: light_params,
+            self.position_category: pos_params,
+        }
 
 
 def _handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:

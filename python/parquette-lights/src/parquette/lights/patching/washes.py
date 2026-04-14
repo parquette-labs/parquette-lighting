@@ -1,6 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from ..audio_analysis import FFTManager
+from ..category import Category
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -11,16 +12,24 @@ from .builder import ParamGeneratorBuilder, register_snap_handler
 
 class WashesBuilder(ParamGeneratorBuilder):
     def __init__(
-        self, osc: OSCManager, fft_manager: FFTManager, all_fixtures: List[Fixture]
+        self,
+        osc: OSCManager,
+        fft_manager: FFTManager,
+        category: Category,
+        color_category: Category,
+        *,
+        all_fixtures: List[Fixture],
     ) -> None:
         self.osc = osc
+        self.category = category
+        self.color_category = color_category
         initial_amp: float = 200
         initial_period: int = 3500
 
-        self.all_washes: list[RGBLight] = [
+        self.all_washes: List[Union[RGBLight, RGBWLight]] = [
             f
             for f in all_fixtures
-            if f.category == "washes" and isinstance(f, RGBLight)
+            if f.category is category and isinstance(f, (RGBLight, RGBWLight))
         ]
         rgbw_washes = [f for f in self.all_washes if isinstance(f, RGBWLight)]
         self.washceilf = rgbw_washes[0]
@@ -28,7 +37,7 @@ class WashesBuilder(ParamGeneratorBuilder):
 
         self.sin_wash = WaveGenerator(
             name="sin_wash",
-            category="washes",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -36,7 +45,7 @@ class WashesBuilder(ParamGeneratorBuilder):
             shape=WaveGenerator.Shape.SIN,
         )
         self.bpm_wash = BPMGenerator(
-            name="bpm_wash", category="washes", amp=255, offset=0, duty=100
+            name="bpm_wash", category=category, amp=255, offset=0, duty=100
         )
 
         register_snap_handler(
@@ -51,7 +60,7 @@ class WashesBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.sin_wash, self.bpm_wash]
 
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
 
         def dispatch_wash_color(_addr: str, *rgb: float) -> None:
@@ -61,14 +70,13 @@ class WashesBuilder(ParamGeneratorBuilder):
                 fixture.set_dimming_target(r=rgb[0], g=rgb[1], b=rgb[2])
 
         return {
-            "washes_color": [
+            self.color_category: [
                 # Non-generator fixture params
                 OSCParam.bind(
                     osc,
                     "/wash_w",
-                    self.washceilf,
+                    [self.washceilf, self.washceilr],
                     "w_target",
-                    extra=[self.washceilr],
                 ),
                 OSCParam(
                     osc,
@@ -81,7 +89,7 @@ class WashesBuilder(ParamGeneratorBuilder):
                     dispatch_wash_color,
                 ),
             ],
-            "washes": [
+            self.category: [
                 # Patch params
                 SignalPatchParam(
                     osc,

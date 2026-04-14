@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Tuple
 
 from ..audio_analysis import FFTManager
+from ..category import Category
 from ..generators import FFTGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -10,14 +11,20 @@ from .builder import ParamGeneratorBuilder
 
 class AudioBuilder(ParamGeneratorBuilder):
     def __init__(
-        self, osc: OSCManager, fft_manager: FFTManager, *, debug: bool = False
+        self,
+        osc: OSCManager,
+        category: Category,
+        fft_manager: FFTManager,
+        *,
+        debug: bool = False,
     ) -> None:
         self.osc = osc
+        self.category = category
         self.fft_manager = fft_manager
 
         self.fft1 = FFTGenerator(
             name="fft_1",
-            category="audio",
+            category=category,
             amp=1,
             offset=0,
             subdivisions=1,
@@ -25,7 +32,7 @@ class AudioBuilder(ParamGeneratorBuilder):
         )
         self.fft2 = FFTGenerator(
             name="fft_2",
-            category="audio",
+            category=category,
             amp=1,
             offset=0,
             subdivisions=1,
@@ -41,7 +48,7 @@ class AudioBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.fft1, self.fft2]
 
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
 
         def fft_dispatch_wedge(fft: Any, args: Tuple[Any, ...]) -> None:
@@ -51,16 +58,15 @@ class AudioBuilder(ParamGeneratorBuilder):
                 fft.set_bounds(args[0], args[2])
 
         return {
-            "audio": [
+            self.category: [
                 # Generator params
                 OSCParam.bind(osc, "/fft1_amp", self.fft1, "amp"),
                 OSCParam.bind(osc, "/fft2_amp", self.fft2, "amp"),
                 OSCParam.bind(
                     osc,
                     "/fft_lpf_alpha",
-                    self.fft1,
+                    [self.fft1, self.fft2],
                     "lpf_alpha",
-                    extra=[self.fft2],
                 ),
                 OSCParam.bind(osc, "/fft_threshold_1", self.fft1, "thres"),
                 OSCParam.bind(osc, "/fft_threshold_2", self.fft2, "thres"),

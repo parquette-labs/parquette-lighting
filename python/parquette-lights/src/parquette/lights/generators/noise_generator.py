@@ -1,5 +1,6 @@
 import random
 from .generator import Generator
+from ..category import Category
 
 
 class NoiseGenerator(Generator):
@@ -10,7 +11,7 @@ class NoiseGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 1,
         offset: float = 0,
         period: float = 500,

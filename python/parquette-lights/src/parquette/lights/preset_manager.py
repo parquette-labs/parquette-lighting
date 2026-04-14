@@ -4,6 +4,7 @@ import pickle
 import pprint
 from copy import copy
 
+from .category import Categories, Category
 from .osc import OSCManager, OSCParam
 from .util.session_store import SessionStore
 
@@ -12,7 +13,8 @@ class PresetManager(object):
     def __init__(
         self,
         osc: OSCManager,
-        exposed_params: Dict[str, List[OSCParam]],
+        exposed_params: Dict[Category, List[OSCParam]],
+        categories: Categories,
         filename: str,
         *,
         enable_save_clear: bool = False,
@@ -21,6 +23,7 @@ class PresetManager(object):
     ) -> None:
         self.osc = osc
         self.exposed_params = exposed_params
+        self.categories = categories
         self.filename = filename
         self.stored_presets: Dict[str, Dict[str, List[Tuple[str, Any]]]] = {}
         self.current_presets: Dict[str, str] = {}
@@ -43,7 +46,9 @@ class PresetManager(object):
         self.load()
 
     def all_categories(self) -> Set[str]:
-        all_categories = {cat for cat in self.exposed_params if cat != "non-saved"}
+        all_categories = {
+            c.name for c in self.exposed_params if c is not self.categories.non_saved
+        }
         for key in self.current_presets:
             all_categories.add(key)
         return all_categories
@@ -139,10 +144,11 @@ class PresetManager(object):
         if not self.enable_save_clear:
             return
 
-        if category == "non-saved":
+        if category == self.categories.non_saved.name:
             return
 
-        if category not in self.exposed_params:
+        cat = self.categories.by_name(category)
+        if cat not in self.exposed_params:
             # we have never any data for this preset category, no-op
             print(
                 "You're requesting to a save a preset for a category that doesn't exist, likely something is wrong in your front end. The passed category is \"{}\"".format(
@@ -167,7 +173,7 @@ class PresetManager(object):
 
         self.stored_presets[category][category_preset] = []
 
-        for param in self.exposed_params[category]:
+        for param in self.exposed_params[cat]:
             self.stored_presets[category][category_preset].append(
                 (param.addr, param.value_lambda())
             )
@@ -184,7 +190,7 @@ class PresetManager(object):
             pickle.dump(self.stored_presets, f)
 
     def sync(self):
-        for category, params in self.exposed_params.items():
+        for params in self.exposed_params.values():
             for param in params:
                 param.sync()
 
@@ -194,7 +200,8 @@ class PresetManager(object):
         self.osc.send_osc("/enable_save", int(self.enable_save_clear))
 
     def select(self, category: str, category_preset: str, sync: bool = True) -> None:
-        if category not in self.exposed_params:
+        cat = self.categories.by_name(category)
+        if cat not in self.exposed_params:
             # there are no valid exposed params in this category to control
             print(
                 "You're requesting to a select a preset for a category that doesn't exist, likely something is wrong in your front end. The passed category is \"{}\"".format(
@@ -218,7 +225,7 @@ class PresetManager(object):
 
         for param_preset in self.stored_presets[category][category_preset]:
             addr, value = param_preset[0], param_preset[1]
-            for param in self.exposed_params[category]:
+            for param in self.exposed_params[cat]:
                 if param.addr == addr:
                     if isinstance(value, (list, tuple)):
                         param.load(addr, *value)

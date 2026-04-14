@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from ..category import Category
 from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
@@ -8,14 +9,20 @@ from .builder import ParamGeneratorBuilder, register_snap_handler
 
 
 class BoothBuilder(ParamGeneratorBuilder):
-    def __init__(self, osc: OSCManager, bpm_red: BPMGenerator) -> None:
+    def __init__(
+        self,
+        osc: OSCManager,
+        category: Category,
+        bpm_red: BPMGenerator,
+    ) -> None:
         self.osc = osc
+        self.category = category
         initial_amp: float = 200
         initial_period: int = 3500
 
         self.sin_booth = WaveGenerator(
             name="sin_booth",
-            category="booth",
+            category=category,
             amp=initial_amp,
             period=initial_period,
             phase=0,
@@ -34,10 +41,10 @@ class BoothBuilder(ParamGeneratorBuilder):
     def generators(self) -> List[Generator]:
         return [self.sin_booth]
 
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
         return {
-            "booth": [
+            self.category: [
                 # Patch params
                 SignalPatchParam(
                     osc,

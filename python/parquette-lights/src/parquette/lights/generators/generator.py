@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 
+from ..category import Category
+
 
 class Generator(ABC):
     def __init__(
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 0.5,
         offset: float = 0.5,
         period: float = 1000,

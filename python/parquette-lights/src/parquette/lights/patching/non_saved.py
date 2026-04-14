@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from ..category import Category
 from ..dmx import DMXManager
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
@@ -11,26 +12,19 @@ class NonSavedBuilder(ParamGeneratorBuilder):
     def __init__(
         self,
         osc: OSCManager,
+        category: Category,
         dmx: DMXManager,
         session: SessionStore,
     ) -> None:
         self.osc = osc
+        self.category = category
         self.dmx = dmx
         self.session = session
 
-        # Master values live on MixChannels and are registered from there.
-        # We just need to trigger a session save whenever one changes so
-        # the new value persists across restarts.
-        for cat in ("reds", "plants", "booth", "washes", "spots_light"):
-            osc.dispatcher.map(
-                "/{}_master".format(cat),
-                lambda addr, *args: session.save(),
-            )
-
-    def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
+    def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
         return {
-            "non-saved": [
+            self.category: [
                 # Non-generator infrastructure params
                 OSCParam.bind(osc, "/dmx_passthrough", self.dmx, "passthrough"),
                 OSCParam.bind(

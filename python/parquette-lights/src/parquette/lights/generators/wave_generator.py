@@ -3,6 +3,7 @@ import time
 from enum import Enum, auto
 
 from .generator import Generator
+from ..category import Category
 from ..util.math import value_map
 
 
@@ -33,7 +34,7 @@ class WaveGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 0.5,
         period: float = 1000,
         phase: float = 0,

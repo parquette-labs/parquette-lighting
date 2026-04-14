@@ -2,6 +2,7 @@ import time
 from typing import List, Optional
 
 from .generator import Generator
+from ..category import Category
 
 
 class LoopGenerator(Generator):
@@ -16,7 +17,7 @@ class LoopGenerator(Generator):
         self,
         *,
         name: str,
-        category: str,
+        category: Category,
         amp: float = 1.0,
         offset: float = 0.0,
         max_samples: int = 500,
