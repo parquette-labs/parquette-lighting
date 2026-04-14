@@ -22,29 +22,6 @@ from ..fixtures.basics import Fixture
 
 
 class Mixer(object):
-    MASTER_ATTRS = (
-        "reds_master",
-        "plants_master",
-        "booth_master",
-        "washes_master",
-        "spots_master",
-    )
-
-    @staticmethod
-    def make_master_property(master_name: str, category: str) -> property:
-        backing_field = master_name + "_val"
-
-        def getter(self: "Mixer") -> float:
-            return getattr(self, backing_field)
-
-        def setter(self: "Mixer", value: float) -> None:
-            setattr(self, backing_field, value)
-            for ch in self.mix_channels:
-                if ch.category == category:
-                    ch.master_value = value
-
-        return property(getter, setter)
-
     @staticmethod
     def make_stutter_period_property(backing_name: str, mappers_attr: str) -> property:
         backing_field = backing_name + "_val"
@@ -59,12 +36,6 @@ class Mixer(object):
 
         return property(getter, setter)
 
-    reds_master = make_master_property("reds_master", "reds")
-    plants_master = make_master_property("plants_master", "plants")
-    booth_master = make_master_property("booth_master", "booth")
-    spots_master = make_master_property("spots_master", "spots_light")
-    washes_master = make_master_property("washes_master", "washes")
-
     reds_stutter_period = make_stutter_period_property(
         "reds_stutter_period", "reds_stutter_mappers"
     )
@@ -76,8 +47,22 @@ class Mixer(object):
     def channel_lookup(self) -> Dict[str, MixChannel]:
         return {ch.name: ch for ch in self.mix_channels}
 
+    def emit_master(self, category: str, value: float) -> None:
+        """Set the master value for every channel in the category and sync
+        the new value to the frontend."""
+        for ch in self.mix_channels:
+            if ch.category == category:
+                ch.master_value = value
+        self.osc.send_osc("/{}_master".format(category), value)
+
     def save_current_masters(self) -> Dict[str, Any]:
-        data: Dict[str, Any] = {attr: getattr(self, attr) for attr in self.MASTER_ATTRS}
+        data: Dict[str, Any] = {}
+        seen: set = set()
+        for ch in self.mix_channels:
+            if ch.category in seen or ch.category == "non-saved":
+                continue
+            seen.add(ch.category)
+            data["{}_master".format(ch.category)] = ch.master_value
 
         # Sodium persists via SessionStore alongside the masters so the
         # room comes back up with the same house-light state.
@@ -86,8 +71,8 @@ class Mixer(object):
 
     def load_current_masters(self, data: Dict[str, Any]) -> None:
         for attr, value in data.items():
-            if attr in self.MASTER_ATTRS:
-                setattr(self, attr, value)
+            if attr.endswith("_master"):
+                self.emit_master(attr[: -len("_master")], value)
             elif attr == "sodium":
                 self.channel_lookup["sodium.dimming"].offset = value
 
@@ -132,6 +117,7 @@ class Mixer(object):
                     category,
                     index,
                     self.history_ticks,
+                    osc=self.osc,
                     impulse_generator=impulse,
                     mapper=FixedMapper(target),
                 )
@@ -235,6 +221,7 @@ class Mixer(object):
                 "reds",
                 index,
                 self.history_ticks,
+                osc=self.osc,
                 mapper=self.reds_fwd_mapper,
             ),
             MixChannel(
@@ -242,6 +229,7 @@ class Mixer(object):
                 "reds",
                 index + 1,
                 self.history_ticks,
+                osc=self.osc,
                 mapper=self.reds_back_mapper,
             ),
             MixChannel(
@@ -249,6 +237,7 @@ class Mixer(object):
                 "reds",
                 index + 2,
                 self.history_ticks,
+                osc=self.osc,
                 mapper=self.reds_zig_mapper,
             ),
             MixChannel(
@@ -256,6 +245,7 @@ class Mixer(object):
                 "washes",
                 index + 3,
                 self.history_ticks,
+                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=self.washes_fwd_mapper,
             ),
@@ -264,6 +254,7 @@ class Mixer(object):
                 "washes",
                 index + 4,
                 self.history_ticks,
+                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=self.washes_back_mapper,
             ),
@@ -273,6 +264,7 @@ class Mixer(object):
                 "reds",
                 index + 5,
                 self.history_ticks,
+                osc=self.osc,
                 mapper=FixedMapper(*all_reds_targets),
             ),
             MixChannel(
@@ -280,6 +272,7 @@ class Mixer(object):
                 "washes",
                 index + 6,
                 self.history_ticks,
+                osc=self.osc,
                 impulse_generator=impulse_gen,
                 mapper=FixedMapper(*all_wall_wash_targets),
             ),

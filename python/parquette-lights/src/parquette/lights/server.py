@@ -315,22 +315,22 @@ def run(
         if dmx.passthrough:
             dmx.passthrough = False
 
-        mixer.reds_master = 1
-        mixer.spots_master = 0
-        mixer.washes_master = 1
-        mixer.booth_master = 1
-        mixer.plants_master = 1
+        mixer.emit_master("reds", 1)
+        mixer.emit_master("spots_light", 0)
+        mixer.emit_master("washes", 1)
+        mixer.emit_master("booth", 1)
+        mixer.emit_master("plants", 1)
 
         mixer.channel_lookup["sodium.dimming"].offset = 255
 
         presets.select_all("Static")
 
     def class_lights():
-        mixer.reds_master = 0.8
-        mixer.spots_master = 0.3
-        mixer.washes_master = 0.25
-        mixer.booth_master = 0
-        mixer.plants_master = 0.5
+        mixer.emit_master("reds", 0.8)
+        mixer.emit_master("spots_light", 0.3)
+        mixer.emit_master("washes", 0.25)
+        mixer.emit_master("booth", 0)
+        mixer.emit_master("plants", 0.5)
 
         mixer.channel_lookup["sodium.dimming"].offset = 0
 

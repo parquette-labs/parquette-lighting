@@ -42,33 +42,45 @@
 
 # Category information
 
-The param groups (each builds a list of OSCParams):
 
-  1. audio — FFT bounds, amp, threshold, LPF, BPM settings
-  2. booth — booth/under fixture controls
-  3. channel_levels — per-channel master levels
-  4. hazer — haze machine controls
-  5. non_saved — params excluded from presets
-  6. plants — ceiling/plant fixture controls
-  7. reds — red dimmer fixture controls
-  8. spots — spot fixtures, pan/tilt, loops
-  9. strobes — strobe controls
-  10. washes — wash fixture RGB/RGBW controls
+1. Fixture creation — patching/fixtures.py
 
-  Plus deps (the shared dependency dataclass) and __init__ (the builder that wires them together).
+Every fixture's category= argument (lines 21-103). Covers: reds, booth, plants, spots_light, spots_position, washes, non-saved, hazer.
 
-❯ what places do we have to hard code param group names?
+2. Generator creation — builder modules
 
-  Searched for 1 pattern, read 1 file (ctrl+o to expand)
+Each builder creates generators with hardcoded categories:
+- patching/reds.py:33, 41, 44 — reds
+- patching/plants.py:18, 27, 37, 47 — plants
+- patching/booth.py:18 — booth
+- patching/washes.py:31, 39 — washes
+- patching/spots.py:32, 41, 50, 59, 68, 77, 82, 87, 92 — spots_light, spots_position
+- patching/audio.py:20, 28 — audio
+- patching/strobes.py:14 — strobes
 
-⏺ Category names are hardcoded in 4 places:
+3. Builder filters — patching/washes.py:23
 
-  1. params/__init__.py (lines 27-38) — the exposed_params dict keys
-  2. preset_manager.py (lines 48-55) — the list of saveable preset categories (plus "non-saved"
-  exclusion at line 155)
-  3. server.py (lines 215-308) — the category= argument on each fixture
-  4. generators/mixer.py (lines 62-66, 115, 122-125, 244-289) — master fader properties, impulse
-  categories, channel-to-preset-group mapping, and generator routing rules
-✻ Brewed for 33s
+f.category == "washes" — uses category to filter fixtures.
 
+4. build_params keys — each builder's return dict
 
+- reds.py:63 → "reds"
+- plants.py:77 → "plants"
+- booth.py:40 → "booth"
+- washes.py:64, 84 → "washes_color", "washes"
+- spots.py:295 → "spots_light", "spots_position"
+- audio.py:54 → "audio"
+- strobes.py:24 → "strobes"
+- hazer.py:17 → "hazer"
+- non_saved.py:24 → "non-saved"
+
+5. Preset manager — preset_manager.py
+
+- Lines 48-55: hardcoded list of saveable preset categories (reds, plants, booth, spots_light, spots_position, washes, washes_color, hazer)
+- Line 155: if category == "non-saved" — skip marker
+
+6. Mixer — generators/mixer.py
+
+- Lines 62-66: make_master_property maps a master name to its category (reds_master → "reds", etc.)
+- Line 115: impulse_categories = {"washes", "non-saved"} — which categories get the impulse generator connected
+- Lines 235, 242, 249, 256, 264, 273, 280: "reds" / "washes" literals for stutter channel construction

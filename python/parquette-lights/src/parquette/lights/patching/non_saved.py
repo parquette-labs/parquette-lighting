@@ -18,47 +18,21 @@ class NonSavedBuilder(ParamGeneratorBuilder):
         self.dmx = dmx
         self.session = session
 
+        # Master values live on MixChannels and are registered from there.
+        # We just need to trigger a session save whenever one changes so
+        # the new value persists across restarts.
+        for cat in ("reds", "plants", "booth", "washes", "spots_light"):
+            osc.dispatcher.map(
+                "/{}_master".format(cat),
+                lambda addr, *args: session.save(),
+            )
+
     def build_params(self, mixer: Mixer) -> Dict[str, List[OSCParam]]:
         osc = self.osc
         return {
             "non-saved": [
                 # Non-generator infrastructure params
                 OSCParam.bind(osc, "/dmx_passthrough", self.dmx, "passthrough"),
-                OSCParam.bind(
-                    osc,
-                    "/reds_master",
-                    mixer,
-                    "reds_master",
-                    on_change=self.session.save,
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/plants_master",
-                    mixer,
-                    "plants_master",
-                    on_change=self.session.save,
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/booth_master",
-                    mixer,
-                    "booth_master",
-                    on_change=self.session.save,
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/washes_master",
-                    mixer,
-                    "washes_master",
-                    on_change=self.session.save,
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/spots_master",
-                    mixer,
-                    "spots_master",
-                    on_change=self.session.save,
-                ),
                 OSCParam.bind(
                     osc,
                     "/synth_visualizer_source",
