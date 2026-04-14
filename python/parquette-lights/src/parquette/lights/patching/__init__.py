@@ -20,8 +20,13 @@ def create_builders(
     loop_max_samples: int,
     debug: bool = False,
 ) -> List[ParamGeneratorBuilder]:
+    # Initialize fft_manager.bpms so builders can append to it
+    fft_manager.bpms = []
+
+    reds_b = reds.RedsBuilder(osc, fft_manager, loop_max_samples)
+
     return [
-        reds.RedsBuilder(osc, fft_manager, loop_max_samples),
+        reds_b,
         plants.PlantsBuilder(osc, reds_b.bpm_red),
         booth.BoothBuilder(osc, reds_b.bpm_red),
         washes.WashesBuilder(osc, fft_manager, all_fixtures),
