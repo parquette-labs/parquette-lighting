@@ -2,8 +2,10 @@ import math
 import time
 from enum import Enum, auto
 
+from .bpm_generator import BPMGenerator
 from .generator import Generator
 from ..category import Category
+from ..osc import OSCManager
 from ..util.math import value_map
 
 
@@ -92,3 +94,21 @@ class WaveGenerator(Generator):
             )
 
         return 0
+
+    def register_snap_to(self, bpm_gen: BPMGenerator, osc: OSCManager) -> None:
+        """Register a snap-to-BPM OSC handler for this wave.
+
+        Triggered by /gen/WaveGenerator/{name}/snap_to/{bpm_name}. When the
+        bpm generator has a valid tempo, sets this wave's period to match
+        and broadcasts the new period so the UI slider tracks it.
+        """
+        cls_name = type(self).__name__
+        snap_addr = "/gen/{}/{}/snap_to/{}".format(cls_name, self.name, bpm_gen.name)
+        period_addr = "/gen/{}/{}/period".format(cls_name, self.name)
+
+        def handler() -> None:
+            if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:
+                self.period = bpm_gen.current_period()
+                osc.send_osc(period_addr, self.period)
+
+        osc.dispatcher.map(snap_addr, lambda addr, *args: handler())

@@ -4,16 +4,11 @@ from ..category import Category
 from ..dmx import DMXManager
 from ..fixtures import LightFixture, YRXY200Spot
 from ..fixtures.basics import Fixture
-from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
+from ..generators import WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import (
-    CategoryBuilder,
-    channel_names_for_category,
-    register_snap_handler,
-    register_loop_record_handler,
-)
+from .builder import CategoryBuilder
 
 
 class SpotsBuilder(CategoryBuilder):
@@ -121,59 +116,43 @@ class SpotsBuilder(CategoryBuilder):
             name="loop_spot_pos_1_x",
             category=position_category,
             max_samples=loop_max_samples,
+            record_group="loop_spot_pos_1",
         )
         self.loop_spot_pos_1_y = LoopGenerator(
             name="loop_spot_pos_1_y",
             category=position_category,
             max_samples=loop_max_samples,
+            record_group="loop_spot_pos_1",
         )
         self.loop_spot_pos_2_x = LoopGenerator(
             name="loop_spot_pos_2_x",
             category=position_category,
             max_samples=loop_max_samples,
+            record_group="loop_spot_pos_2",
         )
         self.loop_spot_pos_2_y = LoopGenerator(
             name="loop_spot_pos_2_y",
             category=position_category,
             max_samples=loop_max_samples,
+            record_group="loop_spot_pos_2",
         )
 
-        register_snap_handler(
-            osc,
-            "/snap_sin_spot_to_bpm",
-            [self.sin_spot],
-            "/sin_spot_period",
-            bpm_red,
-        )
-        spot_pos_gens = [
+        self.sin_spot.register_snap_to(bpm_red, osc)
+        for wave in (
             self.sin_spot_pos_1,
             self.sin_spot_pos_2,
             self.sin_spot_pos_3,
             self.sin_spot_pos_4,
-        ]
-        register_snap_handler(
-            osc,
-            "/snap_sin_spot_pos_to_bpm",
-            spot_pos_gens,
-            [
-                "/sin_spot_pos_1_period",
-                "/sin_spot_pos_2_period",
-                "/sin_spot_pos_3_period",
-                "/sin_spot_pos_4_period",
-            ],
-            bpm_red,
-        )
+        ):
+            wave.register_snap_to(bpm_red, osc)
 
-        loop_pairs = [
-            (self.loop_spot_pos_1_x, self.loop_spot_pos_1_y, 1),
-            (self.loop_spot_pos_2_x, self.loop_spot_pos_2_y, 2),
-        ]
-        for loop_x, loop_y, idx in loop_pairs:
-            register_loop_record_handler(
-                osc,
-                "/loop_spot_pos_{}_record".format(idx),
-                [loop_x, loop_y],
-            )
+        for loop in (
+            self.loop_spot_pos_1_x,
+            self.loop_spot_pos_1_y,
+            self.loop_spot_pos_2_x,
+            self.loop_spot_pos_2_y,
+        ):
+            loop.register_record(osc)
 
     def fixtures(self) -> List[Fixture]:
         return [self.tung_spot, *self.spotlights]
@@ -195,14 +174,8 @@ class SpotsBuilder(CategoryBuilder):
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
         light_params: List[OSCParam] = [
-            # Patch params
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/spots_light",
-                channel_names_for_category(mixer, self.light_category),
-                mixer,
-            ),
-            # Standard generator params (/gen/{type}/{name}/{attr})
+            mixer.patchbay_param(self.light_category),
+            # Standard generator params (/gen/{ClassName}/{name}/{attr})
             *self.sin_spot.standard_params(osc),
         ]
 
@@ -219,44 +192,11 @@ class SpotsBuilder(CategoryBuilder):
         ]
 
         pos_params: List[OSCParam] = [
-            # Patch params
-            SignalPatchParam(
-                osc,
-                "/signal_patchbay/spots_position",
-                channel_names_for_category(mixer, self.position_category),
-                mixer,
-            ),
+            mixer.patchbay_param(self.position_category),
         ]
         for gen in spot_pos_gens:
             # Standard generator params (/gen/{type}/{name}/{attr})
             pos_params.extend(gen.standard_params(osc))
-
-        for fixture in self.spotlights:
-            pan_ch = mixer.channel_lookup["{}.pan".format(fixture.name)]
-            tilt_ch = mixer.channel_lookup["{}.tilt".format(fixture.name)]
-            cls_name = type(fixture).__name__
-            pos_params.append(
-                OSCParam(
-                    osc,
-                    "/fixture/{}/{}/pantilt_offset".format(cls_name, fixture.name),
-                    lambda pc=pan_ch, tc=tilt_ch: [pc.offset, tc.offset],
-                    lambda _, *args, pc=pan_ch, tc=tilt_ch: handle_pantilt_offset(
-                        pc, tc, args
-                    ),
-                )
-            )
-            pan_fine_ch = mixer.channel_lookup["{}.pan_fine".format(fixture.name)]
-            tilt_fine_ch = mixer.channel_lookup["{}.tilt_fine".format(fixture.name)]
-            pos_params.append(
-                OSCParam(
-                    osc,
-                    "/fixture/{}/{}/pantilt_fine_offset".format(cls_name, fixture.name),
-                    lambda pc=pan_fine_ch, tc=tilt_fine_ch: [pc.offset, tc.offset],
-                    lambda _, *args, pc=pan_fine_ch, tc=tilt_fine_ch: (
-                        handle_pantilt_offset(pc, tc, args)
-                    ),
-                )
-            )
 
         loop_pairs = [
             (self.loop_spot_pos_1_x, self.loop_spot_pos_1_y),
@@ -286,15 +226,6 @@ def loop_pair_input_param(osc: OSCManager, loop_x: Any, loop_y: Any) -> OSCParam
         lambda: [loop_x.input_value, loop_y.input_value],
         lambda _a, *args: handle_xy_loop_input(loop_x, loop_y, args),
     )
-
-
-def handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:
-    if len(args) == 1 and isinstance(args[0], (list, tuple)):
-        pan, tilt = args[0][0], args[0][1]
-    else:
-        pan, tilt = args[0], args[1]
-    pan_ch.offset = float(pan)
-    tilt_ch.offset = float(tilt)
 
 
 def handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:

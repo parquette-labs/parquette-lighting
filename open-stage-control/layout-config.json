@@ -2485,7 +2485,7 @@
               },
               {
                 "type": "button",
-                "id": "snap_sin_wash_to_bpm",
+                "id": "gen/WaveGenerator/sin_wash/snap_to/bpm_wash",
                 "top": 321.5,
                 "left": 0,
                 "width": 180,
@@ -2639,7 +2639,7 @@
               },
               {
                 "type": "button",
-                "id": "snap_sin_red_to_bpm",
+                "id": "gen/WaveGenerator/sin_red/snap_to/bpm_red",
                 "top": 321.6216216216216,
                 "left": 0,
                 "width": 180,
@@ -2838,7 +2838,7 @@
               },
               {
                 "type": "button",
-                "id": "snap_sin_plants_to_bpm",
+                "id": "gen/WaveGenerator/sin_plants/snap_to/bpm_red",
                 "top": 316.15384615384613,
                 "left": 10,
                 "width": 182.43243243243242,
@@ -2967,7 +2967,8 @@
                 "decoupled": false,
                 "value": "",
                 "default": "",
-                "address": "auto",
+                "address": "",
+                "onValue": "if (value) { send('/gen/WaveGenerator/sq_1/snap_to/bpm_red', 1); send('/gen/WaveGenerator/sq_2/snap_to/bpm_red', 1); send('/gen/WaveGenerator/sq_3/snap_to/bpm_red', 1); }",
                 "decimals": 2,
                 "bypass": false,
                 "click": false
@@ -3106,7 +3107,7 @@
               },
               {
                 "type": "button",
-                "id": "snap_sin_booth_to_bpm",
+                "id": "gen/WaveGenerator/sin_booth/snap_to/bpm_red",
                 "top": 316.8354430379747,
                 "left": 0,
                 "width": 180,
@@ -3624,7 +3625,7 @@
               },
               {
                 "type": "button",
-                "id": "snap_sin_spot_to_bpm",
+                "id": "gen/WaveGenerator/sin_spot/snap_to/bpm_red",
                 "top": 317,
                 "left": 0,
                 "width": 180,
@@ -4071,7 +4072,8 @@
                 "mode": "tap",
                 "on": 1,
                 "off": 0,
-                "address": "auto",
+                "address": "",
+                "onValue": "if (value) { send('/gen/WaveGenerator/sin_spot_pos_1/snap_to/bpm_red', 1); send('/gen/WaveGenerator/sin_spot_pos_2/snap_to/bpm_red', 1); send('/gen/WaveGenerator/sin_spot_pos_3/snap_to/bpm_red', 1); send('/gen/WaveGenerator/sin_spot_pos_4/snap_to/bpm_red', 1); }",
                 "vertical": false,
                 "wrap": false,
                 "doubleTap": false,
@@ -4208,7 +4210,7 @@
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
-                "onTouch": "if (locals.touching) { locals.touching = false; send(\"/loop_reds_record\", 0) } else { locals.touching = true; send(\"/loop_reds_record\", 1); set(\"loop_reds_origin\", value) }",
+                "onTouch": "if (locals.touching) { locals.touching = false; send(\"/gen/LoopGenerator/loop_reds/record\", 0) } else { locals.touching = true; send(\"/gen/LoopGenerator/loop_reds/record\", 1); set(\"loop_reds_origin\", value) }",
                 "css": "opacity: 0.8;"
               },
               {
@@ -4374,7 +4376,7 @@
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
-                "onTouch": "var t = getVar('this', 'touching'); if (t) { setVar('this', 'touching', false); send(\"/loop_spot_pos_1_record\", 0) } else { setVar('this', 'touching', true); send(\"/loop_spot_pos_1_record\", 1); set(\"loop_spot_pos_1_origin\", get(\"gen/LoopGenerator/loop_spot_pos_1/input\")) }",
+                "onTouch": "var t = getVar('this', 'touching'); if (t) { setVar('this', 'touching', false); send(\"/gen/LoopGenerator/loop_spot_pos_1/record\", 0) } else { setVar('this', 'touching', true); send(\"/gen/LoopGenerator/loop_spot_pos_1/record\", 1); set(\"loop_spot_pos_1_origin\", get(\"gen/LoopGenerator/loop_spot_pos_1/input\")) }",
                 "pips": true,
                 "doubleTap": false,
                 "sensitivity": 1,
@@ -4594,7 +4596,7 @@
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
-                "onTouch": "var t = getVar('this', 'touching'); if (t) { setVar('this', 'touching', false); send(\"/loop_spot_pos_2_record\", 0) } else { setVar('this', 'touching', true); send(\"/loop_spot_pos_2_record\", 1); set(\"loop_spot_pos_2_origin\", get(\"gen/LoopGenerator/loop_spot_pos_2/input\")) }",
+                "onTouch": "var t = getVar('this', 'touching'); if (t) { setVar('this', 'touching', false); send(\"/gen/LoopGenerator/loop_spot_pos_2/record\", 0) } else { setVar('this', 'touching', true); send(\"/gen/LoopGenerator/loop_spot_pos_2/record\", 1); set(\"loop_spot_pos_2_origin\", get(\"gen/LoopGenerator/loop_spot_pos_2/input\")) }",
                 "pips": true,
                 "doubleTap": false,
                 "sensitivity": 1,
@@ -6141,7 +6143,7 @@
               {
                 "type": "xy",
                 "id": "fixture/YRXY200Spot/spot_1/pantilt_offset",
-                "address": "auto",
+                "address": "",
                 "interaction": true,
                 "left": 10,
                 "top": 30,
@@ -6160,7 +6162,7 @@
                 },
                 "logScaleX": false,
                 "logScaleY": false,
-                "value": "",
+                "value": "#{[@{chan/spot_1.pan/offset} || 0, @{chan/spot_1.tilt/offset} || 0]}",
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
@@ -6173,7 +6175,8 @@
                 "stepsY": false,
                 "clipX": "",
                 "clipY": "",
-                "axisLock": ""
+                "axisLock": "",
+                "onValue": "send('/chan/spot_1.pan/offset', value[0]); send('/chan/spot_1.tilt/offset', value[1])"
               },
               {
                 "type": "textarea",
@@ -6183,7 +6186,7 @@
                 "top": 195,
                 "width": 160,
                 "height": 40,
-                "value": "#{'spot_1 p:' + Math.round(@{fixture/YRXY200Spot/spot_1/pantilt_offset}[0]) + ' t:' + Math.round(@{fixture/YRXY200Spot/spot_1/pantilt_offset}[1])}",
+                "value": "#{'spot_1 p:' + Math.round(@{chan/spot_1.pan/offset}) + ' t:' + Math.round(@{chan/spot_1.tilt/offset})}",
                 "bypass": true,
                 "address": "auto",
                 "default": "",
@@ -6192,7 +6195,7 @@
               {
                 "type": "xy",
                 "id": "fixture/YRXY200Spot/spot_2/pantilt_offset",
-                "address": "auto",
+                "address": "",
                 "interaction": true,
                 "left": 185,
                 "top": 30,
@@ -6211,7 +6214,7 @@
                 },
                 "logScaleX": false,
                 "logScaleY": false,
-                "value": "",
+                "value": "#{[@{chan/spot_2.pan/offset} || 0, @{chan/spot_2.tilt/offset} || 0]}",
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
@@ -6224,7 +6227,8 @@
                 "stepsY": false,
                 "clipX": "",
                 "clipY": "",
-                "axisLock": ""
+                "axisLock": "",
+                "onValue": "send('/chan/spot_2.pan/offset', value[0]); send('/chan/spot_2.tilt/offset', value[1])"
               },
               {
                 "type": "textarea",
@@ -6234,7 +6238,7 @@
                 "top": 195,
                 "width": 160,
                 "height": 40,
-                "value": "#{'spot_2 p:' + Math.round(@{fixture/YRXY200Spot/spot_2/pantilt_offset}[0]) + ' t:' + Math.round(@{fixture/YRXY200Spot/spot_2/pantilt_offset}[1])}",
+                "value": "#{'spot_2 p:' + Math.round(@{chan/spot_2.pan/offset}) + ' t:' + Math.round(@{chan/spot_2.tilt/offset})}",
                 "bypass": true,
                 "address": "auto",
                 "default": "",
@@ -6259,7 +6263,7 @@
               {
                 "type": "xy",
                 "id": "fixture/YRXY200Spot/spot_1/pantilt_fine_offset",
-                "address": "auto",
+                "address": "",
                 "interaction": true,
                 "left": 10,
                 "top": 270,
@@ -6278,7 +6282,7 @@
                 },
                 "logScaleX": false,
                 "logScaleY": false,
-                "value": "",
+                "value": "#{[@{chan/spot_1.pan_fine/offset} || 0, @{chan/spot_1.tilt_fine/offset} || 0]}",
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
@@ -6291,7 +6295,8 @@
                 "stepsY": false,
                 "clipX": "",
                 "clipY": "",
-                "axisLock": ""
+                "axisLock": "",
+                "onValue": "send('/chan/spot_1.pan_fine/offset', value[0]); send('/chan/spot_1.tilt_fine/offset', value[1])"
               },
               {
                 "type": "textarea",
@@ -6301,7 +6306,7 @@
                 "top": 435,
                 "width": 160,
                 "height": 40,
-                "value": "#{'spot_1 fine p:' + Math.round(@{fixture/YRXY200Spot/spot_1/pantilt_fine_offset}[0]) + ' t:' + Math.round(@{fixture/YRXY200Spot/spot_1/pantilt_fine_offset}[1])}",
+                "value": "#{'spot_1 fine p:' + Math.round(@{chan/spot_1.pan_fine/offset}) + ' t:' + Math.round(@{chan/spot_1.tilt_fine/offset})}",
                 "bypass": true,
                 "address": "auto",
                 "default": "",
@@ -6310,7 +6315,7 @@
               {
                 "type": "xy",
                 "id": "fixture/YRXY200Spot/spot_2/pantilt_fine_offset",
-                "address": "auto",
+                "address": "",
                 "interaction": true,
                 "left": 185,
                 "top": 270,
@@ -6329,7 +6334,7 @@
                 },
                 "logScaleX": false,
                 "logScaleY": false,
-                "value": "",
+                "value": "#{[@{chan/spot_2.pan_fine/offset} || 0, @{chan/spot_2.tilt_fine/offset} || 0]}",
                 "default": "",
                 "decimals": 2,
                 "bypass": false,
@@ -6342,7 +6347,8 @@
                 "stepsY": false,
                 "clipX": "",
                 "clipY": "",
-                "axisLock": ""
+                "axisLock": "",
+                "onValue": "send('/chan/spot_2.pan_fine/offset', value[0]); send('/chan/spot_2.tilt_fine/offset', value[1])"
               },
               {
                 "type": "textarea",
@@ -6352,7 +6358,7 @@
                 "top": 435,
                 "width": 160,
                 "height": 40,
-                "value": "#{'spot_2 fine p:' + Math.round(@{fixture/YRXY200Spot/spot_2/pantilt_fine_offset}[0]) + ' t:' + Math.round(@{fixture/YRXY200Spot/spot_2/pantilt_fine_offset}[1])}",
+                "value": "#{'spot_2 fine p:' + Math.round(@{chan/spot_2.pan_fine/offset}) + ' t:' + Math.round(@{chan/spot_2.tilt_fine/offset})}",
                 "bypass": true,
                 "address": "auto",
                 "default": "",

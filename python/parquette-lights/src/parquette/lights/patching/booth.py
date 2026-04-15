@@ -4,15 +4,11 @@ from ..category import Category
 from ..dmx import DMXManager
 from ..fixtures import LightFixture
 from ..fixtures.basics import Fixture
-from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
+from ..generators import WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import (
-    CategoryBuilder,
-    channel_names_for_category,
-    register_snap_handler,
-)
+from .builder import CategoryBuilder
 
 
 class BoothBuilder(CategoryBuilder):
@@ -43,13 +39,7 @@ class BoothBuilder(CategoryBuilder):
             shape=WaveGenerator.Shape.SIN,
         )
 
-        register_snap_handler(
-            osc,
-            "/snap_sin_booth_to_bpm",
-            [self.sin_booth],
-            "/sin_booth_period",
-            bpm_red,
-        )
+        self.sin_booth.register_snap_to(bpm_red, osc)
 
     def fixtures(self) -> List[Fixture]:
         return list(self.unders)
@@ -62,12 +52,7 @@ class BoothBuilder(CategoryBuilder):
         return {
             self.category: [
                 # Patch params
-                SignalPatchParam(
-                    osc,
-                    "/signal_patchbay/booth",
-                    channel_names_for_category(mixer, self.category),
-                    mixer,
-                ),
+                mixer.patchbay_param(self.category),
                 # Standard generator params (/gen/{type}/{name}/{attr})
                 *self.sin_booth.standard_params(osc),
             ]

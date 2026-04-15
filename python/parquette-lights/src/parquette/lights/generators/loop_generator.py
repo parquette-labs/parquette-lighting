@@ -24,6 +24,7 @@ class LoopGenerator(Generator):
         amp: float = 1.0,
         offset: float = 0.0,
         max_samples: int = 500,
+        record_group: Optional[str] = None,
     ) -> None:
         super().__init__(
             name=name, category=category, amp=amp, offset=offset, period=1000, phase=0
@@ -38,6 +39,11 @@ class LoopGenerator(Generator):
         self.record_start_ms: float = 0.0
 
         self.input_value: float = 0.0
+
+        # Two or more loops sharing the same record_group register record
+        # handlers at the same OSC address, so one UI toggle starts/stops
+        # them in sync. When None, the handler is per-generator.
+        self.record_group: Optional[str] = record_group
 
     def set_recording(self, active: bool, ts_ms: Optional[float] = None) -> None:
         """Start or stop recording. Called from OSC thread."""
@@ -113,3 +119,20 @@ class LoopGenerator(Generator):
                 else list(args)
             ),
         )
+
+    def register_record(self, osc: OSCManager) -> None:
+        """Register a recording toggle OSC handler for this loop.
+
+        Address: /gen/{ClassName}/{record_group or name}/record. When
+        multiple loops share a record_group, each registers its own
+        handler at the same OSC address and pythonosc fans the incoming
+        message out to every registered handler — paired x/y loops start
+        and stop together without a separate group helper.
+
+        Not exposed via standard_params because recording is an action,
+        not a persisted parameter — presets should not re-issue a record
+        toggle on load.
+        """
+        name = self.record_group or self.name
+        addr = "/gen/{}/{}/record".format(type(self).__name__, name)
+        osc.dispatcher.map(addr, lambda _addr, *args: self.set_recording(bool(args[0])))

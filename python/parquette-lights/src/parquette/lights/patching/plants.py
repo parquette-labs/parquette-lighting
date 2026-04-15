@@ -4,15 +4,11 @@ from ..category import Category
 from ..dmx import DMXManager
 from ..fixtures import LightFixture
 from ..fixtures.basics import Fixture
-from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
+from ..generators import WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import (
-    CategoryBuilder,
-    channel_names_for_category,
-    register_snap_handler,
-)
+from .builder import CategoryBuilder
 
 
 class PlantsBuilder(CategoryBuilder):
@@ -74,20 +70,9 @@ class PlantsBuilder(CategoryBuilder):
             duty=0.5,
         )
 
-        register_snap_handler(
-            osc,
-            "/snap_sin_plants_to_bpm",
-            [self.sin_plants],
-            "/sin_plants_period",
-            bpm_red,
-        )
-        register_snap_handler(
-            osc,
-            "/snap_sq_to_bpm",
-            [self.sq1, self.sq2, self.sq3],
-            "/sq_period",
-            bpm_red,
-        )
+        self.sin_plants.register_snap_to(bpm_red, osc)
+        for wave in (self.sq1, self.sq2, self.sq3):
+            wave.register_snap_to(bpm_red, osc)
 
     def fixtures(self) -> List[Fixture]:
         return list(self.ceils)
@@ -100,12 +85,7 @@ class PlantsBuilder(CategoryBuilder):
         return {
             self.category: [
                 # Patch params
-                SignalPatchParam(
-                    osc,
-                    "/signal_patchbay/plants",
-                    channel_names_for_category(mixer, self.category),
-                    mixer,
-                ),
+                mixer.patchbay_param(self.category),
                 # Standard generator params (/gen/{type}/{name}/{attr})
                 *self.sin_plants.standard_params(osc),
                 *self.sq1.standard_params(osc),

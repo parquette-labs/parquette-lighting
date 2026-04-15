@@ -4,15 +4,11 @@ from ..audio_analysis import FFTManager
 from ..category import Category
 from ..dmx import DMXManager
 from ..fixtures.basics import Fixture, RGBLight, RGBWLight
-from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator
+from ..generators import WaveGenerator, BPMGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import (
-    CategoryBuilder,
-    channel_names_for_category,
-    register_snap_handler,
-)
+from .builder import CategoryBuilder
 
 
 class WashesBuilder(CategoryBuilder):
@@ -75,13 +71,7 @@ class WashesBuilder(CategoryBuilder):
             name="bpm_wash", category=category, amp=255, offset=0, duty=100
         )
 
-        register_snap_handler(
-            osc,
-            "/snap_sin_wash_to_bpm",
-            [self.sin_wash],
-            "/period_wash",
-            self.bpm_wash,
-        )
+        self.sin_wash.register_snap_to(self.bpm_wash, osc)
         fft_manager.bpms.append(self.bpm_wash)
 
     def fixtures(self) -> List[Fixture]:
@@ -121,12 +111,7 @@ class WashesBuilder(CategoryBuilder):
             ],
             self.category: [
                 # Patch params
-                SignalPatchParam(
-                    osc,
-                    "/signal_patchbay/washes",
-                    channel_names_for_category(mixer, self.category),
-                    mixer,
-                ),
+                mixer.patchbay_param(self.category),
                 # Non-generator params
                 OSCParam.bind(
                     osc,

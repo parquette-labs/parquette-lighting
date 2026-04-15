@@ -19,7 +19,7 @@ from .chanmap import (
 from ..osc import OSCManager, OSCParam
 from ..dmx import DMXManager
 from ..fixtures.basics import Fixture
-from ..category import Categories
+from ..category import Categories, Category
 
 
 class Mixer(object):
@@ -419,6 +419,20 @@ class Mixer(object):
 
     def updateDMX(self) -> None:
         self.dmx.submit()
+
+    def patchbay_param(self, category: Category) -> "SignalPatchParam":
+        """Build a SignalPatchParam for every channel in `category`.
+
+        Address is derived from category.name so builders don't have to
+        hardcode `/signal_patchbay/<name>` in every build_params method.
+        """
+        chan_names = [ch.name for ch in self.mix_channels if ch.category is category]
+        return SignalPatchParam(
+            self.osc,
+            "/signal_patchbay/{}".format(category.name),
+            chan_names,
+            self,
+        )
 
 
 class SignalPatchParam(OSCParam):

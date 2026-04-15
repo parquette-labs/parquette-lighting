@@ -5,16 +5,11 @@ from ..category import Category
 from ..dmx import DMXManager
 from ..fixtures import LightFixture
 from ..fixtures.basics import Fixture
-from ..generators import SignalPatchParam, WaveGenerator, BPMGenerator, LoopGenerator
+from ..generators import WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
 from ..generators.mixer import Mixer
 from ..osc import OSCManager, OSCParam
-from .builder import (
-    CategoryBuilder,
-    channel_names_for_category,
-    register_snap_handler,
-    register_loop_record_handler,
-)
+from .builder import CategoryBuilder
 
 
 def handle_loop_input(gen: LoopGenerator, value: float) -> None:
@@ -66,14 +61,8 @@ class RedsBuilder(CategoryBuilder):
             name="loop_reds", category=category, max_samples=loop_max_samples
         )
 
-        register_snap_handler(
-            osc,
-            "/snap_sin_red_to_bpm",
-            [self.sin_reds],
-            "/sin_red_period",
-            self.bpm_red,
-        )
-        register_loop_record_handler(osc, "/loop_reds_record", [self.loop_reds])
+        self.sin_reds.register_snap_to(self.bpm_red, osc)
+        self.loop_reds.register_record(osc)
         fft_manager.bpms.append(self.bpm_red)
 
     def fixtures(self) -> List[Fixture]:
@@ -87,12 +76,7 @@ class RedsBuilder(CategoryBuilder):
         return {
             self.category: [
                 # Patch params
-                SignalPatchParam(
-                    osc,
-                    "/signal_patchbay/reds",
-                    channel_names_for_category(mixer, self.category),
-                    mixer,
-                ),
+                mixer.patchbay_param(self.category),
                 # Non-generator params
                 OSCParam.bind(
                     osc, "/reds_stutter_period", mixer, "reds_stutter_period"
