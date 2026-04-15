@@ -62,19 +62,53 @@ class Spot(LightFixture):
         self.strobe_enabled: bool = False
         self._strobe_rate: DMXValue = 0
 
-        self.color_index: int = 0
-
-        self.pattern_index: int = 0
-
-        self._prisim_enabled: bool = False
-        self._prisim_rotation: DMXValue = 0
-        self.prisim_enabled: bool = False
-        self.prisim_rotation: DMXValue = 0
+        # Backing fields for the color_index / pattern_index / prisim_enabled /
+        # prisim_rotation properties defined below. The properties exist so
+        # that OSCParam.bind can setattr them from the UI and have the full
+        # color()/pattern()/prisim() method bodies run (writing DMX), while
+        # internal code that only needs to update the cached value (inside the
+        # methods themselves) writes to the backing fields directly.
+        self.color_index_value: int = 0
+        self.pattern_index_value: int = 0
+        self.prisim_enabled_value: bool = False
+        self.prisim_rotation_value: DMXValue = 0
 
         self.color_swap_fade_multiplier: float = 1.0
         self.color_swap_fade_time: float = -1.0
         self.color_swap_mechanical_time: float = 0.0
         self.color_swap_fade_cancel: threading.Event = threading.Event()
+
+    @property
+    def color_index(self) -> int:
+        return self.color_index_value
+
+    @color_index.setter
+    def color_index(self, val: int) -> None:
+        self.color(int(val))
+
+    @property
+    def pattern_index(self) -> int:
+        return self.pattern_index_value
+
+    @pattern_index.setter
+    def pattern_index(self, val: int) -> None:
+        self.pattern(int(val))
+
+    @property
+    def prisim_enabled(self) -> bool:
+        return self.prisim_enabled_value
+
+    @prisim_enabled.setter
+    def prisim_enabled(self, val: bool) -> None:
+        self.prisim(bool(val), cast(int, self.prisim_rotation_value))
+
+    @property
+    def prisim_rotation(self) -> DMXValue:
+        return self.prisim_rotation_value
+
+    @prisim_rotation.setter
+    def prisim_rotation(self, val: DMXValue) -> None:
+        self.prisim(self.prisim_enabled_value, int(val))
 
     def pantilt(self, pan: int, tilt: int, fine=False) -> None:
         if not fine:
@@ -159,10 +193,10 @@ class Spot(LightFixture):
         self._start_color_swap_fade(clamped)
 
     def _color_direct(self, index: int) -> None:
-        self.color_index = index
+        self.color_index_value = index
         self.dmx.set_channel(
             self.addr + self.color_channel.offset,
-            self.color_channel.map(range_index=self.color_index),
+            self.color_channel.map(range_index=self.color_index_value),
         )
 
     def _start_color_swap_fade(self, color_index: int) -> None:
@@ -253,19 +287,21 @@ class Spot(LightFixture):
         return self.pattern_channel.range_names()
 
     def pattern(self, index: int) -> None:
-        self.pattern_index = int(constrain(index, 0, len(self.patterns()) - 1))
+        self.pattern_index_value = int(constrain(index, 0, len(self.patterns()) - 1))
 
         self.dmx.set_channel(
             self.addr + self.pattern_channel.offset,
-            self.pattern_channel.map(range_index=self.pattern_index),
+            self.pattern_channel.map(range_index=self.pattern_index_value),
         )
 
     def no_pattern(self) -> None:
         self.pattern(0)
 
     def prisim(self, enable: bool, rotation: int = 0) -> None:
-        self.prisim_enabled = enable
-        self.prisim_rotation = self.prisim_channel.map(rotation, range_name="rotation")
+        self.prisim_enabled_value = enable
+        self.prisim_rotation_value = self.prisim_channel.map(
+            rotation, range_name="rotation"
+        )
 
         if not enable:
             self.dmx.set_channel(
@@ -279,7 +315,7 @@ class Spot(LightFixture):
             )
         else:
             self.dmx.set_channel(
-                self.addr + self.prisim_channel.offset, self.prisim_rotation
+                self.addr + self.prisim_channel.offset, self.prisim_rotation_value
             )
 
     def reset(self, reset: bool) -> None:
@@ -288,6 +324,13 @@ class Spot(LightFixture):
 
 class YRXY200Spot(Spot):
     # https://yuerlighting.com/product/280w-rgbw-led-moving-head-light-200w-white-21x-smd-5050-rgb-540-pan-200-tilt-for-dj-shows-weddings-church-services-events/
+
+    STANDARD_ATTRS = [
+        "color_index",
+        "pattern_index",
+        "prisim_enabled",
+        "prisim_rotation",
+    ]
 
     class YRXY200Channel(Enum):
         X_AXIS = 0
@@ -474,7 +517,7 @@ class YRXY200Spot(Spot):
         super().send_visualizer()
         if self.osc is not None:
             self.osc.send_osc(
-                "/visualizer/{}/pantilt".format(self.name),
+                "/visualizer/fixture/{}/pantilt".format(self.name),
                 [self._pan, self._tilt],
             )
 
@@ -548,8 +591,8 @@ class YRXY200Spot(Spot):
             )
 
     def prisim(self, enable: bool, rotation: int = 0) -> None:
-        self.prisim_enabled = enable
-        self.prisim_rotation = rotation
+        self.prisim_enabled_value = enable
+        self.prisim_rotation_value = rotation
 
         if not enable:
             self.dmx.set_channel(
@@ -562,12 +605,13 @@ class YRXY200Spot(Spot):
                 YRXY200Spot.YRXY200Prisim.PRISIM.value,
             )
         else:
-            self.prisim_rotation = cast(
+            self.prisim_rotation_value = cast(
                 int, value_map(rotation, 0, 255, 0, 255 - 192, True)
             )
             self.dmx.set_channel(
                 self.addr + YRXY200Spot.YRXY200Channel.PRISIM.value,
-                YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION.value + self.prisim_rotation,
+                YRXY200Spot.YRXY200Prisim.PRISIM_ROTATION.value
+                + self.prisim_rotation_value,
             )
 
     def self_propelled(

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List
 
 from ..audio_analysis import FFTManager
 from ..category import Category
@@ -50,61 +50,40 @@ class AudioBuilder(CategoryBuilder):
 
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
-
-        def fft_dispatch_wedge(fft: Any, args: Tuple[Any, ...]) -> None:
-            if len(args) == 1:
-                fft.set_bounds(args[0][0], args[0][2])
-            else:
-                fft.set_bounds(args[0], args[2])
-
         return {
             self.category: [
-                # Standard generator params (/gen/{type}/{name}/{attr})
+                # Standard generator params (/gen/{ClassName}/{name}/{attr}) —
+                # FFTGenerator.standard_params() includes the bounds param
                 *self.fft1.standard_params(osc),
                 *self.fft2.standard_params(osc),
-                # Custom FFT bounds params (not simple scalar attrs)
-                OSCParam(
-                    osc,
-                    "/fft_bounds_1",
-                    lambda: (
-                        self.fft1.fft_bounds[0],
-                        0,
-                        self.fft1.fft_bounds[1],
-                        0,
-                    ),
-                    lambda _addr, *args: fft_dispatch_wedge(self.fft1, args),
-                ),
-                OSCParam(
-                    osc,
-                    "/fft_bounds_2",
-                    lambda: (
-                        self.fft2.fft_bounds[0],
-                        0,
-                        self.fft2.fft_bounds[1],
-                        0,
-                    ),
-                    lambda _addr, *args: fft_dispatch_wedge(self.fft2, args),
-                ),
-                # Non-generator params (fft_manager)
+                # Audio tuning params on fft_manager
                 OSCParam.bind(
                     osc,
-                    "/bpm_energy_threshold",
+                    "/audio_config/bpm_energy_threshold",
                     self.fft_manager,
                     "energy_threshold",
                 ),
-                OSCParam.bind(osc, "/bpm_tempo_alpha", self.fft_manager, "tempo_alpha"),
                 OSCParam.bind(
                     osc,
-                    "/onset_envelope_floor",
+                    "/audio_config/bpm_tempo_alpha",
+                    self.fft_manager,
+                    "tempo_alpha",
+                ),
+                OSCParam.bind(
+                    osc,
+                    "/audio_config/onset_envelope_floor",
                     self.fft_manager,
                     "onset_envelope_floor",
                 ),
                 OSCParam.bind(
-                    osc, "/bpm_business_min", self.fft_manager, "min_business"
+                    osc,
+                    "/audio_config/bpm_business_min",
+                    self.fft_manager,
+                    "min_business",
                 ),
                 OSCParam.bind(
                     osc,
-                    "/bpm_regularity_min",
+                    "/audio_config/bpm_regularity_min",
                     self.fft_manager,
                     "min_regularity",
                 ),

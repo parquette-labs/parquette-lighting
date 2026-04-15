@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from .generator import Generator
 from ..category import Category
+from ..osc import OSCManager, OSCParam
 
 
 class LoopGenerator(Generator):
@@ -13,7 +14,6 @@ class LoopGenerator(Generator):
     interpolation and loops continuously at the original recording speed.
     """
 
-    OSC_TYPE = "loop"
     STANDARD_ATTRS = ["amp"]
 
     def __init__(
@@ -97,3 +97,19 @@ class LoopGenerator(Generator):
         next_idx = (idx + 1) % self.loop_length
         sample = self.samples[idx] * (1.0 - frac) + self.samples[next_idx] * frac
         return sample * self.amp + self.offset
+
+    def standard_params(self, osc: OSCManager) -> List[OSCParam]:
+        return super().standard_params(osc) + [self.samples_param(osc)]
+
+    def samples_param(self, osc: OSCManager) -> OSCParam:
+        addr = "/gen/{}/{}/samples".format(type(self).__name__, self.name)
+        return OSCParam(
+            osc,
+            addr,
+            lambda: self.samples,
+            lambda _a, *args: self.load_samples(
+                list(args[0])
+                if len(args) == 1 and isinstance(args[0], (list, tuple))
+                else list(args)
+            ),
+        )

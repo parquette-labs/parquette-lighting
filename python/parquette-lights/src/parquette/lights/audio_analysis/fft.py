@@ -94,15 +94,19 @@ class FFTManager(object):
         self._beat_executor = ThreadPoolExecutor(max_workers=1)
         self._beat_future: Optional[Future] = None
 
-        self.uidb = UIDebugFrame(osc, "/fft_debug_frame")
+        self.uidb = UIDebugFrame(osc, "/debug/fft_frame")
         self.send_fft_debug_data = False
         self.send_fft_debug_timeout: float = 0.0
         self.debug_timeout = debug_timeout
 
-        self.osc.dispatcher.map("/start_fft", lambda addr, args: self.start_fft())
-        self.osc.dispatcher.map("/stop_fft", lambda addr, args: self.stop_fft())
         self.osc.dispatcher.map(
-            "/set_fft_viz",
+            "/audio_config/start_fft", lambda addr, args: self.start_fft()
+        )
+        self.osc.dispatcher.map(
+            "/audio_config/stop_fft", lambda addr, args: self.stop_fft()
+        )
+        self.osc.dispatcher.map(
+            "/visualizer/enable_fft",
             lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
         )
 
@@ -482,11 +486,11 @@ class FFTManager(object):
                 max_bins = 64
                 downsampled = max(1, len(fft_data) // max_bins)
                 if downsampled == 1:
-                    self.osc.send_osc("/fft_viz", fft_data.tolist())
+                    self.osc.send_osc("/visualizer/fft", fft_data.tolist())
                 else:
                     n = (len(fft_data) // downsampled) * downsampled
                     banded = fft_data[:n].reshape(-1, downsampled).sum(axis=1).tolist()
-                    self.osc.send_osc("/fft_viz", banded)
+                    self.osc.send_osc("/visualizer/fft", banded)
 
             current_time = time.monotonic()
             if current_time - self.last_debug_update >= 0.1:
@@ -495,20 +499,28 @@ class FFTManager(object):
                 self.rms_history.append(self.current_rms)
 
                 if self.send_fft_debug_data:
-                    self.osc.send_osc("/fftgen_1_viz", self.downstream[0].value())
-                    self.osc.send_osc("/fftgen_2_viz", self.downstream[1].value())
-
-                    self.osc.send_osc("/rms_history_viz", list(self.rms_history))
-                    self.osc.send_osc("/bpm_history_viz", list(self.bpm_history))
                     self.osc.send_osc(
-                        "/raw_bpm_history_viz", list(self.raw_bpm_history)
+                        "/visualizer/fftgen_1", self.downstream[0].value()
                     )
                     self.osc.send_osc(
-                        "/harmonic_percussive_viz",
+                        "/visualizer/fftgen_2", self.downstream[1].value()
+                    )
+
+                    self.osc.send_osc("/visualizer/rms_history", list(self.rms_history))
+                    self.osc.send_osc("/visualizer/bpm_history", list(self.bpm_history))
+                    self.osc.send_osc(
+                        "/visualizer/raw_bpm_history", list(self.raw_bpm_history)
+                    )
+                    self.osc.send_osc(
+                        "/visualizer/harmonic_percussive",
                         list(self.harmonic_percussive_history),
                     )
-                    self.osc.send_osc("/business_viz", list(self.business_history))
-                    self.osc.send_osc("/regularity_viz", list(self.regularity_history))
+                    self.osc.send_osc(
+                        "/visualizer/business", list(self.business_history)
+                    )
+                    self.osc.send_osc(
+                        "/visualizer/regularity", list(self.regularity_history)
+                    )
 
                     self.uidb.update_ui()
 

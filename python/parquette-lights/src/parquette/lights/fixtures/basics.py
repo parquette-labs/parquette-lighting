@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Callable, List, Optional
+from typing import Callable, ClassVar, List, Optional
 from ..category import Category
 from ..dmx import DMXManager, DMXListOrValue, DMXValue
-from ..osc import OSCManager
+from ..osc import OSCManager, OSCParam
 from ..util.math import constrain, value_map
 
 
@@ -40,6 +40,8 @@ class MixTarget:
 
 
 class Fixture(object):
+    STANDARD_ATTRS: ClassVar[List[str]] = []
+
     def __init__(
         self,
         *,
@@ -64,6 +66,22 @@ class Fixture(object):
 
     def send_visualizer(self) -> None:
         pass
+
+    def standard_params(self, osc: OSCManager) -> List[OSCParam]:
+        """Return OSCParam binds for this fixture's standard attributes.
+
+        Addresses follow /fixture/{ClassName}/{name}/{attribute}.
+        """
+        cls_name = type(self).__name__
+        return [
+            OSCParam.bind(
+                osc,
+                "/fixture/{}/{}/{}".format(cls_name, self.name, attr),
+                self,
+                attr,
+            )
+            for attr in self.STANDARD_ATTRS
+        ]
 
     def set_mix_targets(self, *targets: Callable[[int], None]) -> None:
         self.wrapped_targets = [
@@ -128,7 +146,9 @@ class LightFixture(Fixture):
 
     def send_visualizer(self) -> None:
         if self.osc is not None:
-            self.osc.send_osc("/visualizer/{}".format(self.name), self._dimming)
+            self.osc.send_osc(
+                "/visualizer/fixture/{}/dimming".format(self.name), self._dimming
+            )
 
     def on(self) -> None:
         self.dimming(255)

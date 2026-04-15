@@ -4,7 +4,6 @@ from ..category import Category
 
 
 class NoiseGenerator(Generator):
-    OSC_TYPE = "noise"
     STANDARD_ATTRS = ["amp", "period"]
 
     last_value: float = 0

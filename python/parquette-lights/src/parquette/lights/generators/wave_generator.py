@@ -8,7 +8,6 @@ from ..util.math import value_map
 
 
 class WaveGenerator(Generator):
-    OSC_TYPE = "wave"
     STANDARD_ATTRS = ["amp", "period", "phase", "duty"]
 
     # period is a property so we can re-anchor self.phase whenever the period

@@ -344,14 +344,15 @@ def run(
         presets.select_all("Class")
 
     osc.dispatcher.map(
-        "/set_fft_viz", lambda addr, *args: mixer.set_fft_viz(bool(args[0]))
+        "/visualizer/enable_fft",
+        lambda addr, *args: mixer.set_fft_viz(bool(args[0])),
     )
     osc.dispatcher.map(
-        "/set_synth_visualizer",
+        "/visualizer/enable_synth",
         lambda addr, *args: mixer.set_synth_visualizer(bool(args[0])),
     )
     osc.dispatcher.map(
-        "/set_fixture_visualizer",
+        "/visualizer/enable_fixture",
         lambda addr, *args: mixer.set_fixture_visualizer(bool(args[0])),
     )
     osc.dispatcher.map("/all_black", lambda addr, args: all_black())

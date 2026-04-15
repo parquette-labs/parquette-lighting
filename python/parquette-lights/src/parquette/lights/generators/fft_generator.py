@@ -1,13 +1,14 @@
 import time
 from copy import copy
+from typing import Any, List
 import numpy as np
 from .generator import Generator
 from ..category import Category
+from ..osc import OSCManager, OSCParam
 from ..util.math import constrain
 
 
 class FFTGenerator(Generator):
-    OSC_TYPE = "fft"
     STANDARD_ATTRS = ["amp", "thres", "lpf_alpha"]
 
     stamps: list[float]
@@ -162,3 +163,22 @@ class FFTGenerator(Generator):
         else:
             self._lpf_state = alpha * raw + (1.0 - alpha) * self._lpf_state
         return self._lpf_state
+
+    def standard_params(self, osc: OSCManager) -> List[OSCParam]:
+        return super().standard_params(osc) + [self.bounds_param(osc)]
+
+    def bounds_param(self, osc: OSCManager) -> OSCParam:
+        addr = "/gen/{}/{}/bounds".format(type(self).__name__, self.name)
+        return OSCParam(
+            osc,
+            addr,
+            lambda: (self.fft_bounds[0], 0, self.fft_bounds[1], 0),
+            lambda _addr, *args: dispatch_bounds(self, args),
+        )
+
+
+def dispatch_bounds(fft: "FFTGenerator", args: Any) -> None:
+    if len(args) == 1:
+        fft.set_bounds(args[0][0], args[0][2])
+    else:
+        fft.set_bounds(args[0], args[2])

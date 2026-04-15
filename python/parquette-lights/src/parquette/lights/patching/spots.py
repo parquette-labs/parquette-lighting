@@ -206,44 +206,9 @@ class SpotsBuilder(CategoryBuilder):
             *self.sin_spot.standard_params(osc),
         ]
 
-        for i, fixture in enumerate(self.spotlights):
-            # Non-generator fixture params
-            light_params.append(
-                OSCParam(
-                    osc,
-                    "/spot_color_{}".format(i + 1),
-                    lambda fixture=fixture: fixture.color_index,
-                    lambda _, args, fixture=fixture: fixture.color(args),
-                )
-            )
-            light_params.append(
-                OSCParam(
-                    osc,
-                    "/spot_pattern_{}".format(i + 1),
-                    lambda fixture=fixture: fixture.pattern_index,
-                    lambda _, args, fixture=fixture: fixture.pattern(args),
-                )
-            )
-            light_params.append(
-                OSCParam(
-                    osc,
-                    "/spot_prisim_{}".format(i + 1),
-                    lambda fixture=fixture: fixture.prisim_enabled,
-                    lambda _, args, fixture=fixture: fixture.prisim(
-                        args, fixture.prisim_rotation
-                    ),
-                )
-            )
-            light_params.append(
-                OSCParam(
-                    osc,
-                    "/spot_prisim_rotation_{}".format(i + 1),
-                    lambda fixture=fixture: fixture.prisim_rotation,
-                    lambda _, args, fixture=fixture: fixture.prisim(
-                        fixture.prisim_enabled, args
-                    ),
-                )
-            )
+        for fixture in self.spotlights:
+            # Standard fixture params (/fixture/{ClassName}/{name}/{attr})
+            light_params.extend(fixture.standard_params(osc))
 
         # Position params
         spot_pos_gens = [
@@ -269,64 +234,40 @@ class SpotsBuilder(CategoryBuilder):
         for fixture in self.spotlights:
             pan_ch = mixer.channel_lookup["{}.pan".format(fixture.name)]
             tilt_ch = mixer.channel_lookup["{}.tilt".format(fixture.name)]
-            # Non-generator mixer params
+            cls_name = type(fixture).__name__
             pos_params.append(
                 OSCParam(
                     osc,
-                    "/{}_pantilt_offset".format(fixture.name),
+                    "/fixture/{}/{}/pantilt_offset".format(cls_name, fixture.name),
                     lambda pc=pan_ch, tc=tilt_ch: [pc.offset, tc.offset],
-                    lambda _, *args, pc=pan_ch, tc=tilt_ch: _handle_pantilt_offset(
+                    lambda _, *args, pc=pan_ch, tc=tilt_ch: handle_pantilt_offset(
                         pc, tc, args
                     ),
                 )
             )
             pan_fine_ch = mixer.channel_lookup["{}.pan_fine".format(fixture.name)]
             tilt_fine_ch = mixer.channel_lookup["{}.tilt_fine".format(fixture.name)]
-            # Non-generator mixer params
             pos_params.append(
                 OSCParam(
                     osc,
-                    "/{}_pantilt_fine_offset".format(fixture.name),
+                    "/fixture/{}/{}/pantilt_fine_offset".format(cls_name, fixture.name),
                     lambda pc=pan_fine_ch, tc=tilt_fine_ch: [pc.offset, tc.offset],
                     lambda _, *args, pc=pan_fine_ch, tc=tilt_fine_ch: (
-                        _handle_pantilt_offset(pc, tc, args)
+                        handle_pantilt_offset(pc, tc, args)
                     ),
                 )
             )
 
         loop_pairs = [
-            (self.loop_spot_pos_1_x, self.loop_spot_pos_1_y, 1),
-            (self.loop_spot_pos_2_x, self.loop_spot_pos_2_y, 2),
+            (self.loop_spot_pos_1_x, self.loop_spot_pos_1_y),
+            (self.loop_spot_pos_2_x, self.loop_spot_pos_2_y),
         ]
-        for loop_x, loop_y, idx in loop_pairs:
-            # Custom XY input param (paired across x/y loop generators)
-            pos_params.append(
-                OSCParam(
-                    osc,
-                    "/loop_spot_pos_{}_input".format(idx),
-                    lambda lx=loop_x, ly=loop_y: [lx.input_value, ly.input_value],
-                    lambda _, *args, lx=loop_x, ly=loop_y: _handle_xy_loop_input(
-                        lx, ly, args
-                    ),
-                )
-            )
-            # Standard generator params for each axis (/gen/loop/{name}/amp)
+        for loop_x, loop_y in loop_pairs:
+            # Standard generator params for each axis (amp, samples)
             pos_params.extend(loop_x.standard_params(osc))
             pos_params.extend(loop_y.standard_params(osc))
-            # Custom sample buffer params
-            for axis_gen in [loop_x, loop_y]:
-                pos_params.append(
-                    OSCParam(
-                        osc,
-                        "/{}_samples".format(axis_gen.name),
-                        lambda g=axis_gen: g.samples,
-                        lambda _, *args, g=axis_gen: g.load_samples(
-                            list(args[0])
-                            if len(args) == 1 and isinstance(args[0], (list, tuple))
-                            else list(args)
-                        ),
-                    )
-                )
+            # Paired XY input writes to both axes and records during loop capture
+            pos_params.append(loop_pair_input_param(osc, loop_x, loop_y))
 
         return {
             self.light_category: light_params,
@@ -334,7 +275,20 @@ class SpotsBuilder(CategoryBuilder):
         }
 
 
-def _handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:
+def loop_pair_input_param(osc: OSCManager, loop_x: Any, loop_y: Any) -> OSCParam:
+    # x/y axis loop generators are always named "<prefix>_x" / "<prefix>_y".
+    # Use the shared prefix as a single generator-pair identity in the address.
+    shared = loop_x.name[:-2] if loop_x.name.endswith("_x") else loop_x.name
+    addr = "/gen/{}/{}/input".format(type(loop_x).__name__, shared)
+    return OSCParam(
+        osc,
+        addr,
+        lambda: [loop_x.input_value, loop_y.input_value],
+        lambda _a, *args: handle_xy_loop_input(loop_x, loop_y, args),
+    )
+
+
+def handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:
     if len(args) == 1 and isinstance(args[0], (list, tuple)):
         pan, tilt = args[0][0], args[0][1]
     else:
@@ -343,7 +297,7 @@ def _handle_pantilt_offset(pan_ch: Any, tilt_ch: Any, args: tuple) -> None:
     tilt_ch.offset = float(tilt)
 
 
-def _handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:
+def handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:
     if len(args) == 1 and isinstance(args[0], (list, tuple)):
         x, y = args[0][0], args[0][1]
     else:

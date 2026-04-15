@@ -3,7 +3,6 @@ from ..category import Category
 
 
 class BPMGenerator(Generator):
-    OSC_TYPE = "bpm"
     STANDARD_ATTRS = ["amp", "duty", "bpm_mult", "manual_offset", "lpf_alpha"]
 
     duty: int

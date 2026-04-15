@@ -6,7 +6,6 @@ from ..osc import OSCManager, OSCParam
 
 
 class Generator(ABC):
-    OSC_TYPE: ClassVar[str] = ""
     STANDARD_ATTRS: ClassVar[List[str]] = []
 
     def __init__(
@@ -33,13 +32,13 @@ class Generator(ABC):
     def standard_params(self, osc: OSCManager) -> List[OSCParam]:
         """Return OSCParam binds for this generator's standard attributes.
 
-        Addresses follow /gen/{type}/{name}/{attribute}. Binds happen for
-        every attribute regardless of whether the frontend UI uses them.
+        Addresses follow /gen/{ClassName}/{name}/{attribute}.
         """
+        cls_name = type(self).__name__
         return [
             OSCParam.bind(
                 osc,
-                "/gen/{}/{}/{}".format(self.OSC_TYPE, self.name, attr),
+                "/gen/{}/{}/{}".format(cls_name, self.name, attr),
                 self,
                 attr,
             )

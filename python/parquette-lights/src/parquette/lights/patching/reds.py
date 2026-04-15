@@ -17,7 +17,7 @@ from .builder import (
 )
 
 
-def _handle_loop_input(gen: LoopGenerator, value: float) -> None:
+def handle_loop_input(gen: LoopGenerator, value: float) -> None:
     gen.input_value = value
     gen.record_sample(value)
 
@@ -97,26 +97,18 @@ class RedsBuilder(CategoryBuilder):
                 OSCParam.bind(
                     osc, "/reds_stutter_period", mixer, "reds_stutter_period"
                 ),
-                # Standard generator params (/gen/{type}/{name}/{attr})
+                # Standard generator params (/gen/{ClassName}/{name}/{attr})
                 *self.sin_reds.standard_params(osc),
                 *self.bpm_red.standard_params(osc),
                 *self.loop_reds.standard_params(osc),
-                # Custom loop params
+                # Loop input param: record_sample side-effect means this can't be bound
                 OSCParam(
                     osc,
-                    "/loop_reds_input",
-                    lambda: self.loop_reds.input_value,
-                    lambda _, args: _handle_loop_input(self.loop_reds, args),
-                ),
-                OSCParam(
-                    osc,
-                    "/loop_reds_samples",
-                    lambda: self.loop_reds.samples,
-                    lambda _, *args: self.loop_reds.load_samples(
-                        list(args[0])
-                        if len(args) == 1 and isinstance(args[0], (list, tuple))
-                        else list(args)
+                    "/gen/{}/{}/input".format(
+                        type(self.loop_reds).__name__, self.loop_reds.name
                     ),
+                    lambda: self.loop_reds.input_value,
+                    lambda _, args: handle_loop_input(self.loop_reds, args),
                 ),
             ]
         }

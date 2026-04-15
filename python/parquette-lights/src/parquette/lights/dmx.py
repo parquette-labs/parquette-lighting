@@ -106,14 +106,14 @@ class DMXManager(object):
         self.art_net_controller.set_net(0)
 
         self.osc.dispatcher.map(
-            "/dmx_port_refresh", lambda addr, args: self.dmx_port_refresh()
+            "/dmx/port_refresh", lambda addr, args: self.dmx_port_refresh()
         )
         self.osc.dispatcher.map(
-            "/dmx_port_disconnect", lambda addr, args: self.close(deselect=True)
+            "/dmx/port_disconnect", lambda addr, args: self.close(deselect=True)
         )
 
         self.osc.dispatcher.map(
-            "/dmx_port_name", lambda addr, args: self.setup_dmx(args)
+            "/dmx/port_name", lambda addr, args: self.setup_dmx(args)
         )
         self.close()
 
@@ -127,7 +127,7 @@ class DMXManager(object):
 
     def dmx_port_refresh(self) -> None:
         ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
-        self.osc.send_osc("/dmx_port_name/values", [str(ports_dict)])
+        self.osc.send_osc("/dmx/port_name/values", [str(ports_dict)])
 
     def setup_dmx(self, port: str) -> None:
         self.close(deselect=False)
@@ -139,7 +139,7 @@ class DMXManager(object):
                 self.enttec_pro_controller = EnttecProController(
                     port, auto_submit=False, dmx_size=self.universe_size
                 )
-                self.osc.send_osc("/dmx_port_name", [port])
+                self.osc.send_osc("/dmx/port_name", [port])
             except SerialException as e:
                 print(e, flush=True)
                 self.close()
@@ -228,4 +228,4 @@ class DMXManager(object):
             self.enttec_pro_controller = None
 
         if deselect:
-            self.osc.send_osc("/dmx_port_name", [None])
+            self.osc.send_osc("/dmx/port_name", [None])

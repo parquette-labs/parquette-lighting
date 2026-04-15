@@ -33,17 +33,22 @@ class AudioCapture(object):
         self.window_ts = deque()
         self.new_chunk_event = Event()
 
-        self.uidb = UIDebugFrame(osc, "/audio_debug_frame")
+        self.uidb = UIDebugFrame(osc, "/debug/audio_frame")
 
         self.osc = osc
         self.osc.dispatcher.map(
-            "/audio_port_refresh", lambda addr, args: self.audio_port_refresh()
+            "/audio_config/port_refresh",
+            lambda addr, args: self.audio_port_refresh(),
         )
         self.osc.dispatcher.map(
-            "/audio_port_name", lambda addr, args: self.setup_audio(args)
+            "/audio_config/port_name", lambda addr, args: self.setup_audio(args)
         )
-        self.osc.dispatcher.map("/start_audio", lambda addr, args: self.start_audio())
-        self.osc.dispatcher.map("/stop_audio", lambda addr, args: self.stop_audio())
+        self.osc.dispatcher.map(
+            "/audio_config/start_audio", lambda addr, args: self.start_audio()
+        )
+        self.osc.dispatcher.map(
+            "/audio_config/stop_audio", lambda addr, args: self.stop_audio()
+        )
         self.close()
 
     def list_audio_ports(self) -> list[Mapping[str, str | int | float]]:
@@ -59,7 +64,7 @@ class AudioCapture(object):
             for i, port in enumerate(self.list_audio_ports())
             if int(port["maxInputChannels"]) > 0
         }
-        self.osc.send_osc("/audio_port_name/values", [str(port_opts)])
+        self.osc.send_osc("/audio_config/port_name/values", [str(port_opts)])
 
     def setup_audio(self, port: int) -> None:
         if port == "undefined":
@@ -91,7 +96,7 @@ class AudioCapture(object):
             self.uidb["audio_nyquist"] = self.rate / 2
             self.uidb.update_ui()
 
-            self.osc.send_osc("/audio_port_name", [port])
+            self.osc.send_osc("/audio_config/port_name", [port])
         except SerialException as e:
             print(e, flush=True)
             self.close()
@@ -149,7 +154,7 @@ class AudioCapture(object):
                 pass
 
         if deselect:
-            self.osc.send_osc("/audio_port_name", [None])
+            self.osc.send_osc("/audio_config/port_name", [None])
 
     def terminate(self) -> None:
         self.close()

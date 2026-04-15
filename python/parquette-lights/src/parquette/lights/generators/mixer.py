@@ -249,7 +249,8 @@ class Mixer(object):
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
-        # modal heartbeats /set_fft_viz, to avoid wasting compute otherwise.
+        # modal heartbeats /visualizer/enable_fft, to avoid wasting compute
+        # otherwise.
         self.fft_history_len = 200
         self.fft_gen_history: Dict[str, List[float]] = {
             "fft_1": [0.0] * self.fft_history_len,
@@ -260,12 +261,12 @@ class Mixer(object):
         self.fixture_visualizer_until: float = 0.0
 
         # Synth visualizer mirrors the history of a selected source channel.
-        # Set via /synth_visualizer_source OSC param. Empty string means off.
+        # Set via /visualizer/synth_source OSC param. Empty string means off.
         self.synth_visualizer_source: str = ""
         self.debug_tick: int = 0
 
     def set_fft_viz(self, enable: bool) -> None:
-        # Heartbeat-driven: each /set_fft_viz with value=1 extends the window
+        # Heartbeat-driven: each /visualizer/enable_fft with value=1 extends the window
         # by ~2s. "off" messages are ignored on purpose — multiple UI clients
         # may be connected, and one client sending 0 (because its active tab
         # isn't FFT/DMX) must not yank the gate closed for another client
@@ -402,11 +403,15 @@ class Mixer(object):
             source = self.channel_lookup.get(self.synth_visualizer_source)
             if source is not None:
                 sv_history = source.history[: min(200, len(source.history))]
-                self.osc.send_osc("/synth_visualizer_history", sv_history)
+                self.osc.send_osc("/visualizer/synth_history", sv_history)
 
         if self.fft_viz_active():
-            self.osc.send_osc("/fftgen_1_history", list(self.fft_gen_history["fft_1"]))
-            self.osc.send_osc("/fftgen_2_history", list(self.fft_gen_history["fft_2"]))
+            self.osc.send_osc(
+                "/visualizer/fftgen_1_history", list(self.fft_gen_history["fft_1"])
+            )
+            self.osc.send_osc(
+                "/visualizer/fftgen_2_history", list(self.fft_gen_history["fft_2"])
+            )
 
         if self.fixture_visualizer_active():
             for fixture in self.all_fixtures:
