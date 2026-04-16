@@ -105,8 +105,8 @@ def test_master_change_drives_dmx_output(
     →DMXManager path without touching hardware."""
 
     ctx = server_instance
-    sodium = ctx.mixer.channel_lookup.get("sodium.dimming")
-    assert sodium is not None, "Expected a 'sodium.dimming' mix channel"
+    sodium = ctx.mixer.channel_lookup.get("sodium/dimming")
+    assert sodium is not None, "Expected a 'sodium/dimming' mix channel"
 
     sodium.offset = 0
     ctx.tick()

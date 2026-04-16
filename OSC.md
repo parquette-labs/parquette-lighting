@@ -50,16 +50,21 @@ BPM snap subscriptions (every wave that called `WaveGenerator.register_snap_to(b
 | `/gen/BPMGenerator/bpm_red/snap` | sin_red, sin_plants, sin_booth, sin_spot, sin_spot_pos_{1-4}, sq_{1-3} |
 | `/gen/BPMGenerator/bpm_wash/snap` | sin_wash |
 
-## `/chan/{channel_name}/offset` — Mix channel offsets
+## `/chan/{fixture}/{attr}/offset` — Mix channel offsets
 
-One per mix channel, preset-saved. Registered via `MixChannel.register_offset(osc, on_change)`. Real channels: per-fixture `{fixture}.dimming` (~16), per-spot `spot_{1,2}.{pan,pan_fine,tilt,tilt_fine}`, plus mono/stutter composites `reds_mono`, `reds_fwd`, `reds_back`, `reds_zig`, `washes_mono`, `washes_fwd`, `washes_back`.
+One per mix channel, preset-saved. Registered via `MixChannel.register_offset(osc, on_change)`. Channel names use `/` as the fixture/attribute separator (not `.`) so `@{chan/…/offset}` references work in Open Stage Control — OSC parses dots in `@{id}` as JS property access.
+
+Real channels:
+- Per-fixture dimming: `chan/{fixture}/dimming/offset` for each of the ~24 fixtures (`left_{1-4}`, `right_{1-4}`, `front_{1,2}`, `ceil_{1-3}`, `under_{1,2}`, `tung_spot`, `sodium`, `spot_{1,2}`, `wash_fl/fr/ml/mr/bl/br`, `wash_ceil_f/r`)
+- Per-spot pan/tilt: `chan/spot_{1,2}/{pan,pan_fine,tilt,tilt_fine}/offset`
+- Mono/stutter composites (no dots in the name): `chan/reds_mono/offset`, `chan/reds_fwd/offset`, `chan/reds_back/offset`, `chan/reds_zig/offset`, `chan/washes_mono/offset`, `chan/washes_fwd/offset`, `chan/washes_back/offset`
 
 Composite pan+tilt addresses, preset-saved — `PantiltChannel` virtual channels whose offset is a 2-vec `[pan, tilt]` that writes through to the real channels; skipped from `signal_patchbay` routing.
 
 | Address | Underlying channels |
 |---|---|
-| `/chan/spot_{1,2}.pantilt/offset` | `spot_{1,2}.pan`, `spot_{1,2}.tilt` |
-| `/chan/spot_{1,2}.pantilt_fine/offset` | `spot_{1,2}.pan_fine`, `spot_{1,2}.tilt_fine` |
+| `/chan/spot_{1,2}/pantilt/offset` | `spot_{1,2}/pan`, `spot_{1,2}/tilt` |
+| `/chan/spot_{1,2}/pantilt_fine/offset` | `spot_{1,2}/pan_fine`, `spot_{1,2}/tilt_fine` |
 
 ## `/chan/{category}/stutter_period` — Stutter period per category
 

@@ -16,7 +16,7 @@ class ChannelLevelsBuilder(CategoryBuilder):
         """Build per-channel offset params, grouped by each channel's category."""
         by_category: Dict[Category, List[OSCParam]] = {}
         for ch in mixer.mix_channels:
-            on_change = self.session.save if ch.name == "sodium.dimming" else None
+            on_change = self.session.save if ch.name == "sodium/dimming" else None
             param = ch.register_offset(self.osc, on_change=on_change)
             by_category.setdefault(ch.category, []).append(param)
         return by_category

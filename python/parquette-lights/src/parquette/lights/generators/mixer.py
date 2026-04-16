@@ -61,7 +61,7 @@ class Mixer(object):
             for target in fixture.mix_targets():
                 targets.append(target)
 
-                chan_name = "{}.{}".format(fixture.name, target.name)
+                chan_name = "{}/{}".format(fixture.name, target.name)
                 impulse = (
                     impulse_gen if fixture.category in impulse_categories else None
                 )
@@ -222,14 +222,14 @@ class Mixer(object):
         # routable mixer outputs.
         lookup = {ch.name: ch for ch in self.mix_channels}
         for spot_name in ("spot_1", "spot_2"):
-            pan_ch = lookup.get("{}.pan".format(spot_name))
-            tilt_ch = lookup.get("{}.tilt".format(spot_name))
-            pan_fine_ch = lookup.get("{}.pan_fine".format(spot_name))
-            tilt_fine_ch = lookup.get("{}.tilt_fine".format(spot_name))
+            pan_ch = lookup.get("{}/pan".format(spot_name))
+            tilt_ch = lookup.get("{}/tilt".format(spot_name))
+            pan_fine_ch = lookup.get("{}/pan_fine".format(spot_name))
+            tilt_fine_ch = lookup.get("{}/tilt_fine".format(spot_name))
             if pan_ch and tilt_ch:
                 self.mix_channels.append(
                     PantiltChannel(
-                        "{}.pantilt".format(spot_name),
+                        "{}/pantilt".format(spot_name),
                         pan_ch.category,
                         pan_ch,
                         tilt_ch,
@@ -238,7 +238,7 @@ class Mixer(object):
             if pan_fine_ch and tilt_fine_ch:
                 self.mix_channels.append(
                     PantiltChannel(
-                        "{}.pantilt_fine".format(spot_name),
+                        "{}/pantilt_fine".format(spot_name),
                         pan_fine_ch.category,
                         pan_fine_ch,
                         tilt_fine_ch,

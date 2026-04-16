@@ -292,7 +292,7 @@ def run(
 
     def session_snapshot():
         masters = categories.save_masters()
-        masters["sodium"] = mixer.channel_lookup["sodium.dimming"].offset
+        masters["sodium"] = mixer.channel_lookup["sodium/dimming"].offset
         return {
             "current_presets": presets.save_current_selection(),
             "masters": masters,
@@ -300,7 +300,7 @@ def run(
 
     session.bind(session_snapshot)
 
-    sodium_ch = mixer.channel_lookup["sodium.dimming"]
+    sodium_ch = mixer.channel_lookup["sodium/dimming"]
 
     Scene(
         name="all_black",
@@ -366,7 +366,7 @@ def run(
         masters = restored.get("masters") or {}
         categories.load_masters(masters)
         if "sodium" in masters:
-            mixer.channel_lookup["sodium.dimming"].offset = masters["sodium"]
+            mixer.channel_lookup["sodium/dimming"].offset = masters["sodium"]
 
     if debug:
         print("DEBUG channel generator connections after restore:", flush=True)
