@@ -106,7 +106,7 @@ class FFTManager(object):
             "/audio_config/stop_fft", lambda addr, args: self.stop_fft()
         )
         self.osc.dispatcher.map(
-            "/visualizer/enable_fft",
+            "/visualizer/enable_fft_spectrum",
             lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
         )
 

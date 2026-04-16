@@ -259,7 +259,7 @@ class Mixer(object):
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
-        # modal heartbeats /visualizer/enable_fft, to avoid wasting compute
+        # modal heartbeats /visualizer/enable_fft_gen_timeseries, to avoid wasting compute
         # otherwise.
         self.fft_history_len = 200
         self.fft_gen_history: Dict[str, List[float]] = {
@@ -275,8 +275,23 @@ class Mixer(object):
         self.synth_visualizer_source: str = ""
         self.debug_tick: int = 0
 
+        # Heartbeat dispatchers for visualizer gates — self-registered so
+        # builders and server.py don't have to know about them.
+        osc.dispatcher.map(
+            "/visualizer/enable_fft_gen_timeseries",
+            lambda _a, *args: self.set_fft_viz(bool(args[0])),
+        )
+        osc.dispatcher.map(
+            "/visualizer/enable_synth",
+            lambda _a, *args: self.set_synth_visualizer(bool(args[0])),
+        )
+        osc.dispatcher.map(
+            "/visualizer/enable_fixture",
+            lambda _a, *args: self.set_fixture_visualizer(bool(args[0])),
+        )
+
     def set_fft_viz(self, enable: bool) -> None:
-        # Heartbeat-driven: each /visualizer/enable_fft with value=1 extends the window
+        # Heartbeat-driven: each /visualizer/enable_fft_gen_timeseries with value=1 extends the window
         # by ~2s. "off" messages are ignored on purpose — multiple UI clients
         # may be connected, and one client sending 0 (because its active tab
         # isn't FFT/DMX) must not yank the gate closed for another client

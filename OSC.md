@@ -122,6 +122,7 @@ Actions (dispatcher.map, not preset-saved). Each `Scene` sets category masters +
 | `/preset/save/{category}` | UI → Server | save current state as preset |
 | `/preset/clear/{category}` | UI → Server | delete the selected preset |
 | `/preset/selector/{category}` | bidirectional | select / echo current preset name |
+| `/preset/reload` | UI → Server | re-sync every preset-tracked param to the frontend |
 
 ## `/visualizer/…` — Data streams and enables
 
@@ -146,7 +147,8 @@ UI → Server:
 
 | Address | Purpose |
 |---|---|
-| `/visualizer/enable_fft` | heartbeat to gate FFT/audio viz streams |
+| `/visualizer/enable_fft_spectrum` | heartbeat to gate FFTManager's spectrum + audio-analysis streams (`/visualizer/fft`, `/visualizer/fftgen_{1,2}`, `rms/bpm/harmonic_percussive/business/regularity` histories) |
+| `/visualizer/enable_fft_gen_timeseries` | heartbeat to gate Mixer's `/visualizer/fftgen_{1,2}_history` 200-sample buffers |
 | `/visualizer/enable_synth` | heartbeat to gate synth history stream |
 | `/visualizer/enable_fixture` | heartbeat to gate fixture dimming/pantilt streams |
 | `/visualizer/synth_source` | select which channel to visualize (non-saved category) |
@@ -177,7 +179,6 @@ Port selection (bidirectional): `port_name`; `port_name/values` carries the drop
 |---|---|---|
 | `/heartbeat` | UI → Server | client keep-alive (sent every 2s from `onCreate`) |
 | `/client_count` | Server → UI | connected client count |
-| `/reload` | UI → Server | fire all preset-param syncs to frontend |
 | `/enable_save` | bidirectional | toggle preset save/clear UI |
 
 ## Frontend-only ganged controls

@@ -300,11 +300,6 @@ def run(
 
     session.bind(session_snapshot)
 
-    osc.dispatcher.map("/reload", lambda addr, args: presets.sync())
-    osc.dispatcher.map(
-        "/enable_save", lambda _, args: presets.set_enable_save_clear(args)
-    )
-
     sodium_ch = mixer.channel_lookup["sodium.dimming"]
 
     Scene(
@@ -355,18 +350,6 @@ def run(
         disable_passthrough=True,
     )
 
-    osc.dispatcher.map(
-        "/visualizer/enable_fft",
-        lambda addr, *args: mixer.set_fft_viz(bool(args[0])),
-    )
-    osc.dispatcher.map(
-        "/visualizer/enable_synth",
-        lambda addr, *args: mixer.set_synth_visualizer(bool(args[0])),
-    )
-    osc.dispatcher.map(
-        "/visualizer/enable_fixture",
-        lambda addr, *args: mixer.set_fixture_visualizer(bool(args[0])),
-    )
     client_tracker = ClientTracker(osc)
     client_tracker.start()
 

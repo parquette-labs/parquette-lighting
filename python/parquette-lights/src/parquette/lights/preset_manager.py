@@ -42,6 +42,10 @@ class PresetManager(object):
             "/preset/selector/*",
             lambda addr, args: self.select(addr.split("/")[3], args),
         )
+        osc.dispatcher.map("/preset/reload", lambda _a, _args: self.sync())
+        osc.dispatcher.map(
+            "/enable_save", lambda _a, args: self.set_enable_save_clear(args)
+        )
 
         self.load()
 
