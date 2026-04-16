@@ -29,6 +29,25 @@ FIT_IN_PARENT_SKIP_TYPES = {"tab", "root"}
 # auto-positioned at runtime.
 OVERLAP_IGNORE_CHILD_TYPES = {"variable"}
 
+# Sub-pixel overlaps come from fractional grid-layout positions and don't
+# render as actual visual overlaps.
+OVERLAP_EPSILON = 0.5
+
+# Intentionally co-located widget pairs. Each entry is a frozenset of two
+# widget IDs: when both appear as siblings inside the same container, the
+# overlap check skips them.
+ALLOWED_OVERLAYS: set = {
+    # Loop generators visually stack the input (live) control on top of the
+    # origin (recorded trajectory) control so the user can see both together.
+    frozenset({"loop_reds_origin", "gen/LoopGenerator/loop_reds/input"}),
+    frozenset({"loop_spot_pos_1_origin", "gen/LoopGenerator/loop_spot_pos_1/input"}),
+    frozenset({"loop_spot_pos_2_origin", "gen/LoopGenerator/loop_spot_pos_2/input"}),
+    # FFT visualizer: the bounds multixy widgets sit on top of the FFT plot
+    # so the user can drag frequency band boundaries on the audio view.
+    frozenset({"visualizer/fft", "gen/FFTGenerator/fft_1/bounds"}),
+    frozenset({"visualizer/fft", "gen/FFTGenerator/fft_2/bounds"}),
+}
+
 # Minimum required css fragments for a patchbay widget per CLAUDE.md.
 # Match what the shared block actually uses (width:30% for the input/output
 # node panels, break-word for long-label wrapping via word-break/overflow-wrap).
@@ -79,10 +98,11 @@ def _rects_overlap(
 ) -> bool:
     a_top, a_left, a_bot, a_right = a
     b_top, b_left, b_bot, b_right = b
-    # Touching edges (shared border) is not an overlap.
-    if a_right <= b_left or b_right <= a_left:
+    # Treat sub-pixel overlaps as non-overlaps — they come from fractional
+    # grid-layout positions and don't render as visible overlap.
+    if a_right - b_left <= OVERLAP_EPSILON or b_right - a_left <= OVERLAP_EPSILON:
         return False
-    if a_bot <= b_top or b_bot <= a_top:
+    if a_bot - b_top <= OVERLAP_EPSILON or b_bot - a_top <= OVERLAP_EPSILON:
         return False
     return True
 
@@ -149,11 +169,14 @@ def test_siblings_do_not_overlap(layout_widgets: List[Widget]) -> None:
 
         for i, (a, ra) in enumerate(rects):
             for b, rb in rects[i + 1 :]:
-                if _rects_overlap(ra, rb):
-                    conflicts.append(
-                        f"parent={parent_id}: {a.id!r} ({a.type}) overlaps "
-                        f"{b.id!r} ({b.type})"
-                    )
+                if not _rects_overlap(ra, rb):
+                    continue
+                if frozenset({a.id, b.id}) in ALLOWED_OVERLAYS:
+                    continue
+                conflicts.append(
+                    f"parent={parent_id}: {a.id!r} ({a.type}) overlaps "
+                    f"{b.id!r} ({b.type})"
+                )
 
     assert not conflicts, "Overlapping siblings in layout:\n  " + "\n  ".join(conflicts)
 
