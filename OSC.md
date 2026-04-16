@@ -1,6 +1,6 @@
 # OSC Address Reference
 
-Complete inventory of all OSC addresses used between the Python server and the Open Stage Control frontend.
+Complete inventory of OSC addresses between the Python server and the Open Stage Control frontend. Unless noted, UI → Server addresses are bidirectional (server syncs current value on preset load / client reconnect).
 
 ## `/gen/{ClassName}/{name}/{attr}` — Generator params
 
@@ -13,9 +13,8 @@ Standard scalar binds via `Generator.standard_params()`, preset-saved:
 | FFTGenerator | fft_1, fft_2 | amp, thres, lpf_alpha |
 | LoopGenerator | loop_reds, loop_spot_pos_{1,2}_{x,y} | amp |
 | ImpulseGenerator | impulse | amp, duty |
-| NoiseGenerator | noise_1 | amp, period |
 
-Custom per-class params (also via `standard_params()` overrides), preset-saved:
+Custom per-class params (via `standard_params()` overrides), preset-saved:
 
 | Address | Type |
 |---|---|
@@ -24,14 +23,21 @@ Custom per-class params (also via `standard_params()` overrides), preset-saved:
 
 Actions (dispatcher.map, not preset-saved):
 
-| Address | Instances |
+| Address | Effect |
 |---|---|
-| `/gen/BPMGenerator/{bpm_name}/snap` | every wave that called `register_snap_to(bpm, osc)` fans in (see below) |
-| `/gen/LoopGenerator/{name}/record` | loop_reds, loop_spot_pos_1 (x+y share), loop_spot_pos_2 (x+y share) |
-| `/gen/LoopGenerator/{pair}/input` | loop_spot_pos_1, loop_spot_pos_2 (XY pair), loop_reds (scalar) |
-| `/gen/ImpulseGenerator/impulse/punch` | trigger impulse burst |
+| `/gen/BPMGenerator/{bpm_name}/snap` | every wave subscribed to this BPM snaps its period — see subscription table below |
+| `/gen/LoopGenerator/{name or record_group}/record` | start/stop recording; paired x/y loops share a `record_group` so one toggle drives both |
+| `/gen/LoopGenerator/{name or pair}/input` | live value input; records sample during capture |
+| `/gen/ImpulseGenerator/impulse/punch` | fire a one-shot impulse |
 
-BPM snap subscriptions:
+Addresses in use for the action families above:
+
+| Family | Concrete addresses |
+|---|---|
+| record | `/gen/LoopGenerator/loop_reds/record`, `/gen/LoopGenerator/loop_spot_pos_1/record`, `/gen/LoopGenerator/loop_spot_pos_2/record` |
+| input | `/gen/LoopGenerator/loop_reds/input` (scalar), `/gen/LoopGenerator/loop_spot_pos_1/input` (XY pair), `/gen/LoopGenerator/loop_spot_pos_2/input` (XY pair) |
+
+BPM snap subscriptions (every wave that called `WaveGenerator.register_snap_to(bpm, osc)` registers a handler at the BPM's snap address; pythonosc fans each trigger to all handlers):
 
 | Snap address | Waves that snap |
 |---|---|
@@ -40,9 +46,9 @@ BPM snap subscriptions:
 
 ## `/chan/{channel_name}/offset` — Mix channel offsets
 
-One per mix channel (~40 channels), preset-saved. Registered via `MixChannel.register_offset(osc, on_change)`. Examples: `chan/left_1.dimming/offset`, `chan/spot_1.pan/offset`, `chan/reds_fwd/offset`, `chan/washes_mono/offset`.
+One per mix channel, preset-saved. Registered via `MixChannel.register_offset(osc, on_change)`. Real channels: per-fixture `{fixture}.dimming` (~16), per-spot `spot_{1,2}.{pan,pan_fine,tilt,tilt_fine}`, plus mono/stutter composites `reds_mono`, `reds_fwd`, `reds_back`, `reds_zig`, `washes_mono`, `washes_fwd`, `washes_back`.
 
-Composite pan+tilt addresses, preset-saved. Each is a `PantiltChannel` virtual channel whose offset is a 2-vec `[pan, tilt]` that writes through to the underlying real channels; skipped from `signal_patchbay` routing.
+Composite pan+tilt addresses, preset-saved — `PantiltChannel` virtual channels whose offset is a 2-vec `[pan, tilt]` that writes through to the real channels; skipped from `signal_patchbay` routing.
 
 | Address | Underlying channels |
 |---|---|
@@ -67,9 +73,11 @@ Preset-saved, via `Fixture.standard_params()`:
 | YRXY200Spot | spot_1, spot_2 | color_index, pattern_index, prisim_enabled, prisim_rotation |
 | RadianceHazer | hazer | target_output, target_fan, interval, duration |
 
-RGBLight and RGBWLight do not expose per-instance `r/g/b/w_target` here — color is set via the class-level broadcasts (see below).
+`RGBLight` and `RGBWLight` expose no per-instance attrs — color is set via the class-level broadcasts below.
 
-Class-level broadcasts (dispatcher.map, not preset-saved). Each instance of the class self-registers a handler at the same address; pythonosc fans one UI message to every instance — the frontend sends directly, no multi-send script needed.
+## `/fixture/{ClassName}/{action}` — Class-level fixture broadcasts
+
+Actions (dispatcher.map, not preset-saved). Each instance self-registers a handler at the same address; pythonosc fans one UI message to every instance of the class — the frontend sends directly, no multi-send script needed.
 
 | Address | Payload | Fans to |
 |---|---|---|
@@ -77,17 +85,17 @@ Class-level broadcasts (dispatcher.map, not preset-saved). Each instance of the 
 | `/fixture/RGBLight/color` | 3× float (r, g, b) | wash_fl, wash_fr, wash_ml, wash_mr, wash_bl, wash_br, wash_ceil_f, wash_ceil_r |
 | `/fixture/RGBWLight/w_target` | float | wash_ceil_f, wash_ceil_r |
 
-By default RGBWLight instances also listen on `/fixture/RGBLight/color` so one UI message drives every RGB-family wash. Pass `use_rgb_color_broadcast=False` to the RGBWLight constructor to isolate an instance to `/fixture/RGBWLight/color` instead.
+By default `RGBWLight` instances also listen on `/fixture/RGBLight/color` so one UI message drives every RGB-family wash. Pass `use_rgb_color_broadcast=False` to the constructor to isolate an instance to `/fixture/RGBWLight/color` instead.
 
 ## `/signal_patchbay/{category}` — Signal routing matrices
 
-Preset-saved. One per patchable category, created via `Mixer.patchbay_param(category)`.
+Preset-saved. One per patchable category, created via `Mixer.patchbay_param(category)`. Virtual channels (PantiltChannel) are excluded from routing.
 
 Categories: reds, plants, booth, washes, spots_light, spots_position.
 
 ## `/{category}_master` — Category master faders
 
-Session-saved (not preset-saved). One per category, bound via `Category.master_param`.
+Session-saved (not preset-saved). Created via `Category.master_param` during `Categories.__init__`.
 
 Categories: reds, plants, booth, washes, spots_light, spots_position, washes_color, audio, strobes, hazer, non-saved.
 
@@ -95,11 +103,11 @@ Categories: reds, plants, booth, washes, spots_light, spots_position, washes_col
 
 Actions (dispatcher.map, not preset-saved). Each `Scene` sets category masters + optional channel offsets + selects a preset group.
 
-| Address | Preset group |
-|---|---|
-| `/scene/all_black` | Off |
-| `/scene/house_lights` | Static |
-| `/scene/class_lights` | Class |
+| Address | Preset group | Notes |
+|---|---|---|
+| `/scene/all_black` | Off | zeroes every master, sodium offset → 0 |
+| `/scene/house_lights` | Static | masters up, sodium → 255, disables DMX passthrough |
+| `/scene/class_lights` | Class | partial masters, disables DMX passthrough |
 
 ## `/preset/…` — Preset management
 
@@ -125,52 +133,53 @@ Server → UI (send_osc, gated by heartbeat):
 | `/visualizer/business` | onset density history |
 | `/visualizer/regularity` | regularity history |
 | `/visualizer/synth_history` | selected synth channel history |
-| `/visualizer/fixture/{name}/dimming` | per-fixture (all ~27 fixtures) |
+| `/visualizer/fixture/{name}/dimming` | per-LightFixture (26 instances) |
 | `/visualizer/fixture/{spot}/pantilt` | spot_1, spot_2 pan/tilt |
 
-UI → Server (heartbeat enables):
+UI → Server:
 
 | Address | Purpose |
 |---|---|
-| `/visualizer/enable_fft` | gate FFT/audio viz streams |
-| `/visualizer/enable_synth` | gate synth history stream |
-| `/visualizer/enable_fixture` | gate fixture dimming/pantilt streams |
-| `/visualizer/synth_source` | select which channel to visualize (preset-saved) |
+| `/visualizer/enable_fft` | heartbeat to gate FFT/audio viz streams |
+| `/visualizer/enable_synth` | heartbeat to gate synth history stream |
+| `/visualizer/enable_fixture` | heartbeat to gate fixture dimming/pantilt streams |
+| `/visualizer/synth_source` | select which channel to visualize (non-saved category) |
 
 ## `/audio_config/…` — Audio/FFT configuration
 
-Preset-saved (OSCParam.bind on FFTManager): `bpm_energy_threshold`, `bpm_tempo_alpha`, `onset_envelope_floor`, `bpm_business_min`, `bpm_regularity_min`.
+Preset-saved (`OSCParam.bind` on FFTManager): `bpm_energy_threshold`, `bpm_tempo_alpha`, `onset_envelope_floor`, `bpm_business_min`, `bpm_regularity_min`.
 
 Actions (dispatcher.map): `start_audio`, `stop_audio`, `start_fft`, `stop_fft`, `port_refresh`.
 
-Port selection: `port_name` (bidirectional), `port_name/values` (server → UI, dropdown options).
+Port selection (non-preset, bidirectional): `port_name`; `port_name/values` carries the dropdown options server → UI.
 
 ## `/dmx/…` — DMX port configuration
 
-Preset-saved: `passthrough` (via `DMXManager.passthrough_param()`).
+`passthrough` is bound via `DMXManager.passthrough_param()` — lives in the non-saved category, so it is not preset-saved.
 
 Actions (dispatcher.map): `port_refresh`, `port_disconnect`.
 
-Port selection: `port_name` (bidirectional), `port_name/values` (server → UI, dropdown options).
+Port selection (bidirectional): `port_name`; `port_name/values` carries the dropdown options server → UI.
 
 ## `/debug/…` — Debug UI frames
 
-`fft_frame`, `audio_frame` — UIDebugFrame heartbeat containers.
+`fft_frame`, `audio_frame` — `UIDebugFrame` heartbeat containers (server → UI with debug metrics).
 
 ## Root-level addresses
 
-Infrastructure:
-
 | Address | Direction | Purpose |
 |---|---|---|
-| `/heartbeat` | UI → Server | client keep-alive |
+| `/heartbeat` | UI → Server | client keep-alive (sent every 2s from `onCreate`) |
 | `/client_count` | Server → UI | connected client count |
-| `/reload` | UI → Server | re-sync all presets to frontend |
-| `/enable_save` | bidirectional | toggle preset save/clear |
+| `/reload` | UI → Server | fire all preset-param syncs to frontend |
+| `/enable_save` | bidirectional | toggle preset save/clear UI |
 
-## Frontend-only multi-sends
+## Frontend-only ganged controls
 
-These widgets have `address: ""` and use `onValue` scripts to fan out to multiple backend addresses.
+A few widgets fan a single value to sibling addresses via `onValue` scripts — not an OSC addressing scheme, just UI ergonomics.
 
 | Widget | Sends to |
 |---|---|
+| `gen/WaveGenerator/sq_1/amp` | also `/gen/WaveGenerator/sq_{2,3}/amp` |
+| `gen/WaveGenerator/sq_1/period` | also `/gen/WaveGenerator/sq_{2,3}/period` |
+| `gen/FFTGenerator/fft_1/lpf_alpha` | also `/gen/FFTGenerator/fft_2/lpf_alpha` |
