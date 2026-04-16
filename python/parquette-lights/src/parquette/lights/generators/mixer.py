@@ -14,6 +14,7 @@ from .chanmap import (
     MixChannel,
     MixTarget,
     FixedMapper,
+    PantiltChannel,
     StutterMapper,
 )
 from ..osc import OSCManager, OSCParam
@@ -213,6 +214,37 @@ class Mixer(object):
         ]
         self.mix_channels.extend(special_channels)
 
+        # Virtual pantilt channels — expose /chan/{spot}.pantilt/offset as a
+        # single 2-vec that fans into the underlying pan and tilt channels.
+        # Same for pan_fine / tilt_fine. Added to mix_channels so the
+        # ChannelLevelsBuilder picks them up for /chan/.../offset bindings;
+        # patchbay_param filters them out because they're OSC facades, not
+        # routable mixer outputs.
+        lookup = {ch.name: ch for ch in self.mix_channels}
+        for spot_name in ("spot_1", "spot_2"):
+            pan_ch = lookup.get("{}.pan".format(spot_name))
+            tilt_ch = lookup.get("{}.tilt".format(spot_name))
+            pan_fine_ch = lookup.get("{}.pan_fine".format(spot_name))
+            tilt_fine_ch = lookup.get("{}.tilt_fine".format(spot_name))
+            if pan_ch and tilt_ch:
+                self.mix_channels.append(
+                    PantiltChannel(
+                        "{}.pantilt".format(spot_name),
+                        pan_ch.category,
+                        pan_ch,
+                        tilt_ch,
+                    )
+                )
+            if pan_fine_ch and tilt_fine_ch:
+                self.mix_channels.append(
+                    PantiltChannel(
+                        "{}.pantilt_fine".format(spot_name),
+                        pan_fine_ch.category,
+                        pan_fine_ch,
+                        tilt_fine_ch,
+                    )
+                )
+
         # Each stutter channel re-registers /chan/{category.name}/stutter_period
         # on the OSC dispatcher. pythonosc fans incoming messages to every
         # handler, so one slider drives every mapper in a category. The
@@ -404,7 +436,11 @@ class Mixer(object):
         Address is derived from category.name so builders don't have to
         hardcode `/signal_patchbay/<name>` in every build_params method.
         """
-        chan_names = [ch.name for ch in self.mix_channels if ch.category is category]
+        chan_names = [
+            ch.name
+            for ch in self.mix_channels
+            if ch.category is category and not ch.is_virtual
+        ]
         return SignalPatchParam(
             self.osc,
             "/signal_patchbay/{}".format(category.name),

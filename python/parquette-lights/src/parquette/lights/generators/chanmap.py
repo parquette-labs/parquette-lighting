@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from . import Generator
 from ..fixtures.basics import MixTarget
@@ -56,6 +56,11 @@ class StutterMapper(ChannelMapper):
 
 
 class MixChannel:
+    # Virtual channels are OSC facades (e.g. PantiltChannel) that proxy
+    # their offset onto multiple real channels. They skip tick / map_output
+    # and are excluded from signal_patchbay routing.
+    is_virtual: bool = False
+
     def __init__(
         self,
         name: str,
@@ -70,11 +75,19 @@ class MixChannel:
         self.category = category
         self.index = index
         self.history: List[float] = [0.0] * history_ticks
-        self.offset: float = 0.0
+        self._offset_storage: float = 0.0
         self.impulse_generator = impulse_generator
         self.impulse_connected = impulse_generator is not None
         self.connected_generators: List[Generator] = []
         self.mapper: ChannelMapper = mapper or NoOpMapper()
+
+    @property
+    def offset(self) -> Any:
+        return self._offset_storage
+
+    @offset.setter
+    def offset(self, value: Any) -> None:
+        self._offset_storage = float(value)
 
     def tick(self, ts: float) -> None:
         """Compute current value and push into history."""
@@ -133,3 +146,40 @@ class MixChannel:
             self,
             "stutter_period",
         )
+
+
+class PantiltChannel(MixChannel):
+    """Virtual channel exposing a paired offset over a single OSC address.
+
+    Binds `/chan/{name}/offset` to a 2-vec whose writes distribute to the
+    two underlying pan and tilt MixChannels. Skipped from tick /
+    map_output / signal_patchbay because it's a pure OSC facade.
+    """
+
+    is_virtual = True
+
+    def __init__(
+        self,
+        name: str,
+        category: Category,
+        pan_channel: MixChannel,
+        tilt_channel: MixChannel,
+    ) -> None:
+        super().__init__(name, category, index=-1, history_ticks=1)
+        self.pan_channel = pan_channel
+        self.tilt_channel = tilt_channel
+
+    @property
+    def offset(self) -> Any:
+        return [self.pan_channel.offset, self.tilt_channel.offset]
+
+    @offset.setter
+    def offset(self, value: Any) -> None:
+        self.pan_channel.offset = float(value[0])
+        self.tilt_channel.offset = float(value[1])
+
+    def tick(self, ts: float) -> None:
+        pass
+
+    def map_output(self) -> None:
+        pass

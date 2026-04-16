@@ -26,14 +26,28 @@ Actions (dispatcher.map, not preset-saved):
 
 | Address | Instances |
 |---|---|
-| `/gen/WaveGenerator/{wave}/snap_to/{bpm}` | sin_red/bpm_red, sin_wash/bpm_wash, sin_plants/bpm_red, sin_booth/bpm_red, sin_spot/bpm_red, sin_spot_pos_{1-4}/bpm_red, sq_{1-3}/bpm_red |
+| `/gen/BPMGenerator/{bpm_name}/snap` | every wave that called `register_snap_to(bpm, osc)` fans in (see below) |
 | `/gen/LoopGenerator/{name}/record` | loop_reds, loop_spot_pos_1 (x+y share), loop_spot_pos_2 (x+y share) |
 | `/gen/LoopGenerator/{pair}/input` | loop_spot_pos_1, loop_spot_pos_2 (XY pair), loop_reds (scalar) |
 | `/gen/ImpulseGenerator/impulse/punch` | trigger impulse burst |
 
+BPM snap subscriptions:
+
+| Snap address | Waves that snap |
+|---|---|
+| `/gen/BPMGenerator/bpm_red/snap` | sin_red, sin_plants, sin_booth, sin_spot, sin_spot_pos_{1-4}, sq_{1-3} |
+| `/gen/BPMGenerator/bpm_wash/snap` | sin_wash |
+
 ## `/chan/{channel_name}/offset` — Mix channel offsets
 
 One per mix channel (~40 channels), preset-saved. Registered via `MixChannel.register_offset(osc, on_change)`. Examples: `chan/left_1.dimming/offset`, `chan/spot_1.pan/offset`, `chan/reds_fwd/offset`, `chan/washes_mono/offset`.
+
+Composite pan+tilt addresses, preset-saved. Each is a `PantiltChannel` virtual channel whose offset is a 2-vec `[pan, tilt]` that writes through to the underlying real channels; skipped from `signal_patchbay` routing.
+
+| Address | Underlying channels |
+|---|---|
+| `/chan/spot_{1,2}.pantilt/offset` | `spot_{1,2}.pan`, `spot_{1,2}.tilt` |
+| `/chan/spot_{1,2}.pantilt_fine/offset` | `spot_{1,2}.pan_fine`, `spot_{1,2}.tilt_fine` |
 
 ## `/chan/{category}/stutter_period` — Stutter period per category
 
@@ -52,21 +66,18 @@ Preset-saved, via `Fixture.standard_params()`:
 |---|---|---|
 | YRXY200Spot | spot_1, spot_2 | color_index, pattern_index, prisim_enabled, prisim_rotation |
 | RadianceHazer | hazer | target_output, target_fan, interval, duration |
-| RGBLight | wash_fl, wash_fr, wash_ml, wash_mr, wash_bl, wash_br | r_target, g_target, b_target |
-| RGBWLight | wash_ceil_f, wash_ceil_r | r_target, g_target, b_target, w_target |
 
-Actions (dispatcher.map, not preset-saved):
+RGBLight and RGBWLight do not expose per-instance `r/g/b/w_target` here — color is set via the class-level broadcasts (see below).
 
-| Address | Instances |
-|---|---|
-| `/fixture/YRXY200Spot/{name}/reset` | spot_1, spot_2 — self-registered in `Spot.__init__` |
+Class-level broadcasts (dispatcher.map, not preset-saved). Each instance of the class self-registers a handler at the same address; pythonosc fans one UI message to every instance — the frontend sends directly, no multi-send script needed.
 
-Non-auto-derived frontend XY pads for mix channel offsets (no backend param; UI fans out to `/chan/…` addresses):
+| Address | Payload | Fans to |
+|---|---|---|
+| `/fixture/YRXY200Spot/reset` | trigger | spot_1, spot_2 |
+| `/fixture/RGBLight/color` | 3× float (r, g, b) | wash_fl, wash_fr, wash_ml, wash_mr, wash_bl, wash_br, wash_ceil_f, wash_ceil_r |
+| `/fixture/RGBWLight/w_target` | float | wash_ceil_f, wash_ceil_r |
 
-| Widget ID | Sends to |
-|---|---|
-| `fixture/YRXY200Spot/spot_{1,2}/pantilt_offset` | `/chan/spot_{1,2}.pan/offset` + `/chan/spot_{1,2}.tilt/offset` |
-| `fixture/YRXY200Spot/spot_{1,2}/pantilt_fine_offset` | `/chan/spot_{1,2}.pan_fine/offset` + `/chan/spot_{1,2}.tilt_fine/offset` |
+By default RGBWLight instances also listen on `/fixture/RGBLight/color` so one UI message drives every RGB-family wash. Pass `use_rgb_color_broadcast=False` to the RGBWLight constructor to isolate an instance to `/fixture/RGBWLight/color` instead.
 
 ## `/signal_patchbay/{category}` — Signal routing matrices
 
@@ -163,10 +174,3 @@ These widgets have `address: ""` and use `onValue` scripts to fan out to multipl
 
 | Widget | Sends to |
 |---|---|
-| `snap_sq_to_bpm` | 3× `/gen/WaveGenerator/sq_{1,2,3}/snap_to/bpm_red` |
-| `snap_sin_spot_pos_to_bpm` | 4× `/gen/WaveGenerator/sin_spot_pos_{1-4}/snap_to/bpm_red` |
-| `reset_spots` | `/fixture/YRXY200Spot/spot_{1,2}/reset` |
-| `wash_color` | 8× `/fixture/{RGBLight,RGBWLight}/{wash_name}/{r,g,b}_target` |
-| `wash_w` | 2× `/fixture/RGBWLight/wash_ceil_{f,r}/w_target` |
-| `fixture/YRXY200Spot/{spot}/pantilt_offset` | `/chan/{spot}.pan/offset` + `/chan/{spot}.tilt/offset` |
-| `fixture/YRXY200Spot/{spot}/pantilt_fine_offset` | `/chan/{spot}.pan_fine/offset` + `/chan/{spot}.tilt_fine/offset` |

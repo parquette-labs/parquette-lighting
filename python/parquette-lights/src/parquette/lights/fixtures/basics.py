@@ -158,8 +158,6 @@ class LightFixture(Fixture):
 
 
 class RGBLight(LightFixture):
-    STANDARD_ATTRS = ["r_target", "g_target", "b_target"]
-
     def __init__(
         self,
         *,
@@ -175,6 +173,19 @@ class RGBLight(LightFixture):
         self.r_target: DMXValue = 255
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
+
+        if osc is not None:
+            # Class-level color broadcast: every instance registers at
+            # /fixture/{ClassName}/color; pythonosc fans the 3-vec write
+            # to all handlers, updating every instance's r/g/b target.
+            osc.dispatcher.map(
+                "/fixture/{}/color".format(type(self).__name__),
+                lambda addr, *args, s=self: s.apply_color_broadcast(args),
+            )
+
+    def apply_color_broadcast(self, args: tuple) -> None:
+        if len(args) >= 3:
+            self.set_dimming_target(r=args[0], g=args[1], b=args[2])
 
     def set_dimming_target(
         self,
@@ -203,8 +214,6 @@ class RGBLight(LightFixture):
 
 
 class RGBWLight(LightFixture):
-    STANDARD_ATTRS = ["r_target", "g_target", "b_target", "w_target"]
-
     def __init__(
         self,
         *,
@@ -213,6 +222,7 @@ class RGBWLight(LightFixture):
         dmx: DMXManager,
         addr: int,
         osc: Optional[OSCManager] = None,
+        use_rgb_color_broadcast: bool = True,
     ):
         super().__init__(
             name=name, category=category, dmx=dmx, addr=addr, num_chans=4, osc=osc
@@ -221,6 +231,31 @@ class RGBWLight(LightFixture):
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
         self.w_target: DMXValue = 255
+
+        if osc is not None:
+            # When use_rgb_color_broadcast is True, this fixture listens on
+            # /fixture/RGBLight/color so a single UI message reaches every
+            # RGB-family wash (both RGBLight and RGBWLight). Set False to
+            # isolate it to /fixture/RGBWLight/color instead.
+            color_class = "RGBLight" if use_rgb_color_broadcast else type(self).__name__
+            osc.dispatcher.map(
+                "/fixture/{}/color".format(color_class),
+                lambda addr, *args, s=self: s.apply_color_broadcast(args),
+            )
+            # White channel broadcast stays class-specific — only RGBW
+            # fixtures have a w_target.
+            osc.dispatcher.map(
+                "/fixture/{}/w_target".format(type(self).__name__),
+                lambda addr, *args, s=self: s.apply_w_broadcast(args),
+            )
+
+    def apply_color_broadcast(self, args: tuple) -> None:
+        if len(args) >= 3:
+            self.set_dimming_target(r=args[0], g=args[1], b=args[2])
+
+    def apply_w_broadcast(self, args: tuple) -> None:
+        if args:
+            self.set_dimming_target(w=args[0])
 
     def set_dimming_target(
         self,
