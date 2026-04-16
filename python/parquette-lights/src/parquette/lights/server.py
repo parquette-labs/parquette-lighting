@@ -13,6 +13,7 @@ from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .patching import Categories, create_builders
 from .preset_manager import PresetManager
+from .scene import Scene
 from .util.client_tracker import ClientTracker
 from .util.session_store import SessionStore
 
@@ -304,44 +305,55 @@ def run(
         "/enable_save", lambda _, args: presets.set_enable_save_clear(args)
     )
 
-    def all_black():
-        mixer.channel_lookup["sodium.dimming"].offset = 0
+    sodium_ch = mixer.channel_lookup["sodium.dimming"]
 
-        categories.reds.set_master(0)
-        categories.spots_light.set_master(0)
-        categories.washes.set_master(0)
-        categories.booth.set_master(0)
-        categories.plants.set_master(0)
-
-        presets.select_all("Off")
-
-    def house_lights():
-        if dmx.passthrough:
-            dmx.passthrough = False
-
-        mixer.channel_lookup["sodium.dimming"].offset = 255
-
-        categories.reds.set_master(1)
-        categories.spots_light.set_master(0)
-        categories.washes.set_master(1)
-        categories.booth.set_master(1)
-        categories.plants.set_master(1)
-
-        presets.select_all("Static")
-
-    def class_lights():
-        if dmx.passthrough:
-            dmx.passthrough = False
-
-        mixer.channel_lookup["sodium.dimming"].offset = 0
-
-        categories.reds.set_master(0.8)
-        categories.spots_light.set_master(0.3)
-        categories.washes.set_master(0.25)
-        categories.booth.set_master(0)
-        categories.plants.set_master(0.5)
-
-        presets.select_all("Class")
+    Scene(
+        name="all_black",
+        osc=osc,
+        dmx=dmx,
+        presets=presets,
+        masters={
+            categories.reds: 0,
+            categories.spots_light: 0,
+            categories.washes: 0,
+            categories.booth: 0,
+            categories.plants: 0,
+        },
+        preset_group="Off",
+        channel_offsets={sodium_ch: 0},
+    )
+    Scene(
+        name="house_lights",
+        osc=osc,
+        dmx=dmx,
+        presets=presets,
+        masters={
+            categories.reds: 1,
+            categories.spots_light: 0,
+            categories.washes: 1,
+            categories.booth: 1,
+            categories.plants: 1,
+        },
+        preset_group="Static",
+        channel_offsets={sodium_ch: 255},
+        disable_passthrough=True,
+    )
+    Scene(
+        name="class_lights",
+        osc=osc,
+        dmx=dmx,
+        presets=presets,
+        masters={
+            categories.reds: 0.8,
+            categories.spots_light: 0.3,
+            categories.washes: 0.25,
+            categories.booth: 0,
+            categories.plants: 0.5,
+        },
+        preset_group="Class",
+        channel_offsets={sodium_ch: 0},
+        disable_passthrough=True,
+    )
 
     osc.dispatcher.map(
         "/visualizer/enable_fft",
@@ -355,9 +367,6 @@ def run(
         "/visualizer/enable_fixture",
         lambda addr, *args: mixer.set_fixture_visualizer(bool(args[0])),
     )
-    osc.dispatcher.map("/all_black", lambda addr, args: all_black())
-    osc.dispatcher.map("/house_lights", lambda addr, args: house_lights())
-    osc.dispatcher.map("/class", lambda addr, args: class_lights())
     client_tracker = ClientTracker(osc)
     client_tracker.start()
 
