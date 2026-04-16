@@ -96,15 +96,16 @@ class WaveGenerator(Generator):
         return 0
 
     def register_snap_to(self, bpm_gen: BPMGenerator, osc: OSCManager) -> None:
-        """Register a snap-to-BPM OSC handler for this wave.
+        """Register a snap-to-BPM handler keyed on the BPM generator.
 
-        Triggered by /gen/WaveGenerator/{name}/snap_to/{bpm_name}. When the
-        bpm generator has a valid tempo, sets this wave's period to match
-        and broadcasts the new period so the UI slider tracks it.
+        Address: /gen/{BPMClass}/{bpm_name}/snap. Every wave that snaps
+        to the same BPM registers its own handler at the same address;
+        pythonosc fans a single incoming message to every listener so one
+        UI trigger snaps every subscribed wave at once. The wave's own
+        period address is sent back on trigger so its UI slider tracks.
         """
-        cls_name = type(self).__name__
-        snap_addr = "/gen/{}/{}/snap_to/{}".format(cls_name, self.name, bpm_gen.name)
-        period_addr = "/gen/{}/{}/period".format(cls_name, self.name)
+        snap_addr = "/gen/{}/{}/snap".format(type(bpm_gen).__name__, bpm_gen.name)
+        period_addr = "/gen/{}/{}/period".format(type(self).__name__, self.name)
 
         def handler() -> None:
             if bpm_gen.bpm > 0 and bpm_gen.bpm_mult > 0:

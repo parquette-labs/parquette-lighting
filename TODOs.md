@@ -32,6 +32,7 @@
 	* Also need a better concept of the patch param
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Move the non synth params out of the generators packages
+	* /fixture/YRXY200Spot/spot_{1,2}/reset should not contrain spot12, same with wash_color and was_w
 	* Build "/chan/{}/offset".format(ch.name)" in chan
 	* into DMX OSCParam.bind(osc, "/dmx/passthrough", self.dmx, "passthrough")
 	* Can the backend keep the front end in sync for addresses and/or ui elements

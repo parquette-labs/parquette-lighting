@@ -48,8 +48,11 @@ class Spot(LightFixture):
         self.position_category = position_category
 
         if self.osc is not None:
+            # Class-level broadcast address: every Spot instance registers
+            # its own handler at the same address so one UI trigger fans
+            # out to all instances via the OSC dispatcher.
             self.osc.dispatcher.map(
-                "/fixture/{}/{}/reset".format(type(self).__name__, self.name),
+                "/fixture/{}/reset".format(type(self).__name__),
                 lambda addr, args, s=self: s.reset(args),
             )
 
