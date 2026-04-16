@@ -36,11 +36,6 @@ class NonSavedBuilder(CategoryBuilder):
             self.category: [
                 # Non-generator infrastructure params
                 self.dmx.passthrough_param(),
-                OSCParam.bind(
-                    osc,
-                    "/visualizer/synth_source",
-                    mixer,
-                    "synth_visualizer_source",
-                ),
+                mixer.synth_source_param(osc),
             ]
         }

@@ -21,7 +21,7 @@ from librosa.effects import hpss
 import numpy as np
 
 from ..generators import BPMGenerator, FFTGenerator
-from ..osc import OSCManager, UIDebugFrame
+from ..osc import OSCManager, OSCParam, UIDebugFrame
 from ..dmx import DMXManager
 from .audio import AudioCapture
 
@@ -109,6 +109,22 @@ class FFTManager(object):
             "/visualizer/enable_fft",
             lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
         )
+
+    def config_params(self, osc: OSCManager) -> List[OSCParam]:
+        """Preset-saved /audio_config/... binds for FFT and BPM tuning knobs."""
+        return [
+            OSCParam.bind(
+                osc, "/audio_config/bpm_energy_threshold", self, "energy_threshold"
+            ),
+            OSCParam.bind(osc, "/audio_config/bpm_tempo_alpha", self, "tempo_alpha"),
+            OSCParam.bind(
+                osc, "/audio_config/onset_envelope_floor", self, "onset_envelope_floor"
+            ),
+            OSCParam.bind(osc, "/audio_config/bpm_business_min", self, "min_business"),
+            OSCParam.bind(
+                osc, "/audio_config/bpm_regularity_min", self, "min_regularity"
+            ),
+        ]
 
     def enable_fft_debug_data(self, enable: bool) -> None:
         # Multi-client safe: only "on" heartbeats extend the gate. If we

@@ -457,6 +457,12 @@ class Mixer(object):
         """
         return self.stutter_period_params_by_category.get(category, [])
 
+    def synth_source_param(self, osc: OSCManager) -> OSCParam:
+        """Bind /visualizer/synth_source to the mixer's synth_visualizer_source."""
+        return OSCParam.bind(
+            osc, "/visualizer/synth_source", self, "synth_visualizer_source"
+        )
+
 
 class SignalPatchParam(OSCParam):
     def __init__(

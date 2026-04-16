@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from ..category import Category
 from ..dmx import DMXManager
@@ -206,34 +206,10 @@ class SpotsBuilder(CategoryBuilder):
             # Standard generator params for each axis (amp, samples)
             pos_params.extend(loop_x.standard_params(osc))
             pos_params.extend(loop_y.standard_params(osc))
-            # Paired XY input writes to both axes and records during loop capture
-            pos_params.append(loop_pair_input_param(osc, loop_x, loop_y))
+            # Paired XY input writes to both axes and records during capture
+            pos_params.append(LoopGenerator.pair_input_param(osc, loop_x, loop_y))
 
         return {
             self.light_category: light_params,
             self.position_category: pos_params,
         }
-
-
-def loop_pair_input_param(osc: OSCManager, loop_x: Any, loop_y: Any) -> OSCParam:
-    # x/y axis loop generators are always named "<prefix>_x" / "<prefix>_y".
-    # Use the shared prefix as a single generator-pair identity in the address.
-    shared = loop_x.name[:-2] if loop_x.name.endswith("_x") else loop_x.name
-    addr = "/gen/{}/{}/input".format(type(loop_x).__name__, shared)
-    return OSCParam(
-        osc,
-        addr,
-        lambda: [loop_x.input_value, loop_y.input_value],
-        lambda _a, *args: handle_xy_loop_input(loop_x, loop_y, args),
-    )
-
-
-def handle_xy_loop_input(loop_x: Any, loop_y: Any, args: tuple) -> None:
-    if len(args) == 1 and isinstance(args[0], (list, tuple)):
-        x, y = args[0][0], args[0][1]
-    else:
-        x, y = args[0], args[1]
-    loop_x.input_value = x
-    loop_y.input_value = y
-    loop_x.record_sample(x)
-    loop_y.record_sample(y)

@@ -136,3 +136,58 @@ class LoopGenerator(Generator):
         name = self.record_group or self.name
         addr = "/gen/{}/{}/record".format(type(self).__name__, name)
         osc.dispatcher.map(addr, lambda _addr, *args: self.set_recording(bool(args[0])))
+
+    def apply_input_write(self, value: float) -> None:
+        """Update input_value and feed record_sample (mid-record capture)."""
+        v = float(value)
+        self.input_value = v
+        self.record_sample(v)
+
+    def input_param(self, osc: OSCManager) -> OSCParam:
+        """Scalar input OSCParam at /gen/{ClassName}/{name}/input.
+
+        Setter both updates input_value and pushes a sample while
+        recording is active — so dragging the UI slider fills the loop.
+        """
+        addr = "/gen/{}/{}/input".format(type(self).__name__, self.name)
+        return OSCParam(
+            osc,
+            addr,
+            lambda: self.input_value,
+            lambda _a, *args: self.apply_input_write(
+                args[0] if len(args) == 1 else args[0]
+            ),
+        )
+
+    @classmethod
+    def pair_input_param(
+        cls,
+        osc: OSCManager,
+        loop_x: "LoopGenerator",
+        loop_y: "LoopGenerator",
+    ) -> OSCParam:
+        """Paired XY input OSCParam for two loops at one address.
+
+        Address is /gen/{ClassName}/{shared_prefix}/input where
+        shared_prefix is loop_x.name stripped of a trailing `_x`. Writes
+        distribute component 0 → loop_x, component 1 → loop_y.
+        """
+        shared = loop_x.name[:-2] if loop_x.name.endswith("_x") else loop_x.name
+        addr = "/gen/{}/{}/input".format(cls.__name__, shared)
+        return OSCParam(
+            osc,
+            addr,
+            lambda: [loop_x.input_value, loop_y.input_value],
+            lambda _a, *args: apply_pair_input(loop_x, loop_y, args),
+        )
+
+
+def apply_pair_input(
+    loop_x: "LoopGenerator", loop_y: "LoopGenerator", args: tuple
+) -> None:
+    if len(args) == 1 and isinstance(args[0], (list, tuple)):
+        x, y = args[0][0], args[0][1]
+    else:
+        x, y = args[0], args[1]
+    loop_x.apply_input_write(x)
+    loop_y.apply_input_write(y)

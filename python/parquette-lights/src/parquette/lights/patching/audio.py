@@ -53,39 +53,10 @@ class AudioBuilder(CategoryBuilder):
         return {
             self.category: [
                 # Standard generator params (/gen/{ClassName}/{name}/{attr}) —
-                # FFTGenerator.standard_params() includes the bounds param
+                # FFTGenerator.standard_params() includes the bounds + lpf_alpha
                 *self.fft1.standard_params(osc),
                 *self.fft2.standard_params(osc),
-                # Audio tuning params on fft_manager
-                OSCParam.bind(
-                    osc,
-                    "/audio_config/bpm_energy_threshold",
-                    self.fft_manager,
-                    "energy_threshold",
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/audio_config/bpm_tempo_alpha",
-                    self.fft_manager,
-                    "tempo_alpha",
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/audio_config/onset_envelope_floor",
-                    self.fft_manager,
-                    "onset_envelope_floor",
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/audio_config/bpm_business_min",
-                    self.fft_manager,
-                    "min_business",
-                ),
-                OSCParam.bind(
-                    osc,
-                    "/audio_config/bpm_regularity_min",
-                    self.fft_manager,
-                    "min_regularity",
-                ),
+                # Audio/BPM tuning binds live on FFTManager itself
+                *self.fft_manager.config_params(osc),
             ]
         }

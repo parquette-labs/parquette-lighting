@@ -12,11 +12,6 @@ from ..osc import OSCManager, OSCParam
 from .builder import CategoryBuilder
 
 
-def handle_loop_input(gen: LoopGenerator, value: float) -> None:
-    gen.input_value = value
-    gen.record_sample(value)
-
-
 class RedsBuilder(CategoryBuilder):
     def __init__(
         self,
@@ -85,14 +80,6 @@ class RedsBuilder(CategoryBuilder):
                 *self.sin_reds.standard_params(osc),
                 *self.bpm_red.standard_params(osc),
                 *self.loop_reds.standard_params(osc),
-                # Loop input param: record_sample side-effect means this can't be bound
-                OSCParam(
-                    osc,
-                    "/gen/{}/{}/input".format(
-                        type(self.loop_reds).__name__, self.loop_reds.name
-                    ),
-                    lambda: self.loop_reds.input_value,
-                    lambda _, args: handle_loop_input(self.loop_reds, args),
-                ),
+                self.loop_reds.input_param(osc),
             ]
         }
