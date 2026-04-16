@@ -3,6 +3,7 @@ from typing import List, Optional
 from . import Generator
 from ..fixtures.basics import MixTarget
 from ..category import Category
+from ..osc import OSCManager, OSCParam
 from ..util.math import constrain
 
 
@@ -92,3 +93,31 @@ class MixChannel:
 
     def map_output(self) -> None:
         self.mapper.map_output(self.value(), self)
+
+    @property
+    def stutter_period(self) -> int:
+        if isinstance(self.mapper, StutterMapper):
+            return self.mapper.stutter_period
+        return 0
+
+    @stutter_period.setter
+    def stutter_period(self, value: int) -> None:
+        if isinstance(self.mapper, StutterMapper):
+            self.mapper.stutter_period = int(value)
+
+    def register_stutter_period(self, osc: OSCManager) -> Optional[OSCParam]:
+        """Bind /chan/{category.name}/stutter_period to this channel.
+
+        No-op for non-stutter channels. When several channels in the same
+        category register this address, pythonosc fans each incoming
+        message to every handler, so one UI slider drives all mappers in
+        the category without a central helper.
+        """
+        if not isinstance(self.mapper, StutterMapper):
+            return None
+        return OSCParam.bind(
+            osc,
+            "/chan/{}/stutter_period".format(self.category.name),
+            self,
+            "stutter_period",
+        )

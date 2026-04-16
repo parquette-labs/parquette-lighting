@@ -112,14 +112,11 @@ class WashesBuilder(CategoryBuilder):
             self.category: [
                 # Patch params
                 mixer.patchbay_param(self.category),
-                # Non-generator params
-                OSCParam.bind(
-                    osc,
-                    "/washes_stutter_period",
-                    mixer,
-                    "washes_stutter_period",
-                ),
-                # Standard generator params (/gen/{type}/{name}/{attr})
+                # Per-category stutter_period — one OSCParam per stutter
+                # channel in this category, all registered on the same OSC
+                # address via MixChannel.register_stutter_period().
+                *mixer.stutter_period_params(self.category),
+                # Standard generator params (/gen/{ClassName}/{name}/{attr})
                 *self.sin_wash.standard_params(osc),
                 *self.bpm_wash.standard_params(osc),
             ],

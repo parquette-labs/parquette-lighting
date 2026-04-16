@@ -23,27 +23,6 @@ from ..category import Categories, Category
 
 
 class Mixer(object):
-    @staticmethod
-    def make_stutter_period_property(backing_name: str, mappers_attr: str) -> property:
-        backing_field = backing_name + "_val"
-
-        def getter(self: "Mixer") -> int:
-            return getattr(self, backing_field)
-
-        def setter(self: "Mixer", value: int) -> None:
-            setattr(self, backing_field, value)
-            for mapper in getattr(self, mappers_attr):
-                mapper.stutter_period = value
-
-        return property(getter, setter)
-
-    reds_stutter_period = make_stutter_period_property(
-        "reds_stutter_period", "reds_stutter_mappers"
-    )
-    washes_stutter_period = make_stutter_period_property(
-        "washes_stutter_period", "washes_stutter_mappers"
-    )
-
     @property
     def channel_lookup(self) -> Dict[str, MixChannel]:
         return {ch.name: ch for ch in self.mix_channels}
@@ -156,16 +135,6 @@ class Mixer(object):
         self.washes_fwd_mapper = StutterMapper(washes_fwd_groups)
         self.washes_back_mapper = StutterMapper(list(reversed(washes_fwd_groups)))
 
-        self.reds_stutter_mappers: List[StutterMapper] = [
-            self.reds_fwd_mapper,
-            self.reds_back_mapper,
-            self.reds_zig_mapper,
-        ]
-        self.washes_stutter_mappers: List[StutterMapper] = [
-            self.washes_fwd_mapper,
-            self.washes_back_mapper,
-        ]
-
         # Mono channels — single input drives all targets in a group equally
         all_reds_targets = [
             self.mix_target_for_fixture(n)
@@ -244,8 +213,17 @@ class Mixer(object):
         ]
         self.mix_channels.extend(special_channels)
 
-        self.reds_stutter_period = 500
-        self.washes_stutter_period = 500
+        # Each stutter channel re-registers /chan/{category.name}/stutter_period
+        # on the OSC dispatcher. pythonosc fans incoming messages to every
+        # handler, so one slider drives every mapper in a category. The
+        # returned OSCParams are grouped by category for the preset manager.
+        self.stutter_period_params_by_category: Dict[Category, List[OSCParam]] = {}
+        for ch in self.mix_channels:
+            param = ch.register_stutter_period(self.osc)
+            if param is not None:
+                self.stutter_period_params_by_category.setdefault(
+                    ch.category, []
+                ).append(param)
 
         # History buffers for FFT generator outputs, sampled once per
         # runChannelMix tick. Only populated and broadcast while the fft_dmx
@@ -433,6 +411,15 @@ class Mixer(object):
             chan_names,
             self,
         )
+
+    def stutter_period_params(self, category: Category) -> List[OSCParam]:
+        """Return the stutter_period OSCParams registered by channels in `category`.
+
+        Builders splat these into their build_params output so the preset
+        manager tracks the values. Empty list for categories without
+        stutter channels.
+        """
+        return self.stutter_period_params_by_category.get(category, [])
 
 
 class SignalPatchParam(OSCParam):

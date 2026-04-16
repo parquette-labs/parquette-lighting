@@ -77,10 +77,10 @@ class RedsBuilder(CategoryBuilder):
             self.category: [
                 # Patch params
                 mixer.patchbay_param(self.category),
-                # Non-generator params
-                OSCParam.bind(
-                    osc, "/reds_stutter_period", mixer, "reds_stutter_period"
-                ),
+                # Per-category stutter_period — one OSCParam per stutter
+                # channel in this category, all registered on the same OSC
+                # address via MixChannel.register_stutter_period().
+                *mixer.stutter_period_params(self.category),
                 # Standard generator params (/gen/{ClassName}/{name}/{attr})
                 *self.sin_reds.standard_params(osc),
                 *self.bpm_red.standard_params(osc),
