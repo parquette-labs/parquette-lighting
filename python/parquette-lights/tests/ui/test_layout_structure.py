@@ -68,6 +68,7 @@ ALLOWED_DUPLICATE_IDS = {
     "spots_light_master_text",
     "washes_master",
     "washes_master_text",
+    "chan/sodium.dimming/offset",
 }
 
 
