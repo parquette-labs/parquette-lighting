@@ -47,7 +47,7 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manager so they can be saved and sync'd with the front end
 - When creating parameters assume you need a front end UI element (slider or similar) in the associated tab and that UI element should also have a text area under it with a name and a real time value
 - Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code
-- When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors
+- When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors and `poetry run poe test-ui`
 - Code written should use mypy typing hints
 - If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.
 - Always try and write object oriented, reusable code. Breakup functions and classes if they are becoming too large. We are trying to make maintable code.
