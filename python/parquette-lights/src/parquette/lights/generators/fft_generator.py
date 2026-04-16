@@ -9,7 +9,7 @@ from ..util.math import constrain
 
 
 class FFTGenerator(Generator):
-    STANDARD_ATTRS = ["amp", "thres", "lpf_alpha"]
+    STANDARD_ATTRS = ["amp", "thres"]
 
     stamps: list[float]
     memory: list[list[float]]
@@ -165,7 +165,10 @@ class FFTGenerator(Generator):
         return self._lpf_state
 
     def standard_params(self, osc: OSCManager) -> List[OSCParam]:
-        return super().standard_params(osc) + [self.bounds_param(osc)]
+        return super().standard_params(osc) + [
+            self.bounds_param(osc),
+            self.lpf_alpha_param(osc),
+        ]
 
     def bounds_param(self, osc: OSCManager) -> OSCParam:
         addr = "/gen/{}/{}/bounds".format(type(self).__name__, self.name)
@@ -175,6 +178,16 @@ class FFTGenerator(Generator):
             lambda: (self.fft_bounds[0], 0, self.fft_bounds[1], 0),
             lambda _addr, *args: dispatch_bounds(self, args),
         )
+
+    def lpf_alpha_param(self, osc: OSCManager) -> OSCParam:
+        """Bind class-level /gen/FFTGenerator/lpf_alpha to this instance's lpf_alpha.
+
+        Every FFTGenerator registers at the same address; pythonosc fans
+        each incoming write to every handler so one UI slider drives every
+        FFTGenerator's filter in sync.
+        """
+        addr = "/gen/{}/lpf_alpha".format(type(self).__name__)
+        return OSCParam.bind(osc, addr, self, "lpf_alpha")
 
 
 def dispatch_bounds(fft: "FFTGenerator", args: Any) -> None:

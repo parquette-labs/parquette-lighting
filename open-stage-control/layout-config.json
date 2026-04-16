@@ -8107,7 +8107,7 @@
             "type": "fader",
             "top": 10,
             "left": 470,
-            "id": "gen/FFTGenerator/fft_1/lpf_alpha",
+            "id": "gen/FFTGenerator/lpf_alpha",
             "interaction": true,
             "width": 60,
             "height": 290,
@@ -8131,8 +8131,7 @@
             "default": "",
             "address": "auto",
             "decimals": 2,
-            "bypass": false,
-            "onValue": "send('/gen/FFTGenerator/fft_2/lpf_alpha', value)"
+            "bypass": false
           },
           {
             "type": "textarea",
@@ -8142,7 +8141,7 @@
             "interaction": false,
             "width": 60,
             "height": 60,
-            "value": "FFT output low pass @{gen/FFTGenerator/fft_1/lpf_alpha}",
+            "value": "FFT output low pass @{gen/FFTGenerator/lpf_alpha}",
             "default": "",
             "address": "auto",
             "decimals": 2,

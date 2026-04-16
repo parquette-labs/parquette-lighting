@@ -10,7 +10,7 @@ Standard scalar binds via `Generator.standard_params()`, preset-saved:
 |---|---|---|
 | WaveGenerator | sin_red, sin_wash, sin_plants, sin_booth, sin_spot, sin_spot_pos_{1-4}, sq_{1-3} | amp, period, phase, duty |
 | BPMGenerator | bpm_red, bpm_wash | amp, duty, bpm_mult, manual_offset, lpf_alpha |
-| FFTGenerator | fft_1, fft_2 | amp, thres, lpf_alpha |
+| FFTGenerator | fft_1, fft_2 | amp, thres |
 | LoopGenerator | loop_reds, loop_spot_pos_{1,2}_{x,y} | amp |
 | ImpulseGenerator | impulse | amp, duty |
 
@@ -20,6 +20,12 @@ Custom per-class params (via `standard_params()` overrides), preset-saved:
 |---|---|
 | `/gen/FFTGenerator/{name}/bounds` | non-scalar (4-tuple) |
 | `/gen/LoopGenerator/{name}/samples` | non-scalar (list) |
+
+Class-level binds, preset-saved. Every instance registers at the same address; pythonosc fans one UI message to every instance so they stay in sync.
+
+| Address | Fans to |
+|---|---|
+| `/gen/FFTGenerator/lpf_alpha` | fft_1, fft_2 |
 
 Actions (dispatcher.map, not preset-saved):
 
@@ -182,4 +188,3 @@ A few widgets fan a single value to sibling addresses via `onValue` scripts — 
 |---|---|
 | `gen/WaveGenerator/sq_1/amp` | also `/gen/WaveGenerator/sq_{2,3}/amp` |
 | `gen/WaveGenerator/sq_1/period` | also `/gen/WaveGenerator/sq_{2,3}/period` |
-| `gen/FFTGenerator/fft_1/lpf_alpha` | also `/gen/FFTGenerator/fft_2/lpf_alpha` |
