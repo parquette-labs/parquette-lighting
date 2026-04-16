@@ -64,6 +64,9 @@ class OSCManager(object):
         if self.server is not None:
             self.server.shutdown()
 
+    def registered_addresses(self) -> List[str]:
+        return list(self.dispatcher._map.keys())  # pylint: disable=protected-access
+
 
 class UIDebugFrame(dict):
     def __init__(self, osc: OSCManager, target_addr: str) -> None:
