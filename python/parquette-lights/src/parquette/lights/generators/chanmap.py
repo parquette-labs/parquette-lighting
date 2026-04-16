@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from . import Generator
 from ..fixtures.basics import MixTarget
@@ -93,6 +93,18 @@ class MixChannel:
 
     def map_output(self) -> None:
         self.mapper.map_output(self.value(), self)
+
+    def register_offset(
+        self, osc: OSCManager, on_change: Optional[Callable[[], None]] = None
+    ) -> OSCParam:
+        """Bind /chan/{name}/offset to this channel's offset attribute."""
+        return OSCParam.bind(
+            osc,
+            "/chan/{}/offset".format(self.name),
+            self,
+            "offset",
+            on_change=on_change,
+        )
 
     @property
     def stutter_period(self) -> int:

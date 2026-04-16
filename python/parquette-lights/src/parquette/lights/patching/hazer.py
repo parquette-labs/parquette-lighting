@@ -34,12 +34,6 @@ class HazerBuilder(CategoryBuilder):
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         return {
             self.category: [
-                # Non-generator fixture params
-                OSCParam.bind(
-                    self.osc, "/hazer_intensity", self.hazer, "target_output"
-                ),
-                OSCParam.bind(self.osc, "/hazer_fan", self.hazer, "target_fan"),
-                OSCParam.bind(self.osc, "/hazer_interval", self.hazer, "interval"),
-                OSCParam.bind(self.osc, "/hazer_duration", self.hazer, "duration"),
+                *self.hazer.standard_params(self.osc),
             ]
         }

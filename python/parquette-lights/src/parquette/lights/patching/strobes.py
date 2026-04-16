@@ -15,8 +15,7 @@ class StrobesBuilder(CategoryBuilder):
         self.impulse = ImpulseGenerator(
             name="impulse", category=category, amp=255, offset=0, duty=100
         )
-
-        osc.dispatcher.map("/impulse_punch", lambda addr, *args: self.impulse.punch())
+        self.impulse.register_punch(osc)
 
     def generators(self) -> List[Generator]:
         return [self.impulse]

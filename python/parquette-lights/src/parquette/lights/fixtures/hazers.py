@@ -8,6 +8,8 @@ from .basics import Fixture
 
 
 class RadianceHazer(Fixture):
+    STANDARD_ATTRS = ["target_output", "target_fan", "interval", "duration"]
+
     def __init__(
         self,
         *,

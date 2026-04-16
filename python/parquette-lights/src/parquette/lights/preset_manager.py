@@ -33,14 +33,14 @@ class PresetManager(object):
         self.session = session
 
         osc.dispatcher.map(
-            "/save_preset/*", lambda addr, args: self.save(addr.split("/")[2])
+            "/preset/save/*", lambda addr, args: self.save(addr.split("/")[3])
         )
         osc.dispatcher.map(
-            "/clear_preset/*", lambda addr, args: self.clear(addr.split("/")[2])
+            "/preset/clear/*", lambda addr, args: self.clear(addr.split("/")[3])
         )
         osc.dispatcher.map(
-            "/preset_selector/*",
-            lambda addr, args: self.select(addr.split("/")[2], args),
+            "/preset/selector/*",
+            lambda addr, args: self.select(addr.split("/")[3], args),
         )
 
         self.load()
@@ -198,7 +198,7 @@ class PresetManager(object):
                 param.sync()
 
         for category, category_preset in self.current_presets.items():
-            self.osc.send_osc("/preset_selector/{}".format(category), category_preset)
+            self.osc.send_osc("/preset/selector/{}".format(category), category_preset)
 
         self.osc.send_osc("/enable_save", int(self.enable_save_clear))
 

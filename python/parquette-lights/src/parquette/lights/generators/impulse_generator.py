@@ -1,5 +1,6 @@
 from .generator import Generator
 from ..category import Category
+from ..osc import OSCManager
 
 
 class ImpulseGenerator(Generator):
@@ -30,6 +31,11 @@ class ImpulseGenerator(Generator):
         # Otherwise a punch fired between ticks can land partway through (or
         # entirely past) a short duty window and be missed by the mix loop.
         self._punch_pending = True
+
+    def register_punch(self, osc: OSCManager) -> None:
+        """Register /gen/ImpulseGenerator/{name}/punch on the dispatcher."""
+        addr = "/gen/{}/{}/punch".format(type(self).__name__, self.name)
+        osc.dispatcher.map(addr, lambda _addr, *args: self.punch())
 
     def value(self, millis: float) -> float:
         if self._punch_pending:

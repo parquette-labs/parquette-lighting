@@ -35,7 +35,7 @@ class NonSavedBuilder(CategoryBuilder):
         return {
             self.category: [
                 # Non-generator infrastructure params
-                OSCParam.bind(osc, "/dmx/passthrough", self.dmx, "passthrough"),
+                self.dmx.passthrough_param(),
                 OSCParam.bind(
                     osc,
                     "/visualizer/synth_source",

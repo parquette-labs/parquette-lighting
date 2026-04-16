@@ -158,6 +158,8 @@ class LightFixture(Fixture):
 
 
 class RGBLight(LightFixture):
+    STANDARD_ATTRS = ["r_target", "g_target", "b_target"]
+
     def __init__(
         self,
         *,
@@ -201,6 +203,8 @@ class RGBLight(LightFixture):
 
 
 class RGBWLight(LightFixture):
+    STANDARD_ATTRS = ["r_target", "g_target", "b_target", "w_target"]
+
     def __init__(
         self,
         *,

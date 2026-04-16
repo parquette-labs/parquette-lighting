@@ -6,7 +6,7 @@ from stupidArtnet import StupidArtnet, StupidArtnetServer  # type: ignore[import
 from serial import SerialException
 import serial.tools.list_ports as slp
 
-from .osc import OSCManager
+from .osc import OSCManager, OSCParam
 from .util.math import constrain, value_map
 
 DMXValue = Union[int, float]
@@ -116,6 +116,10 @@ class DMXManager(object):
             "/dmx/port_name", lambda addr, args: self.setup_dmx(args)
         )
         self.close()
+
+    def passthrough_param(self) -> OSCParam:
+        """Bind /dmx/passthrough to DMXManager.passthrough."""
+        return OSCParam.bind(self.osc, "/dmx/passthrough", self, "passthrough")
 
     @classmethod
     def list_dmx_ports(cls) -> List[str]:

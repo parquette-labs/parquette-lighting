@@ -49,7 +49,8 @@ class Spot(LightFixture):
 
         if self.osc is not None:
             self.osc.dispatcher.map(
-                "/reset_spots", lambda addr, args, s=self: s.reset(args)
+                "/fixture/{}/{}/reset".format(type(self).__name__, self.name),
+                lambda addr, args, s=self: s.reset(args),
             )
 
         self._pan: DMXValue = 0

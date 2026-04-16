@@ -83,38 +83,17 @@ class WashesBuilder(CategoryBuilder):
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
 
-        def dispatch_wash_color(_addr: str, *rgb: float) -> None:
-            if len(rgb) < 3:
-                return
-            for fixture in self.all_washes:
-                fixture.set_dimming_target(r=rgb[0], g=rgb[1], b=rgb[2])
+        # Every wash fixture exposes its own r/g/b[/w]_target via
+        # Fixture.standard_params(). The frontend RGB picker and white
+        # slider fan out to every wash address via onValue scripts.
+        color_params: List[OSCParam] = []
+        for fixture in self.all_washes:
+            color_params.extend(fixture.standard_params(osc))
 
         return {
-            self.color_category: [
-                # Non-generator fixture params
-                OSCParam.bind(
-                    osc,
-                    "/wash_w",
-                    [self.washceilf, self.washceilr],
-                    "w_target",
-                ),
-                OSCParam(
-                    osc,
-                    "/wash_color",
-                    lambda: [
-                        self.washceilf.r_target,
-                        self.washceilf.g_target,
-                        self.washceilf.b_target,
-                    ],
-                    dispatch_wash_color,
-                ),
-            ],
+            self.color_category: color_params,
             self.category: [
-                # Patch params
                 mixer.patchbay_param(self.category),
-                # Per-category stutter_period — one OSCParam per stutter
-                # channel in this category, all registered on the same OSC
-                # address via MixChannel.register_stutter_period().
                 *mixer.stutter_period_params(self.category),
                 # Standard generator params (/gen/{ClassName}/{name}/{attr})
                 *self.sin_wash.standard_params(osc),

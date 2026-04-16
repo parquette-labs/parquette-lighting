@@ -25,10 +25,15 @@
 * Hardware
 	* Debug non SHED fixtures
 * Code structure
+	* Loops generator input doesn't need to be saved
+	* rename standard param
+	* Fix naming conflicts with "offset"
 	* If I add auto binders to generators I can auto generator the osc target names (can that be done in the general case)
 	* Also need a better concept of the patch param
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Move the non synth params out of the generators packages
+	* Build "/chan/{}/offset".format(ch.name)" in chan
+	* into DMX OSCParam.bind(osc, "/dmx/passthrough", self.dmx, "passthrough")
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 * Confirm done
 	* Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
