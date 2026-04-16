@@ -144,11 +144,22 @@ class OSCParam(object):
         """
         targets: List[Any] = target if isinstance(target, list) else [target]
         primary = targets[0]
+
+        def dispatch(_addr: str, *args: Any) -> None:
+            # OSC messages may deliver a scalar (one arg) or a vector (multi
+            # positional args). Collapse to a single value the setter can
+            # assign: scalar stays scalar, multi-arg packs into a list.
+            if len(args) == 1:
+                value = args[0]
+            else:
+                value = list(args)
+            cls.obj_param_setter(value, field, targets)
+
         return cls(
             osc,
             addr,
             lambda: getattr(primary, field),
-            lambda _addr, args: cls.obj_param_setter(args, field, targets),
+            dispatch,
             on_change=on_change,
             default_value=getattr(primary, field),
         )

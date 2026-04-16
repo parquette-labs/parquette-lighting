@@ -27,8 +27,6 @@
 * Code structure
 	* Fix naming conflicts with "offset"
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
-	* Build "/chan/{}/offset".format(ch.name)" in chan
-	* into DMX OSCParam.bind(osc, "/dmx/passthrough", self.dmx, "passthrough")
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 * Confirm done
 	* Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
