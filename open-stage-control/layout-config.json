@@ -3260,44 +3260,44 @@
                 "bypass": false,
                 "values": {
                   "Off": "",
-                  "Left 1": "left_1.dimming",
-                  "Left 2": "left_2.dimming",
-                  "Left 3": "left_3.dimming",
-                  "Left 4": "left_4.dimming",
-                  "Right 1": "right_1.dimming",
-                  "Right 2": "right_2.dimming",
-                  "Right 3": "right_3.dimming",
-                  "Right 4": "right_4.dimming",
-                  "Front 1": "front_1.dimming",
-                  "Front 2": "front_2.dimming",
+                  "Left 1": "left_1/dimming",
+                  "Left 2": "left_2/dimming",
+                  "Left 3": "left_3/dimming",
+                  "Left 4": "left_4/dimming",
+                  "Right 1": "right_1/dimming",
+                  "Right 2": "right_2/dimming",
+                  "Right 3": "right_3/dimming",
+                  "Right 4": "right_4/dimming",
+                  "Front 1": "front_1/dimming",
+                  "Front 2": "front_2/dimming",
                   "Reds Mono": "reds_mono",
                   "Reds Fwd": "reds_fwd",
                   "Reds Back": "reds_back",
                   "Reds Zig": "reds_zig",
-                  "Ceil 1": "ceil_1.dimming",
-                  "Ceil 2": "ceil_2.dimming",
-                  "Ceil 3": "ceil_3.dimming",
-                  "Under 1": "under_1.dimming",
-                  "Under 2": "under_2.dimming",
-                  "Tung Spot": "tung_spot.dimming",
-                  "Spot 1": "spot_1.dimming",
-                  "Spot 1 Pan": "spot_1.pan",
-                  "Spot 1 Tilt": "spot_1.tilt",
-                  "Spot 2": "spot_2.dimming",
-                  "Spot 2 Pan": "spot_2.pan",
-                  "Spot 2 Tilt": "spot_2.tilt",
-                  "Wash fl": "wash_fl.dimming",
-                  "Wash fr": "wash_fr.dimming",
-                  "Wash ml": "wash_ml.dimming",
-                  "Wash mr": "wash_mr.dimming",
-                  "Wash bl": "wash_bl.dimming",
-                  "Wash br": "wash_br.dimming",
-                  "Wash ceil_f": "wash_ceil_f.dimming",
-                  "Wash ceil_r": "wash_ceil_r.dimming",
+                  "Ceil 1": "ceil_1/dimming",
+                  "Ceil 2": "ceil_2/dimming",
+                  "Ceil 3": "ceil_3/dimming",
+                  "Under 1": "under_1/dimming",
+                  "Under 2": "under_2/dimming",
+                  "Tung Spot": "tung_spot/dimming",
+                  "Spot 1": "spot_1/dimming",
+                  "Spot 1 Pan": "spot_1/pan",
+                  "Spot 1 Tilt": "spot_1/tilt",
+                  "Spot 2": "spot_2/dimming",
+                  "Spot 2 Pan": "spot_2/pan",
+                  "Spot 2 Tilt": "spot_2/tilt",
+                  "Wash fl": "wash_fl/dimming",
+                  "Wash fr": "wash_fr/dimming",
+                  "Wash ml": "wash_ml/dimming",
+                  "Wash mr": "wash_mr/dimming",
+                  "Wash bl": "wash_bl/dimming",
+                  "Wash br": "wash_br/dimming",
+                  "Wash ceil_f": "wash_ceil_f/dimming",
+                  "Wash ceil_r": "wash_ceil_r/dimming",
                   "Wash Mono": "washes_mono",
                   "Wash Fwd": "washes_fwd",
                   "Wash Back": "washes_back",
-                  "Sodium": "sodium.dimming"
+                  "Sodium": "sodium/dimming"
                 },
                 "gridTemplate": "",
                 "wrap": false
@@ -8960,7 +8960,7 @@
               },
               {
                 "type": "textarea",
-                "value": "left_1.dimming",
+                "value": "left_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -8969,7 +8969,7 @@
                 "id": "viz_label_left_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "left_1.dimming",
+                "default": "left_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9032,7 +9032,7 @@
               },
               {
                 "type": "textarea",
-                "value": "left_2.dimming",
+                "value": "left_2/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9041,7 +9041,7 @@
                 "id": "viz_label_left_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "left_2.dimming",
+                "default": "left_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9104,7 +9104,7 @@
               },
               {
                 "type": "textarea",
-                "value": "left_3.dimming",
+                "value": "left_3/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9113,7 +9113,7 @@
                 "id": "viz_label_left_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "left_3.dimming",
+                "default": "left_3/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9176,7 +9176,7 @@
               },
               {
                 "type": "textarea",
-                "value": "left_4.dimming",
+                "value": "left_4/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9185,7 +9185,7 @@
                 "id": "viz_label_left_4",
                 "left": "auto",
                 "top": "auto",
-                "default": "left_4.dimming",
+                "default": "left_4/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9248,7 +9248,7 @@
               },
               {
                 "type": "textarea",
-                "value": "right_1.dimming",
+                "value": "right_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9257,7 +9257,7 @@
                 "id": "viz_label_right_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "right_1.dimming",
+                "default": "right_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9320,7 +9320,7 @@
               },
               {
                 "type": "textarea",
-                "value": "right_2.dimming",
+                "value": "right_2/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9329,7 +9329,7 @@
                 "id": "viz_label_right_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "right_2.dimming",
+                "default": "right_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9392,7 +9392,7 @@
               },
               {
                 "type": "textarea",
-                "value": "right_3.dimming",
+                "value": "right_3/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9401,7 +9401,7 @@
                 "id": "viz_label_right_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "right_3.dimming",
+                "default": "right_3/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9464,7 +9464,7 @@
               },
               {
                 "type": "textarea",
-                "value": "right_4.dimming",
+                "value": "right_4/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9473,7 +9473,7 @@
                 "id": "viz_label_right_4",
                 "left": "auto",
                 "top": "auto",
-                "default": "right_4.dimming",
+                "default": "right_4/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9536,7 +9536,7 @@
               },
               {
                 "type": "textarea",
-                "value": "front_1.dimming",
+                "value": "front_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9545,7 +9545,7 @@
                 "id": "viz_label_front_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "front_1.dimming",
+                "default": "front_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9608,7 +9608,7 @@
               },
               {
                 "type": "textarea",
-                "value": "front_2.dimming",
+                "value": "front_2/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9617,7 +9617,7 @@
                 "id": "viz_label_front_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "front_2.dimming",
+                "default": "front_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9680,7 +9680,7 @@
               },
               {
                 "type": "textarea",
-                "value": "under_1.dimming",
+                "value": "under_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9689,7 +9689,7 @@
                 "id": "viz_label_under_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "under_1.dimming",
+                "default": "under_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9752,7 +9752,7 @@
               },
               {
                 "type": "textarea",
-                "value": "under_2.dimming",
+                "value": "under_2/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9761,7 +9761,7 @@
                 "id": "viz_label_under_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "under_2.dimming",
+                "default": "under_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9824,7 +9824,7 @@
               },
               {
                 "type": "textarea",
-                "value": "ceil_1.dimming",
+                "value": "ceil_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9833,7 +9833,7 @@
                 "id": "viz_label_ceil_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "ceil_1.dimming",
+                "default": "ceil_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9896,7 +9896,7 @@
               },
               {
                 "type": "textarea",
-                "value": "ceil_2.dimming",
+                "value": "ceil_2/dimming",
                 "interaction": true,
                 "width": 100,
                 "height": 50,
@@ -9905,7 +9905,7 @@
                 "id": "viz_label_ceil_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "ceil_2.dimming",
+                "default": "ceil_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -9968,7 +9968,7 @@
               },
               {
                 "type": "textarea",
-                "value": "ceil_3.dimming",
+                "value": "ceil_3/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -9977,7 +9977,7 @@
                 "id": "viz_label_ceil_3",
                 "left": "auto",
                 "top": "auto",
-                "default": "ceil_3.dimming",
+                "default": "ceil_3/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10040,7 +10040,7 @@
               },
               {
                 "type": "textarea",
-                "value": "tung_spot.dimming",
+                "value": "tung_spot/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10049,7 +10049,7 @@
                 "id": "viz_label_tung_spot",
                 "left": "auto",
                 "top": "auto",
-                "default": "tung_spot.dimming",
+                "default": "tung_spot/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10112,7 +10112,7 @@
               },
               {
                 "type": "textarea",
-                "value": "spot_1.dimming",
+                "value": "spot_1/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10121,7 +10121,7 @@
                 "id": "viz_label_spot_1",
                 "left": "auto",
                 "top": "auto",
-                "default": "spot_1.dimming",
+                "default": "spot_1/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10184,7 +10184,7 @@
               },
               {
                 "type": "textarea",
-                "value": "spot_2.dimming",
+                "value": "spot_2/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10193,7 +10193,7 @@
                 "id": "viz_label_spot_2",
                 "left": "auto",
                 "top": "auto",
-                "default": "spot_2.dimming",
+                "default": "spot_2/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10256,7 +10256,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_fl.dimming",
+                "value": "wash_fl/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10265,7 +10265,7 @@
                 "id": "viz_label_wash_fl",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_fl.dimming",
+                "default": "wash_fl/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10328,7 +10328,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_fr.dimming",
+                "value": "wash_fr/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10337,7 +10337,7 @@
                 "id": "viz_label_wash_fr",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_fr.dimming",
+                "default": "wash_fr/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10400,7 +10400,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_ml.dimming",
+                "value": "wash_ml/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10409,7 +10409,7 @@
                 "id": "viz_label_wash_ml",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_ml.dimming",
+                "default": "wash_ml/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10472,7 +10472,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_mr.dimming",
+                "value": "wash_mr/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10481,7 +10481,7 @@
                 "id": "viz_label_wash_mr",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_mr.dimming",
+                "default": "wash_mr/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10544,7 +10544,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_bl.dimming",
+                "value": "wash_bl/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10553,7 +10553,7 @@
                 "id": "viz_label_wash_bl",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_bl.dimming",
+                "default": "wash_bl/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10616,7 +10616,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_br.dimming",
+                "value": "wash_br/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10625,7 +10625,7 @@
                 "id": "viz_label_wash_br",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_br.dimming",
+                "default": "wash_br/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10688,7 +10688,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_ceil_f.dimming",
+                "value": "wash_ceil_f/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10697,7 +10697,7 @@
                 "id": "viz_label_wash_ceil_f",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_ceil_f.dimming",
+                "default": "wash_ceil_f/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10760,7 +10760,7 @@
               },
               {
                 "type": "textarea",
-                "value": "wash_ceil_r.dimming",
+                "value": "wash_ceil_r/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10769,7 +10769,7 @@
                 "id": "viz_label_wash_ceil_r",
                 "left": "auto",
                 "top": "auto",
-                "default": "wash_ceil_r.dimming",
+                "default": "wash_ceil_r/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
@@ -10832,7 +10832,7 @@
               },
               {
                 "type": "textarea",
-                "value": "sodium.dimming",
+                "value": "sodium/dimming",
                 "interaction": false,
                 "width": 100,
                 "height": 50,
@@ -10841,7 +10841,7 @@
                 "id": "viz_label_sodium",
                 "left": "auto",
                 "top": "auto",
-                "default": "sodium.dimming",
+                "default": "sodium/dimming",
                 "address": "auto",
                 "decimals": 2,
                 "bypass": true
