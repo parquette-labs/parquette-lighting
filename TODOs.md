@@ -13,6 +13,7 @@
 	* Max loop length is too short
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
+	* Stutter is in the wrong UI place
 * Orchestration
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
 	* Some randomization methods inthis
@@ -21,6 +22,7 @@
 	* The BPM confidence is kinda bouncy, I want it quick to come on but not too bouncy
 	* Annotate FFT plots in the front end with key frequencies
 * Effects
+	* Stutter calculation is wrong
 	* Spinning mode where lights rotate around the room
 	* Some type of spatial mapping or better approach that is more generic for the spatial movements
 * General perceptual improvements
