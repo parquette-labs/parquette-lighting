@@ -39,8 +39,8 @@
     "target": "",
     "ignoreDefaults": false,
     "bypass": true,
-    "onCreate": "set(\"preset/reload\", 1);\nvar hb_id = Math.floor(Math.random() * 1000000000);\nsetVar(\"root\", \"hb_id\", hb_id);\nsend(\"/heartbeat\", hb_id);\nsetInterval(function() {\n    send(\"/heartbeat\", getVar(\"root\", \"hb_id\"))\n}, 2000);\nsetInterval(function() {\n    var v = get(\"root\");\n    if (v == 8) { send(\"/visualizer/enable_fft_spectrum\", 1); send(\"/visualizer/enable_fft_gen_timeseries\", 1); }\n    if (v == 5) send(\"/visualizer/enable_synth\", 1);\n    if (v == 9 || v == 6) send(\"/visualizer/enable_fixture\", 1);\n}, 1000);\n\n",
-    "onValue": "send(\"/visualizer/enable_fft_spectrum\", (value == 8) ? 1 : 0);\nsend(\"/visualizer/enable_fft_gen_timeseries\", (value == 8) ? 1 : 0);\nsend(\"/visualizer/enable_synth\", (value == 5) ? 1 : 0);\nsend(\"/visualizer/enable_fixture\", (value == 9 || value == 6) ? 1 : 0);",
+    "onCreate": "set(\"preset/reload\", 1);\nvar hb_id = Math.floor(Math.random() * 1000000000);\nsetVar(\"root\", \"hb_id\", hb_id);\nsend(\"/heartbeat\", hb_id);\nsetInterval(function() {\n    send(\"/heartbeat\", getVar(\"root\", \"hb_id\"))\n}, 2000);\nsetInterval(function() {\n    var v = get(\"root\");\n    if (v == 8) { send(\"/visualizer/enable_fft_spectrum\", 1); send(\"/visualizer/enable_fft_gen_timeseries\", 1); }\n    if (v == 5) send(\"/visualizer/enable_synth\", 1);\n    if (v == 9) send(\"/visualizer/enable_fixture\", 1);\n}, 1000);\n\n",
+    "onValue": "send(\"/visualizer/enable_fft_spectrum\", (value == 8) ? 1 : 0);\nsend(\"/visualizer/enable_fft_gen_timeseries\", (value == 8) ? 1 : 0);\nsend(\"/visualizer/enable_synth\", (value == 5) ? 1 : 0);\nsend(\"/visualizer/enable_fixture\", (value == 9) ? 1 : 0);",
     "onTouch": "",
     "onPreload": "",
     "widgets": [],
@@ -4233,8 +4233,8 @@
                 "address": "auto",
                 "interaction": true,
                 "range": {
-                  "min": 0,
-                  "max": 255
+                  "min": -127,
+                  "max": 127
                 },
                 "design": "default",
                 "horizontal": false,
@@ -4351,8 +4351,8 @@
                 "continuous": false,
                 "autoClear": true,
                 "onCreate": "locals.dragging = false; locals.dragPath = [];",
-                "onTouch": "console.log('touch', event.type, 'keys:', Object.keys(event).join(',')); if (event.type === 'stop') {   if (locals.dragging) {     locals.dragging = false;     send('/gen/LoopGenerator/loop_spot_pos_1/record', 0);     updateCanvas('loop_canvas_spot_1');   }   return; } var w = this.width || 280, h = this.height || 280; var cx = Number(event.offsetX || event.x || 0); var cy = Number(event.offsetY || event.y || 0); cx = Math.max(0, Math.min(w, cx)); cy = Math.max(0, Math.min(h, cy)); var pan = (cx / w) * 255; var tilt = ((h - cy) / h) * 255; console.log('coords', 'cx:', cx, 'cy:', cy, 'pan:', pan, 'tilt:', tilt, 'offsetX:', event.offsetX, 'x:', event.x); if (event.type === 'start') {   locals.dragging = true;   locals.dragPath = [[cx, cy]];   send('/gen/LoopGenerator/loop_spot_pos_1/record', 1);   send('/gen/LoopGenerator/loop_spot_pos_1/input', pan, tilt);   updateCanvas('loop_canvas_spot_1'); } else if (event.type === 'move' && locals.dragging) {   locals.dragPath.push([cx, cy]);   send('/gen/LoopGenerator/loop_spot_pos_1/input', pan, tilt);   updateCanvas('loop_canvas_spot_1'); }",
-                "onDraw": "var path; if (locals.dragging && locals.dragPath && locals.dragPath.length > 0) {   path = locals.dragPath; } else {   var xs = get('loop_canvas_spot_1_samples_x') || [];   var ys = get('loop_canvas_spot_1_samples_y') || [];   path = [];   var nn = Math.min(xs.length, ys.length);   for (var i = 0; i < nn; i++) {     path.push([(xs[i] / 255) * width, height - (ys[i] / 255) * height]);   } } if (path.length > 1) {   ctx.strokeStyle = '#4af'; ctx.lineWidth = 2;   ctx.beginPath(); ctx.moveTo(path[0][0], path[0][1]);   for (var i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);   ctx.stroke(); } if (path.length > 0) {   ctx.fillStyle = '#fc0'; ctx.beginPath();   ctx.arc(path[0][0], path[0][1], 6, 0, 2 * Math.PI); ctx.fill(); } var live = get('loop_canvas_spot_1_live'); if (live && live.length >= 2) {   var lx = (live[0] / 255) * width;   var ly = height - (live[1] / 255) * height;   ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;   ctx.beginPath(); ctx.arc(lx, ly, 5, 0, 2 * Math.PI);   ctx.fill(); ctx.stroke(); }",
+                "onTouch": "if (event.type === 'stop') {  if (locals.dragging) {    locals.dragging = false;    send('/gen/LoopGenerator/loop_spot_pos_1/record', 0);    updateCanvas('loop_canvas_spot_1');  }  return;} if (typeof event.offsetX !== 'number' || typeof event.offsetY !== 'number') return; var w = this.width || 280, h = this.height || 280; var cx = Math.max(0, Math.min(w, event.offsetX)); var cy = Math.max(0, Math.min(h, event.offsetY)); var pan = (cx / w) * 254 - 127; var tilt = ((h - cy) / h) * 254 - 127; if (!isFinite(pan) || !isFinite(tilt)) return; if (event.type === 'start') {   locals.dragging = true;   locals.dragPath = [[cx, cy]];   send('/gen/LoopGenerator/loop_spot_pos_1/record', 1);   send('/gen/LoopGenerator/loop_spot_pos_1/input', pan, tilt);   updateCanvas('loop_canvas_spot_1'); } else if (event.type === 'move' && locals.dragging) {   locals.dragPath.push([cx, cy]);   send('/gen/LoopGenerator/loop_spot_pos_1/input', pan, tilt);   updateCanvas('loop_canvas_spot_1'); }",
+                "onDraw": "var cw = width, ch = height; ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cw/2, 0); ctx.lineTo(cw/2, ch); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, ch/2); ctx.lineTo(cw, ch/2); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(cw/2, ch/2, 3, 0, 2*Math.PI); ctx.fill(); var path = locals.dragPath || []; if (path.length > 1) {   ctx.strokeStyle = '#4af'; ctx.lineWidth = 2;   ctx.beginPath(); ctx.moveTo(path[0][0], path[0][1]);   for (var i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);   ctx.stroke(); } if (path.length > 0) {   ctx.fillStyle = '#fc0'; ctx.beginPath();   ctx.arc(path[0][0], path[0][1], 6, 0, 2*Math.PI); ctx.fill(); }",
                 "bypass": true,
                 "value": "",
                 "default": "",
@@ -4360,36 +4360,6 @@
                 "contextType": "2d",
                 "valueLength": 1,
                 "onResize": ""
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_1_live",
-                "address": "/visualizer/fixture/spot_1/pantilt",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_1');"
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_1_samples_x",
-                "address": "/gen/LoopGenerator/loop_spot_pos_1_x/samples",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_1');"
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_1_samples_y",
-                "address": "/gen/LoopGenerator/loop_spot_pos_1_y/samples",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_1');"
               },
               {
                 "type": "textarea",
@@ -4531,8 +4501,8 @@
                 "continuous": false,
                 "autoClear": true,
                 "onCreate": "locals.dragging = false; locals.dragPath = [];",
-                "onTouch": "console.log('touch', event.type, 'keys:', Object.keys(event).join(',')); if (event.type === 'stop') {   if (locals.dragging) {     locals.dragging = false;     send('/gen/LoopGenerator/loop_spot_pos_2/record', 0);     updateCanvas('loop_canvas_spot_2');   }   return; } var w = this.width || 280, h = this.height || 280; var cx = Number(event.offsetX || event.x || 0); var cy = Number(event.offsetY || event.y || 0); cx = Math.max(0, Math.min(w, cx)); cy = Math.max(0, Math.min(h, cy)); var pan = (cx / w) * 255; var tilt = ((h - cy) / h) * 255; console.log('coords', 'cx:', cx, 'cy:', cy, 'pan:', pan, 'tilt:', tilt, 'offsetX:', event.offsetX, 'x:', event.x); if (event.type === 'start') {   locals.dragging = true;   locals.dragPath = [[cx, cy]];   send('/gen/LoopGenerator/loop_spot_pos_2/record', 1);   send('/gen/LoopGenerator/loop_spot_pos_2/input', pan, tilt);   updateCanvas('loop_canvas_spot_2'); } else if (event.type === 'move' && locals.dragging) {   locals.dragPath.push([cx, cy]);   send('/gen/LoopGenerator/loop_spot_pos_2/input', pan, tilt);   updateCanvas('loop_canvas_spot_2'); }",
-                "onDraw": "var path; if (locals.dragging && locals.dragPath && locals.dragPath.length > 0) {   path = locals.dragPath; } else {   var xs = get('loop_canvas_spot_2_samples_x') || [];   var ys = get('loop_canvas_spot_2_samples_y') || [];   path = [];   var nn = Math.min(xs.length, ys.length);   for (var i = 0; i < nn; i++) {     path.push([(xs[i] / 255) * width, height - (ys[i] / 255) * height]);   } } if (path.length > 1) {   ctx.strokeStyle = '#4af'; ctx.lineWidth = 2;   ctx.beginPath(); ctx.moveTo(path[0][0], path[0][1]);   for (var i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);   ctx.stroke(); } if (path.length > 0) {   ctx.fillStyle = '#fc0'; ctx.beginPath();   ctx.arc(path[0][0], path[0][1], 6, 0, 2 * Math.PI); ctx.fill(); } var live = get('loop_canvas_spot_2_live'); if (live && live.length >= 2) {   var lx = (live[0] / 255) * width;   var ly = height - (live[1] / 255) * height;   ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;   ctx.beginPath(); ctx.arc(lx, ly, 5, 0, 2 * Math.PI);   ctx.fill(); ctx.stroke(); }",
+                "onTouch": "if (event.type === 'stop') {  if (locals.dragging) {    locals.dragging = false;    send('/gen/LoopGenerator/loop_spot_pos_2/record', 0);    updateCanvas('loop_canvas_spot_2');  }  return;} if (typeof event.offsetX !== 'number' || typeof event.offsetY !== 'number') return; var w = this.width || 280, h = this.height || 280; var cx = Math.max(0, Math.min(w, event.offsetX)); var cy = Math.max(0, Math.min(h, event.offsetY)); var pan = (cx / w) * 254 - 127; var tilt = ((h - cy) / h) * 254 - 127; if (!isFinite(pan) || !isFinite(tilt)) return; if (event.type === 'start') {   locals.dragging = true;   locals.dragPath = [[cx, cy]];   send('/gen/LoopGenerator/loop_spot_pos_2/record', 1);   send('/gen/LoopGenerator/loop_spot_pos_2/input', pan, tilt);   updateCanvas('loop_canvas_spot_2'); } else if (event.type === 'move' && locals.dragging) {   locals.dragPath.push([cx, cy]);   send('/gen/LoopGenerator/loop_spot_pos_2/input', pan, tilt);   updateCanvas('loop_canvas_spot_2'); }",
+                "onDraw": "var cw = width, ch = height; ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(cw/2, 0); ctx.lineTo(cw/2, ch); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, ch/2); ctx.lineTo(cw, ch/2); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(cw/2, ch/2, 3, 0, 2*Math.PI); ctx.fill(); var path = locals.dragPath || []; if (path.length > 1) {   ctx.strokeStyle = '#4af'; ctx.lineWidth = 2;   ctx.beginPath(); ctx.moveTo(path[0][0], path[0][1]);   for (var i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);   ctx.stroke(); } if (path.length > 0) {   ctx.fillStyle = '#fc0'; ctx.beginPath();   ctx.arc(path[0][0], path[0][1], 6, 0, 2*Math.PI); ctx.fill(); }",
                 "bypass": true,
                 "value": "",
                 "default": "",
@@ -4540,36 +4510,6 @@
                 "contextType": "2d",
                 "valueLength": 1,
                 "onResize": ""
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_2_live",
-                "address": "/visualizer/fixture/spot_2/pantilt",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_2');"
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_2_samples_x",
-                "address": "/gen/LoopGenerator/loop_spot_pos_2_x/samples",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_2');"
-              },
-              {
-                "type": "variable",
-                "id": "loop_canvas_spot_2_samples_y",
-                "address": "/gen/LoopGenerator/loop_spot_pos_2_y/samples",
-                "value": "",
-                "default": "",
-                "bypass": true,
-                "decimals": 2,
-                "onValue": "updateCanvas('loop_canvas_spot_2');"
               },
               {
                 "type": "textarea",

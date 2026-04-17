@@ -9,6 +9,7 @@
 	* [partial] Pan tilt to XY mapping
 	* [mvp] Way to program movement patterns for the spots
 	* I need a way to change the loop intensity without moving it's average xy position
+	* Max loop length is too short
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 * Orchestration
@@ -27,7 +28,6 @@
 	* Debug non SHED fixtures
 * Code structure
 	* Fix naming conflicts with "offset"
-	* The chanel visualizer doesn't work on some channels, also some ui elements still say . for / 
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 * Confirm done

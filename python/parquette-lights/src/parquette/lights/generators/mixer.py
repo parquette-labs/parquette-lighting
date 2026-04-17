@@ -225,6 +225,8 @@ class Mixer(object):
             pan_fine_ch = lookup.get("{}/pan_fine".format(spot_name))
             tilt_fine_ch = lookup.get("{}/tilt_fine".format(spot_name))
             if pan_ch and tilt_ch:
+                pan_ch.offset = 127
+                tilt_ch.offset = 127
                 self.mix_channels.append(
                     PantiltChannel(
                         "{}/pantilt".format(spot_name),
@@ -234,6 +236,8 @@ class Mixer(object):
                     )
                 )
             if pan_fine_ch and tilt_fine_ch:
+                pan_fine_ch.offset = 127
+                tilt_fine_ch.offset = 127
                 self.mix_channels.append(
                     PantiltChannel(
                         "{}/pantilt_fine".format(spot_name),
