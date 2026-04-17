@@ -11,6 +11,8 @@
 	* I need a way to change the loop intensity without moving it's average xy position
 	* Max loop length is too short
 	* Unclear if save/load works
+	* Loops is jittery
+	* Full resolution / bigger sliders
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 * Orchestration

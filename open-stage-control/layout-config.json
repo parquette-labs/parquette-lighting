@@ -702,7 +702,6 @@
                 "values": {
                   "Booth": "Booth",
                   "Disco": "Disco",
-                  "Disco Front": "Disco Front",
                   "Dancers Front": "Dancers Front",
                   "Speakers": "Speakers",
                   "Dancers Crowd": "Dancers Crowd",
@@ -710,6 +709,7 @@
                   "Plants": "Plants",
                   "Install Above Booth": "Install Above Booth",
                   "Live": "Live",
+                  "CKUT Live": "CKUT Live",
                   "Linear": "Linear",
                   "Class": "Class"
                 }
@@ -6058,7 +6058,7 @@
           {
             "type": "panel",
             "id": "spots_pos_group",
-            "top": 310,
+            "top": 690,
             "left": 1040,
             "width": 360,
             "height": 500,
@@ -7042,8 +7042,8 @@
           },
           {
             "type": "panel",
-            "top": 930,
-            "left": 620,
+            "top": 310,
+            "left": 1040,
             "id": "panel_1",
             "interaction": true,
             "width": 330,
@@ -7203,8 +7203,8 @@
           },
           {
             "type": "button",
-            "top": 310,
-            "left": 1410,
+            "top": 250,
+            "left": 1320,
             "id": "fixture/YRXY200Spot/reset",
             "interaction": true,
             "width": "auto",
@@ -7226,12 +7226,12 @@
           },
           {
             "type": "panel",
-            "top": 930,
-            "left": 950,
+            "top": 310,
+            "left": 1370,
             "id": "panel_2",
             "interaction": true,
             "width": 330,
-            "height": 390,
+            "height": 380,
             "layout": "default",
             "justify": "start",
             "gridTemplate": "",
@@ -7249,7 +7249,7 @@
             "widgets": [
               {
                 "type": "button",
-                "top": 320,
+                "top": 310,
                 "left": 250,
                 "id": "fixture/YRXY200Spot/spot_2/prisim_enabled",
                 "interaction": true,
@@ -7272,7 +7272,7 @@
               },
               {
                 "type": "fader",
-                "top": 30,
+                "top": 20,
                 "left": 250,
                 "id": "fixture/YRXY200Spot/spot_2/prisim_rotation",
                 "interaction": true,
@@ -7302,7 +7302,7 @@
               },
               {
                 "type": "switch",
-                "top": 30,
+                "top": 20,
                 "left": 130,
                 "id": "fixture/YRXY200Spot/spot_2/pattern_index",
                 "interaction": true,
@@ -7334,7 +7334,7 @@
               },
               {
                 "type": "switch",
-                "top": 30,
+                "top": 20,
                 "left": 0,
                 "id": "fixture/YRXY200Spot/spot_2/color_index",
                 "interaction": true,
@@ -7372,7 +7372,7 @@
                 "left": 0,
                 "top": 0,
                 "width": 120,
-                "height": 30,
+                "height": 20,
                 "value": "Spot 2 Color",
                 "alphaStroke": 0,
                 "alphaFillOn": 0,
