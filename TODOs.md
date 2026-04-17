@@ -10,6 +10,7 @@
 	* [mvp] Way to program movement patterns for the spots
 	* I need a way to change the loop intensity without moving it's average xy position
 	* Max loop length is too short
+	* Unclear if save/load works
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 * Orchestration
