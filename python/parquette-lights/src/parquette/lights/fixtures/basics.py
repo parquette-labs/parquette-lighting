@@ -174,18 +174,24 @@ class RGBLight(LightFixture):
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
 
-        if osc is not None:
-            # Class-level color broadcast: every instance registers at
-            # /fixture/{ClassName}/color; pythonosc fans the 3-vec write
-            # to all handlers, updating every instance's r/g/b target.
-            osc.dispatcher.map(
-                "/fixture/{}/color".format(type(self).__name__),
-                lambda addr, *args, s=self: s.apply_color_broadcast(args),
-            )
+    @property
+    def color(self) -> List:
+        return [self.r_target, self.g_target, self.b_target]
 
-    def apply_color_broadcast(self, args: tuple) -> None:
-        if len(args) >= 3:
-            self.set_dimming_target(r=args[0], g=args[1], b=args[2])
+    @color.setter
+    def color(self, value: List) -> None:
+        if len(value) >= 3:
+            self.set_dimming_target(r=value[0], g=value[1], b=value[2])
+
+    def color_param(self, osc: OSCManager) -> OSCParam:
+        """Preset-saved class-level color bind at /fixture/{ClassName}/color.
+
+        Every instance registers at the same address; pythonosc fans one
+        UI message to all handlers. Preset save/load round-trips the
+        [r, g, b] value through the standard OSCParam machinery.
+        """
+        addr = "/fixture/{}/color".format(type(self).__name__)
+        return OSCParam.bind(osc, addr, self, "color")
 
     def set_dimming_target(
         self,
@@ -231,31 +237,34 @@ class RGBWLight(LightFixture):
         self.g_target: DMXValue = 255
         self.b_target: DMXValue = 255
         self.w_target: DMXValue = 255
+        self.use_rgb_color_broadcast = use_rgb_color_broadcast
 
-        if osc is not None:
-            # When use_rgb_color_broadcast is True, this fixture listens on
-            # /fixture/RGBLight/color so a single UI message reaches every
-            # RGB-family wash (both RGBLight and RGBWLight). Set False to
-            # isolate it to /fixture/RGBWLight/color instead.
-            color_class = "RGBLight" if use_rgb_color_broadcast else type(self).__name__
-            osc.dispatcher.map(
-                "/fixture/{}/color".format(color_class),
-                lambda addr, *args, s=self: s.apply_color_broadcast(args),
-            )
-            # White channel broadcast stays class-specific — only RGBW
-            # fixtures have a w_target.
-            osc.dispatcher.map(
-                "/fixture/{}/w_target".format(type(self).__name__),
-                lambda addr, *args, s=self: s.apply_w_broadcast(args),
-            )
+    @property
+    def color(self) -> List:
+        return [self.r_target, self.g_target, self.b_target]
 
-    def apply_color_broadcast(self, args: tuple) -> None:
-        if len(args) >= 3:
-            self.set_dimming_target(r=args[0], g=args[1], b=args[2])
+    @color.setter
+    def color(self, value: List) -> None:
+        if len(value) >= 3:
+            self.set_dimming_target(r=value[0], g=value[1], b=value[2])
 
-    def apply_w_broadcast(self, args: tuple) -> None:
-        if args:
-            self.set_dimming_target(w=args[0])
+    def color_param(self, osc: OSCManager) -> OSCParam:
+        """Preset-saved class-level color bind.
+
+        When use_rgb_color_broadcast is True, binds to /fixture/RGBLight/color
+        so one UI message reaches every RGB-family wash. Otherwise binds to
+        /fixture/RGBWLight/color.
+        """
+        color_class = (
+            "RGBLight" if self.use_rgb_color_broadcast else type(self).__name__
+        )
+        addr = "/fixture/{}/color".format(color_class)
+        return OSCParam.bind(osc, addr, self, "color")
+
+    def w_target_param(self, osc: OSCManager) -> OSCParam:
+        """Preset-saved class-level w_target bind at /fixture/RGBWLight/w_target."""
+        addr = "/fixture/{}/w_target".format(type(self).__name__)
+        return OSCParam.bind(osc, addr, self, "w_target")
 
     def set_dimming_target(
         self,

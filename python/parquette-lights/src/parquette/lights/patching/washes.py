@@ -83,12 +83,15 @@ class WashesBuilder(CategoryBuilder):
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
 
-        # Every wash fixture exposes its own r/g/b[/w]_target via
-        # Fixture.standard_params(). The frontend RGB picker and white
-        # slider fan out to every wash address via onValue scripts.
+        # Each wash fixture registers a preset-saved OSCParam.bind at the
+        # class-level color address (/fixture/RGBLight/color); pythonosc
+        # fans one UI message to every handler. RGBWLight also binds
+        # /fixture/RGBWLight/w_target for the white channel.
         color_params: List[OSCParam] = []
         for fixture in self.all_washes:
-            color_params.extend(fixture.standard_params(osc))
+            color_params.append(fixture.color_param(osc))
+            if hasattr(fixture, "w_target_param"):
+                color_params.append(fixture.w_target_param(osc))
 
         return {
             self.color_category: color_params,
