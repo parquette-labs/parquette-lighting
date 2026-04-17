@@ -51,7 +51,7 @@ class Mixer(object):
 
         # Auto-generate a FixedMapper channel for every mix_target on every
         # fixture. Categories that receive impulse get it connected.
-        impulse_categories = {categories.washes, categories.non_saved}
+        impulse_categories = {categories.non_saved}
         self.fixture_targets: Dict[str, List[MixTarget]] = {}
         self.mix_channels: List[MixChannel] = []
 
@@ -184,7 +184,6 @@ class Mixer(object):
                 categories.washes,
                 index + 3,
                 self.history_ticks,
-                impulse_generator=impulse_gen,
                 mapper=self.washes_fwd_mapper,
             ),
             MixChannel(
@@ -192,7 +191,6 @@ class Mixer(object):
                 categories.washes,
                 index + 4,
                 self.history_ticks,
-                impulse_generator=impulse_gen,
                 mapper=self.washes_back_mapper,
             ),
             # Mono channels
