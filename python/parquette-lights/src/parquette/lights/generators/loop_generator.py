@@ -23,7 +23,7 @@ class LoopGenerator(Generator):
         category: Category,
         amp: float = 1.0,
         offset: float = 0.0,
-        max_samples: int = 500,
+        max_samples: int = 1000,
         record_group: Optional[str] = None,
     ) -> None:
         super().__init__(

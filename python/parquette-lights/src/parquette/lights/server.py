@@ -6,7 +6,6 @@ import time
 import click
 
 from .generators import Mixer
-from .generators.chanmap import TICK_MS
 from .audio_analysis import FFTManager, AudioCapture
 
 from .category import Category
@@ -162,10 +161,17 @@ from .util.session_store import SessionStore
 )
 @click.option(
     "--loop-max-samples",
-    default=500,
+    default=1000,
     show_default=True,
     type=int,
-    help="Maximum samples per loop recording (500 = 10s at 50Hz).",
+    help="Maximum samples per loop recording (1000 = 20s at 50Hz).",
+)
+@click.option(
+    "--tick-ms",
+    default=20,
+    show_default=True,
+    type=int,
+    help="Mixer tick interval in milliseconds. Controls history resolution, stutter timing, and loop sample rate.",
 )
 # pylint: disable-next=too-many-positional-arguments
 def run(
@@ -190,8 +196,15 @@ def run(
     session_file: str,
     audio_interface: Optional[str],
     loop_max_samples: int,
+    tick_ms: int,
 ) -> None:
     print("Setup", flush=True)
+
+    # Set the global tick rate before anything reads it
+    # pylint: disable=import-outside-toplevel
+    import parquette.lights.generators.chanmap as chanmap_module
+
+    chanmap_module.TICK_MS = tick_ms
 
     osc = OSCManager()
     osc.set_target(target_ip, target_port)
@@ -385,8 +398,15 @@ def run(
 
     runnable_fixtures = [f for f in all_fixtures if f.runnable]
 
-    print("Start compute loop", flush=True)
+    tick_s = tick_ms / 1000
+    print(
+        "Start compute loop (tick_ms={}, {:.0f}Hz)".format(tick_ms, 1000 / tick_ms),
+        flush=True,
+    )
     try:
+        next_tick = time.monotonic() + tick_s
+        tick_count = 0
+        debug_interval_start = time.monotonic()
         while True:
             if dmx.passthrough:
                 dmx.submit_passthrough()
@@ -396,7 +416,25 @@ def run(
                 for f in runnable_fixtures:
                     f.run()
                 mixer.updateDMX()
-            time.sleep(TICK_MS / 1000)
+
+            tick_count += 1
+            if debug and tick_count % 500 == 0:
+                now = time.monotonic()
+                elapsed = now - debug_interval_start
+                avg_ms = elapsed / 500 * 1000
+                print(
+                    "DEBUG tick: avg {:.1f}ms target {}ms ({:.0f}Hz actual)".format(
+                        avg_ms, tick_ms, 1000 / avg_ms if avg_ms > 0 else 0
+                    ),
+                    flush=True,
+                )
+                debug_interval_start = now
+
+            now = time.monotonic()
+            sleep_time = next_tick - now
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            next_tick += tick_s
 
     except KeyboardInterrupt:
         print("\nShutdown FFT", flush=True)
