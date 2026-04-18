@@ -54,5 +54,6 @@ install-git-hooks.shell = """
     chmod +x "$HOOKS_DIR/pre-commit"
     echo "installed pre-commit hook to $HOOKS_DIR/pre-commit"
 """
+bench-timing = "python scripts/bench_timing.py"
 check.sequence = ["black", "pylint", "mypy"]
 check.ignore_fail = "return_non_zero"
