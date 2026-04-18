@@ -10,7 +10,6 @@
 	* [mvp] Way to program movement patterns for the spots
 		* Loops is jittery
 		* Full resolution / bigger sliders
-	* Max loop length is too short
 	* Much longer timescales for the spot sines / movement
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
@@ -23,7 +22,6 @@
 	* The BPM confidence is kinda bouncy, I want it quick to come on but not too bouncy
 	* Annotate FFT plots in the front end with key frequencies
 * Effects
-	* Stutter calculation is wrong
 	* Spinning mode where lights rotate around the room
 	* Some type of spatial mapping or better approach that is more generic for the spatial movements
 * General perceptual improvements
