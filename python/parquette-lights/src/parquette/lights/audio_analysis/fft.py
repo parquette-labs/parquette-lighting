@@ -479,10 +479,18 @@ class FFTManager(object):
             if self.debug:
                 debug_fft_tick += 1
                 if debug_fft_tick % 500 == 1:
+                    expected_ms = (
+                        self.audio_cap.chunk / self.audio_cap.rate * 1000
+                        if self.audio_cap.rate
+                        else 0
+                    )
                     print(
-                        "DEBUG FFT: forwarding to {} downstream, fft_data sum={:.4f}, "
-                        "downstream values=[{}]".format(
-                            len(self.downstream),
+                        "DEBUG FFT tick {}: fft_avg={:.1f}ms beat_avg={:.1f}ms "
+                        "expected={:.1f}ms fft_sum={:.4f} downstream=[{}]".format(
+                            debug_fft_tick,
+                            self.uidb["fft_avg_time"],
+                            self.uidb["beat_avg_time"],
+                            expected_ms,
                             float(np.sum(fft_data)),
                             ", ".join(
                                 "{}: {:.4f}".format(d.name, d.value())

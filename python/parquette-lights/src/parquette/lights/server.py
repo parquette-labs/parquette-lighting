@@ -219,7 +219,7 @@ def run(
     session = SessionStore(session_file)
     categories = Categories(osc, session)
 
-    audio_capture = AudioCapture(osc, audio_window_secs=audio_window)
+    audio_capture = AudioCapture(osc, audio_window_secs=audio_window, debug=debug)
     audio_capture.dmx = dmx
     fft_manager = FFTManager(
         osc,

@@ -23,11 +23,16 @@ class AudioCapture(object):
     dmx: DMXManager  # set by server.py; loop checks dmx.passthrough to skip work
 
     def __init__(
-        self, osc: OSCManager, chunk: int = 512, audio_window_secs: float = 5
+        self,
+        osc: OSCManager,
+        chunk: int = 512,
+        audio_window_secs: float = 5,
+        debug: bool = False,
     ) -> None:
         self.paudio = pyaudio.PyAudio()
         self.chunk = chunk
         self.audio_window_secs = audio_window_secs
+        self.debug = debug
         self.window_len = 250  # fallback until audio is configured and rate is known
         self.window = deque()
         self.window_ts = deque()
@@ -102,19 +107,19 @@ class AudioCapture(object):
             self.close()
 
     def _run_capture(self) -> None:
+        capture_tick = 0
+        debug_interval_start = time.monotonic()
+        avg_ms = 0.0
+
         while self.audio_running:
             try:
-                # Idle while no input device is selected/open. The thread
-                # stays alive so a later setup_audio() call can hand it a
-                # fresh stream without needing a restart.
                 if self.stream is None:
                     time.sleep(0.1)
                     continue
 
+                iter_start = time.monotonic()
                 data = self.stream.read(self.chunk, exception_on_overflow=False)
 
-                # In DMX passthrough mode we still drain the audio stream (so it
-                # doesn't overflow) but discard samples and skip downstream FFT work.
                 if self.dmx is not None and self.dmx.passthrough:
                     continue
 
@@ -124,6 +129,24 @@ class AudioCapture(object):
                 self.window.append(indata)
                 self.window_ts.append(ts)
                 self.new_chunk_event.set()
+
+                capture_tick += 1
+                iter_ms = (time.monotonic() - iter_start) * 1000
+                avg_ms = avg_ms * 0.9 + iter_ms * 0.1
+                self.uidb["capture_avg_time"] = avg_ms
+                if self.debug and capture_tick % 500 == 0:
+                    now = time.monotonic()
+                    wall_avg = (now - debug_interval_start) / 500 * 1000
+                    expected_ms = self.chunk / self.rate * 1000 if self.rate else 0
+                    print(
+                        "DEBUG audio capture tick {}: "
+                        "process_avg={:.1f}ms wall_avg={:.1f}ms "
+                        "expected={:.1f}ms".format(
+                            capture_tick, avg_ms, wall_avg, expected_ms
+                        ),
+                        flush=True,
+                    )
+                    debug_interval_start = now
 
             except ValueError as e:
                 print("Malformed audio buffer", e, flush=True)
