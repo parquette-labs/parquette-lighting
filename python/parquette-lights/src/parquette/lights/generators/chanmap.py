@@ -1,3 +1,4 @@
+from collections import deque
 from typing import Any, Callable, List, Optional
 
 from . import Generator
@@ -7,11 +8,15 @@ from ..osc import OSCManager, OSCParam
 from ..util.math import constrain
 
 TICK_MS: int = 20
+MAX_STUTTER_MS: int = 2000
 
 
 class ChannelMapper:
     def map_output(self, value: float, channel: "MixChannel") -> None:
         pass
+
+    def required_history_ticks(self) -> int:
+        return 1
 
 
 class FixedMapper(ChannelMapper):
@@ -46,6 +51,12 @@ class StutterMapper(ChannelMapper):
         self.fixture_groups = fixture_groups
         self.stutter_period = stutter_period
 
+    def required_history_ticks(self) -> int:
+        n = len(self.fixture_groups)
+        if n <= 1:
+            return 1
+        return int(MAX_STUTTER_MS * (n - 1) / TICK_MS) + 1
+
     def map_output(self, value: float, channel: "MixChannel") -> None:
         max_timeslice = len(channel.history) - 1
         for i, group in enumerate(self.fixture_groups):
@@ -68,7 +79,6 @@ class MixChannel:
         name: str,
         category: Category,
         index: int,
-        history_ticks: int,
         *,
         impulse_generator: Optional[Generator] = None,
         mapper: Optional[ChannelMapper] = None,
@@ -76,12 +86,13 @@ class MixChannel:
         self.name = name
         self.category = category
         self.index = index
-        self.history: List[float] = [0.0] * history_ticks
+        self.mapper: ChannelMapper = mapper or NoOpMapper()
+        history_size = self.mapper.required_history_ticks()
+        self.history: deque = deque([0.0] * history_size, maxlen=history_size)
         self._offset_storage: float = 0.0
         self.impulse_generator = impulse_generator
         self.impulse_connected = impulse_generator is not None
         self.connected_generators: List[Generator] = []
-        self.mapper: ChannelMapper = mapper or NoOpMapper()
 
     @property
     def offset(self) -> Any:
@@ -92,15 +103,14 @@ class MixChannel:
         self._offset_storage = float(value)
 
     def tick(self, ts: float) -> None:
-        """Compute current value and push into history."""
+        """Compute current value and push into history (O(1) via deque)."""
         val = self.offset
         for gen in self.connected_generators:
             val += gen.value(ts)
         val *= self.category.master
         if self.impulse_connected and self.impulse_generator is not None:
             val += self.impulse_generator.value(ts)
-        self.history[1:] = self.history[0:-1]
-        self.history[0] = val
+        self.history.appendleft(val)
 
     def value(self, timeslice: int = 0) -> float:
         """Read value from history. timeslice=0 is current, 1 is 20ms ago, etc."""
@@ -167,7 +177,7 @@ class PantiltChannel(MixChannel):
         pan_channel: MixChannel,
         tilt_channel: MixChannel,
     ) -> None:
-        super().__init__(name, category, index=-1, history_ticks=1)
+        super().__init__(name, category, index=-1)
         self.pan_channel = pan_channel
         self.tilt_channel = tilt_channel
 

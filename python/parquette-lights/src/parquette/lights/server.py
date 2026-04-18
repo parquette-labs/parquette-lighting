@@ -284,7 +284,6 @@ def run(
         generators=generators,
         fixtures=all_fixtures,
         categories=categories,
-        history_len=666 * 6,
         debug=debug,
     )
 

@@ -7,11 +7,9 @@ from typing import (
 )
 
 import time
-import math
 
 from . import Generator
 from .chanmap import (
-    TICK_MS,
     MixChannel,
     MixTarget,
     FixedMapper,
@@ -37,7 +35,6 @@ class Mixer(object):
         generators: List[Generator],
         fixtures: List[Fixture],
         categories: Categories,
-        history_len: float,
         debug: bool = False,
     ) -> None:
         self.osc = osc
@@ -47,7 +44,6 @@ class Mixer(object):
         self.categories = categories
         self.debug = debug
 
-        self.history_ticks = math.ceil(history_len * 1000 / TICK_MS)
         impulse_gen = next(g for g in generators if g.name == "impulse")
 
         # Auto-generate a FixedMapper channel for every mix_target on every
@@ -70,7 +66,6 @@ class Mixer(object):
                     chan_name,
                     target.category,
                     index,
-                    self.history_ticks,
                     impulse_generator=impulse,
                     mapper=FixedMapper(target),
                 )
@@ -163,35 +158,30 @@ class Mixer(object):
                 "reds_fwd",
                 categories.reds,
                 index,
-                self.history_ticks,
                 mapper=self.reds_fwd_mapper,
             ),
             MixChannel(
                 "reds_back",
                 categories.reds,
                 index + 1,
-                self.history_ticks,
                 mapper=self.reds_back_mapper,
             ),
             MixChannel(
                 "reds_zig",
                 categories.reds,
                 index + 2,
-                self.history_ticks,
                 mapper=self.reds_zig_mapper,
             ),
             MixChannel(
                 "washes_fwd",
                 categories.washes,
                 index + 3,
-                self.history_ticks,
                 mapper=self.washes_fwd_mapper,
             ),
             MixChannel(
                 "washes_back",
                 categories.washes,
                 index + 4,
-                self.history_ticks,
                 mapper=self.washes_back_mapper,
             ),
             # Mono channels
@@ -199,14 +189,12 @@ class Mixer(object):
                 "reds_mono",
                 categories.reds,
                 index + 5,
-                self.history_ticks,
                 mapper=FixedMapper(*all_reds_targets),
             ),
             MixChannel(
                 "washes_mono",
                 categories.washes,
                 index + 6,
-                self.history_ticks,
                 impulse_generator=impulse_gen,
                 mapper=FixedMapper(*all_wall_wash_targets),
             ),
@@ -430,7 +418,7 @@ class Mixer(object):
         if self.synth_visualizer_active() and self.synth_visualizer_source:
             source = self.channel_lookup.get(self.synth_visualizer_source)
             if source is not None:
-                sv_history = source.history[: min(200, len(source.history))]
+                sv_history = list(source.history)[: min(200, len(source.history))]
                 self.osc.send_osc("/visualizer/synth_history", sv_history)
 
         if self.fft_viz_active():
