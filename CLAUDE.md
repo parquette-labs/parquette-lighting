@@ -57,3 +57,51 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - In Open Stage Control widget properties, use `@{widget_id}` to reference another widget's value. For dynamic JS expressions, use the `#{}` shorthand which auto-returns the expression result, e.g. `#{'RGB ' + @{wash_rgb_picker}.map(v => Math.round(v)).join(', ')}`. Do not mix literal text outside `#{}` — the entire value must be inside the block. For multi-statement scripts use `JS{ ... return val; }`.
 - Don't use if TYPE_CHECKING, structure code without circular imports or stop on circular imports and discuss how to avoid them
 - When adding a new `patchbay` widget to `open-stage-control/layout-config.json`, copy the shared `css` block from an existing patchbay (e.g. `signal_patchbay/reds`). It widens the input/output node panels to 30% of the container each and enables word-wrap on node labels so long names like `wash_ceil_f.dimming` don't truncate.
+
+## Adding a new fixture category
+
+When adding a new category with fixtures and generators, follow these steps. Use an existing simple category like `plants` or `chandelier` as a reference.
+
+### 1. Register the category (`category.py`)
+- Add `self.<name> = Category("<name>", osc, session)` in `Categories.__init__`
+- Add it to `self.all` list (before `non_saved`)
+- This auto-creates the `/<name>_master` OSCParam for the master fader
+
+### 2. Create the builder (`patching/<name>.py`)
+- Subclass `CategoryBuilder`
+- In `__init__`: create fixtures (e.g. `LightFixture`), generators (e.g. `WaveGenerator`), and wire cross-object behavior (`register_snap_to`, etc.)
+- Implement `fixtures()` → returns all fixtures
+- Implement `generators()` → returns all generators
+- Implement `build_params(mixer)` → returns `{self.category: [mixer.patchbay_param(self.category), *gen.standard_params(osc), ...]}`. Every OSCParam in this list becomes preset-saveable
+
+### 3. Register the builder (`patching/__init__.py`)
+- Import the new module
+- Add the builder to the list in `create_builders()`, before `channel_levels` (which must be last among real builders since it iterates all mix channels)
+
+### 4. Add UI widgets (`open-stage-control/layout-config.json`)
+All new widgets need globally unique IDs. Add to these tabs:
+
+- **tab_preset**: Preset panel with `preset/selector/<name>` switch, `preset/save/<name>` button, `preset/clear/<name>` button, and a `<name>_master` fader (duplicated across tabs — add to `ALLOWED_DUPLICATE_IDS` in `tests/ui/test_layout_structure.py`)
+- **tab_master_levelss**: Master fader `<name>_master` + label
+- **tab_synth_controls**: `signal_patchbay/<name>` patchbay (with shared CSS) listing generator inputs and `<fixture>/dimming` outputs, plus generator control panels (amp/period faders + labels + snap-to-bpm button per generator)
+- **tab_chan_offsets**: A `<name>_master` fader at the left, then a **panel** container (e.g. `chandelier_group`) with a title textarea (e.g. "Chandelier") at (5,5), then per-channel offset faders (`chan/<fixture>/dimming/offset`) starting at (10,30) spaced 85px apart horizontally, with labels at top:235. Copy the structure from an existing group like `booth_group`
+
+### 5. Add fixtures to the visualizer (`open-stage-control/layout-config.json`)
+- In `tab_visualizer`, add a panel per fixture following the `viz_{name}` pattern (e.g. `viz_chand_1`)
+- Each panel has `layout: "horizontal"`, contains a compact fader (`visualizer/fixture/{name}/dimming`, range 0-255, interaction: false) and a label textarea (`viz_label_{name}`)
+- Group related fixtures together spatially. Copy structure from an existing panel like `viz_sodium`
+
+### 6. Add the category master to scenes (`server.py`)
+- Find the `Scene(...)` instantiations (all_black, house_lights, class_lights)
+- Add `categories.<name>: <value>` to each scene's `masters` dict:
+  - `all_black`: set to 0
+  - `house_lights`: set to appropriate level (typically 1)
+  - `class_lights`: set to appropriate level (e.g. 0.5)
+
+### 7. Update tests
+- Add `<name>_master` and `<name>_master_text` to `ALLOWED_DUPLICATE_IDS` in `tests/ui/test_layout_structure.py`
+
+### 8. Verify
+- `poetry run poe check` — formatting, lint, types
+- `poetry run poe pytest` — unit + UI tests
+- `poetry run poe test-ui` — UI-specific tests

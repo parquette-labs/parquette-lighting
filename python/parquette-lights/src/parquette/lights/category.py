@@ -50,6 +50,7 @@ class Categories:
         self.audio = Category("audio", osc, session)
         self.strobes = Category("strobes", osc, session)
         self.hazer = Category("hazer", osc, session)
+        self.chandelier = Category("chandelier", osc, session)
         self.non_saved = Category("non-saved", osc, session)
 
         self.all: List[Category] = [
@@ -63,6 +64,7 @@ class Categories:
             self.audio,
             self.strobes,
             self.hazer,
+            self.chandelier,
             self.non_saved,
         ]
         self._by_name: Dict[str, Category] = {c.name: c for c in self.all}

@@ -6,8 +6,8 @@ from ..dmx import DMXManager
 from ..osc import OSCManager
 from ..util.session_store import SessionStore
 from .builder import CategoryBuilder
-from . import audio, booth, channel_levels, hazer, non_saved, plants, reds, spots
-from . import strobes, washes
+from . import audio, booth, chandelier, channel_levels, hazer, non_saved, plants, reds
+from . import spots, strobes, washes
 
 
 def create_builders(
@@ -57,6 +57,7 @@ def create_builders(
         audio.AudioBuilder(osc, categories.audio, fft_manager, debug=debug),
         strobes.StrobesBuilder(osc, categories.strobes),
         hazer.HazerBuilder(osc, dmx, categories.hazer, debug=debug_hazer),
+        chandelier.ChandelierBuilder(osc, dmx, categories.chandelier, reds_b.bpm_red),
         non_saved.NonSavedBuilder(osc, dmx, categories.non_saved, session),
         channel_levels.ChannelLevelsBuilder(osc, session),
     ]
