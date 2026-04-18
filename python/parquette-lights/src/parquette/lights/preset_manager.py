@@ -201,6 +201,9 @@ class PresetManager(object):
             for param in params:
                 param.sync()
 
+        for cat in self.categories.all:
+            cat.master_param.sync()
+
         for category, category_preset in self.current_presets.items():
             self.osc.send_osc("/preset/selector/{}".format(category), category_preset)
 
