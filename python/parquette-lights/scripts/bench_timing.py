@@ -14,8 +14,15 @@ import threading
 
 DURATION_S = 70
 SERVER_CMD = [
-    "poetry", "run", "server", "--local-ip", "127.0.0.1",
-    "--boot-art-net", "--debug", "--audio-interface", "Loopback audio",
+    "poetry",
+    "run",
+    "server",
+    "--local-ip",
+    "127.0.0.1",
+    "--boot-art-net",
+    "--debug",
+    "--audio-interface",
+    "Loopback audio",
 ]
 
 
@@ -119,58 +126,87 @@ def main() -> None:
     print("TIMING REPORT ({}s run)".format(DURATION_S))
     print("=" * 78)
     print()
-    print("{:<22} {:<30} {:<12} {:<12}".format(
-        "Loop", "Measured", "Target", "Headroom"
-    ))
+    print(
+        "{:<22} {:<30} {:<12} {:<12}".format("Loop", "Measured", "Target", "Headroom")
+    )
     print("-" * 78)
 
     if tick_compute:
         avg_c = sum(tick_compute) / len(tick_compute)
-        print("{:<22} {:<30} {:<12} {:<12}".format(
-            "Main tick compute", fmt(tick_compute),
-            "{:.0f}ms".format(tick_target), pct(avg_c, tick_target),
-        ))
+        print(
+            "{:<22} {:<30} {:<12} {:<12}".format(
+                "Main tick compute",
+                fmt(tick_compute),
+                "{:.0f}ms".format(tick_target),
+                pct(avg_c, tick_target),
+            )
+        )
 
     if tick_wall:
         avg_w = sum(tick_wall) / len(tick_wall)
         hz = 1000 / avg_w if avg_w > 0 else 0
-        print("{:<22} {:<30} {:<12} {:<12}".format(
-            "Main tick wall", fmt(tick_wall),
-            "{:.0f}ms ({:.0f}Hz)".format(tick_target, 1000 / tick_target),
-            "{:.0f}Hz actual".format(hz),
-        ))
+        print(
+            "{:<22} {:<30} {:<12} {:<12}".format(
+                "Main tick wall",
+                fmt(tick_wall),
+                "{:.0f}ms ({:.0f}Hz)".format(tick_target, 1000 / tick_target),
+                "{:.0f}Hz actual".format(hz),
+            )
+        )
 
     if audio_process:
         avg_p = sum(audio_process) / len(audio_process)
-        print("{:<22} {:<30} {:<12} {:<12}".format(
-            "Audio capture process", fmt(audio_process),
-            "{:.1f}ms".format(audio_expected), pct(avg_p, audio_expected),
-        ))
+        print(
+            "{:<22} {:<30} {:<12} {:<12}".format(
+                "Audio capture process",
+                fmt(audio_process),
+                "{:.1f}ms".format(audio_expected),
+                pct(avg_p, audio_expected),
+            )
+        )
 
     if audio_wall:
-        print("{:<22} {:<30} {:<12} {:<12}".format(
-            "Audio capture wall", fmt(audio_wall),
-            "{:.1f}ms".format(audio_expected), "hw-paced",
-        ))
+        print(
+            "{:<22} {:<30} {:<12} {:<12}".format(
+                "Audio capture wall",
+                fmt(audio_wall),
+                "{:.1f}ms".format(audio_expected),
+                "hw-paced",
+            )
+        )
 
     if fft_avg:
         avg_f = sum(fft_avg) / len(fft_avg)
-        print("{:<22} {:<30} {:<12} {:<12}".format(
-            "FFT forward", fmt(fft_avg),
-            "{:.1f}ms".format(fft_expected), pct(avg_f, fft_expected),
-        ))
+        print(
+            "{:<22} {:<30} {:<12} {:<12}".format(
+                "FFT forward",
+                fmt(fft_avg),
+                "{:.1f}ms".format(fft_expected),
+                pct(avg_f, fft_expected),
+            )
+        )
 
     if beat_avg:
         nonzero = [b for b in beat_avg if b > 0]
         if nonzero:
             avg_b = sum(nonzero) / len(nonzero)
-            print("{:<22} {:<30} {:<12} {:<12}".format(
-                "Beat track", fmt(nonzero), "200ms", pct(avg_b, 200),
-            ))
+            print(
+                "{:<22} {:<30} {:<12} {:<12}".format(
+                    "Beat track",
+                    fmt(nonzero),
+                    "200ms",
+                    pct(avg_b, 200),
+                )
+            )
         else:
-            print("{:<22} {:<30} {:<12} {:<12}".format(
-                "Beat track", "never fired", "200ms", "—",
-            ))
+            print(
+                "{:<22} {:<30} {:<12} {:<12}".format(
+                    "Beat track",
+                    "never fired",
+                    "200ms",
+                    "—",
+                )
+            )
 
     print("-" * 78)
 

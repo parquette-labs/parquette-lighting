@@ -32,7 +32,6 @@
 	* Debug non SHED fixtures
 * Code structure
 	* Fix naming conflicts with "offset"
-	* Compute time is too slow
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 
