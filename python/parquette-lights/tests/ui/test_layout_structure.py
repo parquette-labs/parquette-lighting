@@ -37,15 +37,20 @@ OVERLAP_EPSILON = 0.5
 # widget IDs: when both appear as siblings inside the same container, the
 # overlap check skips them.
 ALLOWED_OVERLAYS: set = {
-    # Loop generators visually stack the input (live) control on top of the
-    # origin (recorded trajectory) control so the user can see both together.
+    # Loop reds: origin fader overlays the input fader.
     frozenset({"loop_reds_origin", "gen/LoopGenerator/loop_reds/input"}),
-    frozenset({"loop_spot_pos_1_origin", "gen/LoopGenerator/loop_spot_pos_1/input"}),
-    frozenset({"loop_spot_pos_2_origin", "gen/LoopGenerator/loop_spot_pos_2/input"}),
     # FFT visualizer: the bounds multixy widgets sit on top of the FFT plot
     # so the user can drag frequency band boundaries on the audio view.
     frozenset({"visualizer/fft", "gen/FFTGenerator/fft_1/bounds"}),
     frozenset({"visualizer/fft", "gen/FFTGenerator/fft_2/bounds"}),
+    # Pantilt XY pads intentionally overlap their own text labels (user layout).
+    frozenset({"chan/spot_1/pantilt/offset", "spot_1_pantilt_offset_label"}),
+    frozenset({"chan/spot_1/pantilt_fine/offset", "spot_1_pantilt_fine_offset_label"}),
+    # Nudge buttons sit at the edges of the XY pads; the gap between spot 1
+    # and spot 2 is too narrow for two side-by-side buttons without overlap.
+    frozenset({"chan/spot_1/pantilt/offset", "spot_2_pantilt_nudge_left"}),
+    frozenset({"chan/spot_2/pantilt/offset", "spot_1_pantilt_nudge_right"}),
+    frozenset({"spot_1_pantilt_nudge_right", "spot_2_pantilt_nudge_left"}),
 }
 
 # Minimum required css fragments for a patchbay widget per CLAUDE.md.
