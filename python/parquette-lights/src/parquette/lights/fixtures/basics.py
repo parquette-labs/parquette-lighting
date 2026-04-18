@@ -24,19 +24,21 @@ class MixTarget:
         target: Callable[[int], None],
         name: str,
         category: Category,
+        max_value: int = 255,
     ) -> None:
         self.target = target
         self.name = name
         self.category: Category = category
+        self.max_value: int = max_value
         self.accumulator: float = 0.0
 
     def __call__(self, value: float, accumulate: bool = False) -> None:
         if accumulate:
             self.accumulator += value
-            self.target(int(constrain(self.accumulator, 0, 255)))
+            self.target(int(constrain(self.accumulator, 0, self.max_value)))
         else:
             self.accumulator = 0.0
-            self.target(int(constrain(value, 0, 255)))
+            self.target(int(constrain(value, 0, self.max_value)))
 
 
 class Fixture(object):

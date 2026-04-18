@@ -114,16 +114,9 @@ class Spot(LightFixture):
     def prisim_rotation(self, val: DMXValue) -> None:
         self.prisim(self.prisim_enabled_value, int(val))
 
-    def pantilt(self, pan: int, tilt: int, fine=False) -> None:
-        if not fine:
-            self.pan(pan)
-            self.tilt(tilt)
-        else:
-            self.pan((pan & 0xFF00) >> 8)
-            self.pan_fine(pan & 0xFF)
-
-            self.tilt((tilt & 0xFF00) >> 8)
-            self.tilt_fine(tilt & 0xFF)
+    def pantilt(self, pan: int, tilt: int, fine: bool = False) -> None:
+        self.pan(pan, fine=fine)
+        self.tilt(tilt, fine=fine)
 
     def pantilt_fine(self, pan: DMXValue, tilt: DMXValue) -> None:
         self.pan_fine(pan)
@@ -135,17 +128,39 @@ class Spot(LightFixture):
     def get_tilt(self) -> DMXValue:
         return self._tilt
 
-    def pan(self, val: DMXValue) -> None:
-        self._pan = cast(DMXValue, self.pan_channel.map(val))
-        self.dmx.set_channel(self.addr + self.pan_channel.offset, self._pan)
+    def pan(self, val: DMXValue, fine: bool = False) -> None:
+        if fine:
+            int_val = int(constrain(val, 0, 65535))
+            self._pan = int_val
+            self.dmx.set_channel(
+                self.addr + self.pan_channel.offset, (int_val >> 8) & 0xFF
+            )
+            self.dmx.set_channel(
+                self.addr + self.pan_fine_channel.offset, int_val & 0xFF
+            )
+        else:
+            mapped = cast(DMXValue, self.pan_channel.map(val))
+            self._pan = int(mapped) << 8
+            self.dmx.set_channel(self.addr + self.pan_channel.offset, mapped)
 
     def pan_fine(self, val: DMXValue) -> None:
         self._pan_fine = cast(DMXValue, self.pan_fine_channel.map(val))
         self.dmx.set_channel(self.addr + self.pan_fine_channel.offset, self._pan_fine)
 
-    def tilt(self, val: DMXValue) -> None:
-        self._tilt = cast(DMXValue, self.tilt_channel.map(val))
-        self.dmx.set_channel(self.addr + self.tilt_channel.offset, self._tilt)
+    def tilt(self, val: DMXValue, fine: bool = False) -> None:
+        if fine:
+            int_val = int(constrain(val, 0, 65535))
+            self._tilt = int_val
+            self.dmx.set_channel(
+                self.addr + self.tilt_channel.offset, (int_val >> 8) & 0xFF
+            )
+            self.dmx.set_channel(
+                self.addr + self.tilt_fine_channel.offset, int_val & 0xFF
+            )
+        else:
+            mapped = cast(DMXValue, self.tilt_channel.map(val))
+            self._tilt = int(mapped) << 8
+            self.dmx.set_channel(self.addr + self.tilt_channel.offset, mapped)
 
     def tilt_fine(self, val: DMXValue) -> None:
         self._tilt_fine = cast(DMXValue, self.tilt_fine_channel.map(val))
@@ -511,10 +526,18 @@ class YRXY200Spot(Spot):
         pos_cat = self.position_category
         self.wrapped_targets = [
             MixTarget(self.dimming, "dimming", self.category),
-            MixTarget(self.pan, "pan", pos_cat),
-            MixTarget(self.tilt, "tilt", pos_cat),
-            MixTarget(self.pan_fine, "pan_fine", pos_cat),
-            MixTarget(self.tilt_fine, "tilt_fine", pos_cat),
+            MixTarget(
+                lambda val: self.pan(val, fine=True),
+                "pan",
+                pos_cat,
+                max_value=65535,
+            ),
+            MixTarget(
+                lambda val: self.tilt(val, fine=True),
+                "tilt",
+                pos_cat,
+                max_value=65535,
+            ),
         ]
 
     def send_visualizer(self) -> None:

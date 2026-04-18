@@ -27,7 +27,8 @@ class SpotsBuilder(CategoryBuilder):
         self.osc = osc
         self.light_category = light_category
         self.position_category = position_category
-        initial_amp: float = 200
+        initial_dimming_amp: float = 200
+        initial_pos_amp: float = 51200
         initial_period: int = 3500
 
         self.tung_spot = LightFixture(
@@ -70,7 +71,7 @@ class SpotsBuilder(CategoryBuilder):
         self.sin_spot = WaveGenerator(
             name="sin_spot",
             category=light_category,
-            amp=initial_amp,
+            amp=initial_dimming_amp,
             period=initial_period,
             phase=0,
             offset=0,
@@ -79,7 +80,7 @@ class SpotsBuilder(CategoryBuilder):
         self.sin_spot_pos_1 = WaveGenerator(
             name="sin_spot_pos_1",
             category=position_category,
-            amp=initial_amp,
+            amp=initial_pos_amp,
             period=initial_period,
             phase=0,
             offset=0,
@@ -88,7 +89,7 @@ class SpotsBuilder(CategoryBuilder):
         self.sin_spot_pos_2 = WaveGenerator(
             name="sin_spot_pos_2",
             category=position_category,
-            amp=initial_amp,
+            amp=initial_pos_amp,
             period=initial_period,
             phase=0,
             offset=0,
@@ -97,7 +98,7 @@ class SpotsBuilder(CategoryBuilder):
         self.sin_spot_pos_3 = WaveGenerator(
             name="sin_spot_pos_3",
             category=position_category,
-            amp=initial_amp,
+            amp=initial_pos_amp,
             period=initial_period,
             phase=0,
             offset=0,
@@ -106,7 +107,7 @@ class SpotsBuilder(CategoryBuilder):
         self.sin_spot_pos_4 = WaveGenerator(
             name="sin_spot_pos_4",
             category=position_category,
-            amp=initial_amp,
+            amp=initial_pos_amp,
             period=initial_period,
             phase=0,
             offset=0,

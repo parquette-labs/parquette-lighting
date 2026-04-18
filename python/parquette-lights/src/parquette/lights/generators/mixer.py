@@ -211,28 +211,15 @@ class Mixer(object):
         for spot_name in ("spot_1", "spot_2"):
             pan_ch = lookup.get("{}/pan".format(spot_name))
             tilt_ch = lookup.get("{}/tilt".format(spot_name))
-            pan_fine_ch = lookup.get("{}/pan_fine".format(spot_name))
-            tilt_fine_ch = lookup.get("{}/tilt_fine".format(spot_name))
             if pan_ch and tilt_ch:
-                pan_ch.offset = 127
-                tilt_ch.offset = 127
+                pan_ch.offset = 32767
+                tilt_ch.offset = 32767
                 self.mix_channels.append(
                     PantiltChannel(
                         "{}/pantilt".format(spot_name),
                         pan_ch.category,
                         pan_ch,
                         tilt_ch,
-                    )
-                )
-            if pan_fine_ch and tilt_fine_ch:
-                pan_fine_ch.offset = 127
-                tilt_fine_ch.offset = 127
-                self.mix_channels.append(
-                    PantiltChannel(
-                        "{}/pantilt_fine".format(spot_name),
-                        pan_fine_ch.category,
-                        pan_fine_ch,
-                        tilt_fine_ch,
                     )
                 )
 
