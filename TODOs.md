@@ -11,11 +11,10 @@
 		* Loops is jittery
 		* Full resolution / bigger sliders
 	* Max loop length is too short
-	* Need a nudge button
 	* Much longer timescales for the spot sines / movement
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
-	* Stutter is in the wrong UI place
+	* Stutter sometimes skipping? 
 * Orchestration
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
 	* Some randomization methods inthis
@@ -36,8 +35,6 @@
 	* Compute time is too slow
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Can the backend keep the front end in sync for addresses and/or ui elements
-* Confirm done
-	* Remove the need for wash and red to be named wash_1 wash_2 so that we can benefit from human names. It's that rn for the chan offset I think
 
 # Feedback
 
