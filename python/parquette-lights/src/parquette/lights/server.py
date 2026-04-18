@@ -6,6 +6,7 @@ import time
 import click
 
 from .generators import Mixer
+from .generators.chanmap import TICK_MS
 from .audio_analysis import FFTManager, AudioCapture
 
 from .category import Category
@@ -395,7 +396,7 @@ def run(
                 for f in runnable_fixtures:
                     f.run()
                 mixer.updateDMX()
-            time.sleep(0.01)
+            time.sleep(TICK_MS / 1000)
 
     except KeyboardInterrupt:
         print("\nShutdown FFT", flush=True)

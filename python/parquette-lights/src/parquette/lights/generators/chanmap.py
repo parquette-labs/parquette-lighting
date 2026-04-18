@@ -6,6 +6,8 @@ from ..category import Category
 from ..osc import OSCManager, OSCParam
 from ..util.math import constrain
 
+TICK_MS: int = 20
+
 
 class ChannelMapper:
     def map_output(self, value: float, channel: "MixChannel") -> None:
@@ -48,7 +50,7 @@ class StutterMapper(ChannelMapper):
         max_timeslice = len(channel.history) - 1
         for i, group in enumerate(self.fixture_groups):
             stutter_index = int(
-                constrain(self.stutter_period * i / 20, 0, max_timeslice)
+                constrain(self.stutter_period * i / TICK_MS, 0, max_timeslice)
             )
             val = int(constrain(channel.value(stutter_index), 0, 255))
             for target in group:

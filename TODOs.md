@@ -11,6 +11,7 @@
 		* Loops is jittery
 		* Full resolution / bigger sliders
 	* Max loop length is too short
+	* Need a nudge button
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 	* Stutter is in the wrong UI place

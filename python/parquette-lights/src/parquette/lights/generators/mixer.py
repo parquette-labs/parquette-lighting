@@ -11,6 +11,7 @@ import math
 
 from . import Generator
 from .chanmap import (
+    TICK_MS,
     MixChannel,
     MixTarget,
     FixedMapper,
@@ -46,7 +47,7 @@ class Mixer(object):
         self.categories = categories
         self.debug = debug
 
-        self.history_ticks = math.ceil(history_len * 1000 / 20)
+        self.history_ticks = math.ceil(history_len * 1000 / TICK_MS)
         impulse_gen = next(g for g in generators if g.name == "impulse")
 
         # Auto-generate a FixedMapper channel for every mix_target on every
