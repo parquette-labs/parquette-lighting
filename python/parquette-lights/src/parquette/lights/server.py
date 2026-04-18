@@ -406,7 +406,10 @@ def run(
         next_tick = time.monotonic() + tick_s
         tick_count = 0
         debug_interval_start = time.monotonic()
+        compute_ema = 0.0
         while True:
+            compute_start = time.monotonic()
+
             if dmx.passthrough:
                 dmx.submit_passthrough()
             else:
@@ -416,14 +419,21 @@ def run(
                     f.run()
                 mixer.updateDMX()
 
+            compute_ms = (time.monotonic() - compute_start) * 1000
+            compute_ema = compute_ema * 0.95 + compute_ms * 0.05
+
             tick_count += 1
             if debug and tick_count % 500 == 0:
                 now = time.monotonic()
                 elapsed = now - debug_interval_start
-                avg_ms = elapsed / 500 * 1000
+                wall_avg_ms = elapsed / 500 * 1000
                 print(
-                    "DEBUG tick: avg {:.1f}ms target {}ms ({:.0f}Hz actual)".format(
-                        avg_ms, tick_ms, 1000 / avg_ms if avg_ms > 0 else 0
+                    "DEBUG tick: compute_avg={:.2f}ms wall_avg={:.1f}ms "
+                    "target={}ms ({:.0f}Hz actual)".format(
+                        compute_ema,
+                        wall_avg_ms,
+                        tick_ms,
+                        1000 / wall_avg_ms if wall_avg_ms > 0 else 0,
                     ),
                     flush=True,
                 )

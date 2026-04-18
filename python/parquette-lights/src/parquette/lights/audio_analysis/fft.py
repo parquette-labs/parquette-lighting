@@ -485,7 +485,8 @@ class FFTManager(object):
                         else 0
                     )
                     print(
-                        "DEBUG FFT tick {}: fft_avg={:.1f}ms beat_avg={:.1f}ms "
+                        "DEBUG FFT tick {}: fft_avg={:.1f}ms "
+                        "beat_avg={:.1f}ms (target=200ms) "
                         "expected={:.1f}ms fft_sum={:.4f} downstream=[{}]".format(
                             debug_fft_tick,
                             self.uidb["fft_avg_time"],
