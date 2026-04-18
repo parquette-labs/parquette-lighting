@@ -3808,7 +3808,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 30000
                 },
                 "value": 300,
                 "address": "auto",
@@ -3896,7 +3896,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 30000
                 },
                 "value": 300,
                 "address": "auto",
@@ -3984,7 +3984,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 30000
                 },
                 "value": 300,
                 "address": "auto",
@@ -4072,7 +4072,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 30000
                 },
                 "value": 300,
                 "address": "auto",
@@ -4487,6 +4487,51 @@
                 "address": "auto",
                 "default": "",
                 "decimals": 2
+              },
+              {
+                "type": "fader",
+                "id": "gen/LoopGenerator/loop_spot_pos_1_x/smooth_factor",
+                "top": 35,
+                "left": 360,
+                "width": 50,
+                "height": 135,
+                "address": "auto",
+                "onValue": "send('/gen/LoopGenerator/loop_spot_pos_1_y/smooth_factor', value)",
+                "interaction": true,
+                "range": {
+                  "min": 0,
+                  "max": 20
+                },
+                "design": "default",
+                "horizontal": false,
+                "snap": true,
+                "spring": false,
+                "value": 0,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 0,
+                "bypass": false
+              },
+              {
+                "type": "textarea",
+                "id": "loop_spot_pos_1_smooth_label",
+                "top": 175,
+                "left": 360,
+                "width": 50,
+                "height": 40,
+                "value": "smooth @{gen/LoopGenerator/loop_spot_pos_1_x/smooth_factor}",
+                "interaction": false,
+                "bypass": true,
+                "address": "auto",
+                "default": "",
+                "decimals": 0
               }
             ],
             "tabs": [],
@@ -4652,6 +4697,51 @@
                 "default": "",
                 "decimals": 2,
                 "bypass": true
+              },
+              {
+                "type": "fader",
+                "id": "gen/LoopGenerator/loop_spot_pos_2_x/smooth_factor",
+                "top": 35,
+                "left": 360,
+                "width": 50,
+                "height": 135,
+                "address": "auto",
+                "onValue": "send('/gen/LoopGenerator/loop_spot_pos_2_y/smooth_factor', value)",
+                "interaction": true,
+                "range": {
+                  "min": 0,
+                  "max": 20
+                },
+                "design": "default",
+                "horizontal": false,
+                "snap": true,
+                "spring": false,
+                "value": 0,
+                "pips": false,
+                "dashed": false,
+                "gradient": [],
+                "touchZone": "all",
+                "doubleTap": false,
+                "logScale": false,
+                "sensitivity": 1,
+                "steps": "",
+                "default": "",
+                "decimals": 0,
+                "bypass": false
+              },
+              {
+                "type": "textarea",
+                "id": "loop_spot_pos_2_smooth_label",
+                "top": 175,
+                "left": 360,
+                "width": 50,
+                "height": 40,
+                "value": "smooth @{gen/LoopGenerator/loop_spot_pos_2_x/smooth_factor}",
+                "interaction": false,
+                "bypass": true,
+                "address": "auto",
+                "default": "",
+                "decimals": 0
               }
             ],
             "tabs": [],
