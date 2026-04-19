@@ -91,17 +91,21 @@ All new widgets need globally unique IDs. Add to these tabs:
 - Each panel has `layout: "horizontal"`, contains a compact fader (`visualizer/fixture/{name}/dimming`, range 0-255, interaction: false) and a label textarea (`viz_label_{name}`)
 - Group related fixtures together spatially. Copy structure from an existing panel like `viz_sodium`
 
-### 6. Add the category master to scenes (`server.py`)
+### 6. Add mix channels to the synth visualizer (`open-stage-control/layout-config.json`)
+- Find the `visualizer/synth_source` switch widget in tab_synth_controls (inside the synth visualizer panel)
+- Add entries for each new mix channel to the `values` object, e.g. `"Chand 1": "chand_1/dimming"`
+
+### 7. Add the category master to scenes (`server.py`)
 - Find the `Scene(...)` instantiations (all_black, house_lights, class_lights)
 - Add `categories.<name>: <value>` to each scene's `masters` dict:
   - `all_black`: set to 0
   - `house_lights`: set to appropriate level (typically 1)
   - `class_lights`: set to appropriate level (e.g. 0.5)
 
-### 7. Update tests
+### 8. Update tests
 - Add `<name>_master` and `<name>_master_text` to `ALLOWED_DUPLICATE_IDS` in `tests/ui/test_layout_structure.py`
 
-### 8. Verify
+### 9. Verify
 - `poetry run poe check` — formatting, lint, types
 - `poetry run poe pytest` — unit + UI tests
 - `poetry run poe test-ui` — UI-specific tests
