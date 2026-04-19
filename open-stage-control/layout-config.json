@@ -9361,7 +9361,7 @@
             "height": 290,
             "id": "audio_config/bpm_energy_threshold",
             "address": "auto",
-            "left": 530,
+            "left": 600,
             "range": {
               "min": 0,
               "max": 5000
@@ -9516,7 +9516,7 @@
           {
             "type": "textarea",
             "top": 1110,
-            "left": 520,
+            "left": 590,
             "id": "bpm_energy_threshold_text",
             "interaction": false,
             "width": 70,
@@ -9747,8 +9747,8 @@
             "type": "plot",
             "id": "visualizer/offset_history",
             "address": "auto",
-            "top": 1410,
-            "left": 10,
+            "top": 1040,
+            "left": 690,
             "width": 440,
             "height": 160,
             "interaction": false,
@@ -9774,8 +9774,8 @@
           {
             "type": "textarea",
             "id": "offset_history_text",
-            "top": 1370,
-            "left": 10,
+            "top": 1000,
+            "left": 690,
             "width": 200,
             "height": 40,
             "interaction": false,

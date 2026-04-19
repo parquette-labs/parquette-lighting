@@ -12,6 +12,7 @@
 		* Full resolution / bigger sliders
 	* Much longer timescales for the spot sines / movement
 	* Read 16b code
+	* The nudge sometimes goes in the wrong direction race condition?
 * Other lights
 	* sq1, sq2, sq3, need to have separate period controls or some nicer way to make them chaotic
 	* Stutter sometimes skipping? 
