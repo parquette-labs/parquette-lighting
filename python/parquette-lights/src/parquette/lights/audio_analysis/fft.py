@@ -48,6 +48,7 @@ class FFTManager(object):
         *,
         energy_threshold: float = 100.0,
         tempo_alpha: float = 0.25,
+        offset_alpha: float = 0.25,
         debug_timeout: int = 2,
         rms_window_secs: float = 1.0,
         debug: bool = False,
@@ -67,6 +68,7 @@ class FFTManager(object):
 
         self.energy_threshold = energy_threshold
         self.tempo_alpha = tempo_alpha
+        self.offset_alpha = offset_alpha
         self.rms_window_secs = rms_window_secs
         self.current_rms: float = 0.0
         self.last_beat_track_time: float = 0.0
@@ -117,6 +119,7 @@ class FFTManager(object):
                 osc, "/audio_config/bpm_energy_threshold", self, "energy_threshold"
             ),
             OSCParam.bind(osc, "/audio_config/bpm_tempo_alpha", self, "tempo_alpha"),
+            OSCParam.bind(osc, "/audio_config/bpm_offset_alpha", self, "offset_alpha"),
             OSCParam.bind(
                 osc, "/audio_config/onset_envelope_floor", self, "onset_envelope_floor"
             ),
@@ -257,8 +260,8 @@ class FFTManager(object):
                 self.smoothed_offset_time = new_offset_time
             else:
                 self.smoothed_offset_time = (
-                    self.tempo_alpha * new_offset_time
-                    + (1 - self.tempo_alpha) * self.smoothed_offset_time
+                    self.offset_alpha * new_offset_time
+                    + (1 - self.offset_alpha) * self.smoothed_offset_time
                 )
 
         current_time = time.monotonic()
