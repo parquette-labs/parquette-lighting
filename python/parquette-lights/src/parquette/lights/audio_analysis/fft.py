@@ -87,6 +87,7 @@ class FFTManager(object):
         self.harmonic_percussive_history: deque = deque(maxlen=self.bpm_history_len)
         self.business_history: deque = deque(maxlen=self.bpm_history_len)
         self.regularity_history: deque = deque(maxlen=self.bpm_history_len)
+        self.offset_history: deque = deque(maxlen=self.bpm_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self.rms_ss: deque = deque()
@@ -276,6 +277,9 @@ class FFTManager(object):
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
+        self.offset_history.append(
+            self.smoothed_offset_time if self.smoothed_offset_time is not None else 0.0
+        )
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
@@ -548,6 +552,9 @@ class FFTManager(object):
                     )
                     self.osc.send_osc(
                         "/visualizer/regularity", list(self.regularity_history)
+                    )
+                    self.osc.send_osc(
+                        "/visualizer/offset_history", list(self.offset_history)
                     )
 
                     self.uidb.update_ui()

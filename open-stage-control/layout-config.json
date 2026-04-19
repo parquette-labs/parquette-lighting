@@ -9746,6 +9746,49 @@
             "bypass": true
           },
           {
+            "type": "plot",
+            "id": "visualizer/offset_history",
+            "address": "auto",
+            "top": 1410,
+            "left": 10,
+            "width": 440,
+            "height": 160,
+            "interaction": false,
+            "colorWidget": "#4af0ff",
+            "alphaFillOff": 0,
+            "alphaFillOn": 0,
+            "value": "",
+            "default": "",
+            "pips": true,
+            "rangeX": {
+              "min": 0,
+              "max": 600
+            },
+            "rangeY": {
+              "min": "auto",
+              "max": "auto"
+            },
+            "logScaleX": false,
+            "logScaleY": false,
+            "dots": false,
+            "bars": false
+          },
+          {
+            "type": "textarea",
+            "id": "offset_history_text",
+            "top": 1370,
+            "left": 10,
+            "width": 200,
+            "height": 40,
+            "interaction": false,
+            "colorWidget": "#4af0ff",
+            "value": "Smoothed Offset History",
+            "default": "",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": true
+          },
+          {
             "type": "fader",
             "interaction": true,
             "colorWidget": "#a4ff4c",
