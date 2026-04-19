@@ -1177,6 +1177,8 @@
                 "mode": "tap",
                 "values": {
                   "Waves": "Waves",
+                  "Multi Waves Fast": "Multi Waves Fast",
+                  "Multi Waves Slow": "Multi Waves Slow",
                   "Static": "Static",
                   "Off": "Off"
                 }
@@ -4422,7 +4424,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 10000
                 },
                 "logScale": false,
                 "value": 3500,
@@ -4559,7 +4561,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 10000
                 },
                 "logScale": false,
                 "value": 3500,
@@ -4696,7 +4698,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 10000
                 },
                 "logScale": false,
                 "value": 3500,

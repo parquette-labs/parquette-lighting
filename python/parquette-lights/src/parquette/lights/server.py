@@ -340,7 +340,7 @@ def run(
             categories.reds: 1,
             categories.spots_light: 0,
             categories.washes: 1,
-            categories.booth: 1,
+            categories.booth: 0,
             categories.plants: 1,
             categories.chandelier: 1,
         },
