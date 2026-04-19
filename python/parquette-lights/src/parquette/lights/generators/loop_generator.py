@@ -85,8 +85,10 @@ class LoopGenerator(Generator):
         self.playback_start = time.time() * 1000
 
     def value(self, millis: float) -> float:
-        if self.recording and self.record_buffer:
-            return self.record_buffer[-1] * self.amp + self.offset
+        if self.recording:
+            self.record_sample(self.input_value)
+            if self.record_buffer:
+                return self.record_buffer[-1] * self.amp + self.offset
 
         if self.loop_length == 0:
             return self.offset
@@ -138,10 +140,8 @@ class LoopGenerator(Generator):
         osc.dispatcher.map(addr, lambda _addr, *args: self.set_recording(bool(args[0])))
 
     def apply_input_write(self, value: float) -> None:
-        """Update input_value and feed record_sample (mid-record capture)."""
-        v = float(value)
-        self.input_value = v
-        self.record_sample(v)
+        """Update input_value. Sampling happens at tick rate in value()."""
+        self.input_value = float(value)
 
     def input_param(self, osc: OSCManager) -> OSCParam:
         """Scalar input OSCParam at /gen/{ClassName}/{name}/input.
