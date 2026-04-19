@@ -41,7 +41,7 @@ class SpotsBuilder(CategoryBuilder):
                 category=light_category,
                 position_category=position_category,
                 dmx=dmx,
-                addr=21,
+                addr=216,
                 osc=osc,
             ),
             YRXY200Spot(
