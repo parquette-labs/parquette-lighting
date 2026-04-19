@@ -26,7 +26,7 @@ class ChandelierBuilder(CategoryBuilder):
 
         self.fixtures_list: List[LightFixture] = [
             LightFixture(name="chand_1", category=category, dmx=dmx, addr=28, osc=osc),
-            LightFixture(name="chand_2", category=category, dmx=dmx, addr=29, osc=osc),
+            LightFixture(name="chand_2", category=category, dmx=dmx, addr=31, osc=osc),
             LightFixture(name="chand_3", category=category, dmx=dmx, addr=30, osc=osc),
         ]
 
