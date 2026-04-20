@@ -9291,8 +9291,8 @@
           },
           {
             "type": "button",
-            "top": 700,
-            "left": 180,
+            "top": 730,
+            "left": 490,
             "id": "enable_save",
             "interaction": true,
             "width": 280,
@@ -9387,7 +9387,7 @@
             "steps": "",
             "value": "",
             "default": "",
-            "decimals": 2,
+            "decimals": 4,
             "bypass": false,
             "top": 910,
             "width": 70,
@@ -9397,7 +9397,7 @@
             "left": 1130,
             "range": {
               "min": 0,
-              "max": 1
+              "max": 0.25
             },
             "logScale": true
           },
@@ -9417,7 +9417,7 @@
             "steps": "",
             "value": 0.25,
             "default": "",
-            "decimals": 2,
+            "decimals": 4,
             "bypass": false,
             "top": 910,
             "width": 70,
@@ -9427,7 +9427,7 @@
             "left": 1060,
             "range": {
               "min": 0,
-              "max": 1
+              "max": 0.1
             },
             "logScale": true,
             "colorWidget": "#1bf4f5"
