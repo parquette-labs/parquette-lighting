@@ -55,7 +55,8 @@ class FFTManager(object):
         onset_envelope_floor: float = 2.0,
         min_business: float = 0.5,
         min_regularity: float = 0.4,
-        bpm_publish_interval: float = 5.0,
+        beat_track_interval: float = 0.2,
+        bpm_publish_interval: float = 5,
     ) -> None:
         self.debug = debug
         self.onset_envelope_floor = onset_envelope_floor
@@ -74,11 +75,13 @@ class FFTManager(object):
         self.last_beat_track_time: float = 0.0
         self.last_debug_update: float = 0.0
 
+        self.beat_track_interval = beat_track_interval
         self.bpm_publish_interval = bpm_publish_interval
         self.smoothed_bpm: float = 0.0
         self.phase_cos: float = 1.0
         self.phase_sin: float = 0.0
         self.phase_initialized: bool = False
+        self.phase_ref: float = 0.0
         self.last_bpm_publish_time: float = 0.0
 
         self.bpm_history_len: int = 150
@@ -253,16 +256,22 @@ class FFTManager(object):
             + (1 - self.tempo_alpha) * self.smoothed_bpm
         )
 
-        # Beat phase: convert detected beat time to a 0-1 fraction of the
-        # current beat period, then smooth circularly using sin/cos
-        # decomposition so the EMA handles the 0↔1 wrap-around correctly.
+        # Beat phase: compute where the detected beat falls within the
+        # current beat period as a 0-1 fraction, using a nearby reference
+        # point to avoid floating-point precision loss from modulus on
+        # huge wall-clock timestamps. Smooth circularly via sin/cos
+        # decomposition so the EMA handles the 0↔1 wrap correctly.
         if len(beat_frames) > 0 and win_ts and self.smoothed_bpm > 0:
             last_beat_sample = int(beat_frames[-1]) * hop_length
             samples_after = max(0, len(y) - last_beat_sample)
             end_ts = win_ts[-1]
             beat_time_ms = (end_ts - samples_after / sr) * 1000.0
             period_ms = 60000.0 / self.smoothed_bpm
-            raw_phase = (beat_time_ms % period_ms) / period_ms
+            elapsed = beat_time_ms - self.phase_ref
+            raw_phase = (elapsed % period_ms) / period_ms
+            # Re-anchor reference to stay near current time
+            full_periods = math.floor(elapsed / period_ms)
+            self.phase_ref += full_periods * period_ms
             angle = raw_phase * 2.0 * math.pi
             if not self.phase_initialized:
                 self.phase_cos = math.cos(angle)
@@ -471,7 +480,7 @@ class FFTManager(object):
             fft_data = self.forward(win[-1])
 
             now = time.monotonic()
-            if now - self.last_beat_track_time >= 0.2:
+            if now - self.last_beat_track_time >= self.beat_track_interval:
                 if self._beat_future is None or self._beat_future.done():
                     self.last_beat_track_time = now
                     self._beat_future = self._beat_executor.submit(
