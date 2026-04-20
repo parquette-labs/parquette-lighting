@@ -48,7 +48,7 @@ class FFTManager(object):
         *,
         energy_threshold: float = 100.0,
         tempo_alpha: float = 0.25,
-        offset_alpha: float = 0.25,
+        phase_alpha: float = 0.25,
         debug_timeout: int = 2,
         rms_window_secs: float = 1.0,
         debug: bool = False,
@@ -68,7 +68,7 @@ class FFTManager(object):
 
         self.energy_threshold = energy_threshold
         self.tempo_alpha = tempo_alpha
-        self.offset_alpha = offset_alpha
+        self.phase_alpha = phase_alpha
         self.rms_window_secs = rms_window_secs
         self.current_rms: float = 0.0
         self.last_beat_track_time: float = 0.0
@@ -76,7 +76,7 @@ class FFTManager(object):
 
         self.bpm_publish_interval = bpm_publish_interval
         self.smoothed_bpm: float = 0.0
-        self.smoothed_offset_time: Optional[float] = None
+        self.smoothed_phase_time: Optional[float] = None
         self.last_bpm_publish_time: float = 0.0
 
         self.bpm_history_len: int = 150
@@ -87,7 +87,7 @@ class FFTManager(object):
         self.harmonic_percussive_history: deque = deque(maxlen=self.bpm_history_len)
         self.business_history: deque = deque(maxlen=self.bpm_history_len)
         self.regularity_history: deque = deque(maxlen=self.bpm_history_len)
-        self.offset_history: deque = deque(maxlen=self.bpm_history_len)
+        self.phase_history: deque = deque(maxlen=self.bpm_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self.rms_ss: deque = deque()
@@ -120,7 +120,7 @@ class FFTManager(object):
                 osc, "/audio_config/bpm_energy_threshold", self, "energy_threshold"
             ),
             OSCParam.bind(osc, "/audio_config/bpm_tempo_alpha", self, "tempo_alpha"),
-            OSCParam.bind(osc, "/audio_config/bpm_offset_alpha", self, "offset_alpha"),
+            OSCParam.bind(osc, "/audio_config/bpm_phase_alpha", self, "phase_alpha"),
             OSCParam.bind(
                 osc, "/audio_config/onset_envelope_floor", self, "onset_envelope_floor"
             ),
@@ -249,20 +249,20 @@ class FFTManager(object):
         # Offset: convert the last detected beat (frame index) back to a
         # wall-clock ms timestamp. Computed every tick so the EMA converges
         # between publishes, mirroring the BPM smoothing above.
-        new_offset_time: Optional[float] = None
+        new_phase_time: Optional[float] = None
         if len(beat_frames) > 0 and win_ts:
             last_beat_sample = int(beat_frames[-1]) * hop_length
             samples_after = max(0, len(y) - last_beat_sample)
             end_ts = win_ts[-1]
-            new_offset_time = (end_ts - samples_after / sr) * 1000.0
+            new_phase_time = (end_ts - samples_after / sr) * 1000.0
 
-        if new_offset_time is not None:
-            if self.smoothed_offset_time is None:
-                self.smoothed_offset_time = new_offset_time
+        if new_phase_time is not None:
+            if self.smoothed_phase_time is None:
+                self.smoothed_phase_time = new_phase_time
             else:
-                self.smoothed_offset_time = (
-                    self.offset_alpha * new_offset_time
-                    + (1 - self.offset_alpha) * self.smoothed_offset_time
+                self.smoothed_phase_time = (
+                    self.phase_alpha * new_phase_time
+                    + (1 - self.phase_alpha) * self.smoothed_phase_time
                 )
 
         current_time = time.monotonic()
@@ -272,13 +272,13 @@ class FFTManager(object):
             bpm_int = int(self.smoothed_bpm)
             for b in self.bpms:
                 b.bpm = bpm_int
-                if self.smoothed_offset_time is not None:
-                    b.offset_time = self.smoothed_offset_time
+                if self.smoothed_phase_time is not None:
+                    b.phase_time = self.smoothed_phase_time
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
-        self.offset_history.append(
-            self.smoothed_offset_time if self.smoothed_offset_time is not None else 0.0
+        self.phase_history.append(
+            self.smoothed_phase_time if self.smoothed_phase_time is not None else 0.0
         )
 
         # Audio character metrics — see _compute_* helpers below.
@@ -554,7 +554,7 @@ class FFTManager(object):
                         "/visualizer/regularity", list(self.regularity_history)
                     )
                     self.osc.send_osc(
-                        "/visualizer/offset_history", list(self.offset_history)
+                        "/visualizer/phase_history", list(self.phase_history)
                     )
 
                     self.uidb.update_ui()

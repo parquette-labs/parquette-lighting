@@ -46,23 +46,23 @@ class Generator(ABC):
         ]
 
     @staticmethod
-    def reanchor_offset(
+    def reanchor_phase(
         millis: float,
         old_period: float,
         new_period: float,
-        old_offset: float,
+        old_phase: float,
     ) -> float:
         """
         Given a generator whose cycle position at time `millis` is
-            (millis - old_offset) % old_period
-        return a new_offset such that
-            (millis - new_offset) % new_period
+            (millis - old_phase) % old_period
+        return a new phase such that
+            (millis - new_phase) % new_period
         starts at the same fractional position within the new cycle.
 
-        Returns old_offset unchanged if either period is non-positive.
+        Returns old_phase unchanged if either period is non-positive.
         """
         if old_period <= 0 or new_period <= 0:
-            return old_offset
-        elapsed = millis - old_offset
+            return old_phase
+        elapsed = millis - old_phase
         frac = (elapsed % old_period) / old_period
         return millis - frac * new_period

@@ -3,11 +3,11 @@ from ..category import Category
 
 
 class BPMGenerator(Generator):
-    STANDARD_ATTRS = ["amp", "duty", "bpm_mult", "manual_offset", "lpf_alpha"]
+    STANDARD_ATTRS = ["amp", "duty", "bpm_mult", "manual_phase", "lpf_alpha"]
 
     duty: int
-    offset_time: float
-    manual_offset: float
+    phase_time: float
+    manual_phase: float
 
     def __init__(
         self,
@@ -18,15 +18,15 @@ class BPMGenerator(Generator):
         offset: float = 0,
         duty: int = 100,
         bpm: float = 126,
-        offset_time: int = 0,
+        phase_time: int = 0,
         lpf_alpha: float = 1.0,
     ):
         super().__init__(
             name=name, category=category, amp=amp, offset=offset, period=0, phase=0
         )
 
-        self.offset_time = offset_time
-        self.manual_offset = 0
+        self.phase_time = phase_time
+        self.manual_phase = 0
         self.duty = duty
         self.bpm_mult = 1
         self.bpm = bpm
@@ -46,7 +46,7 @@ class BPMGenerator(Generator):
             raw = self.offset
         else:
             try:
-                ellapsed: float = millis - self.offset_time - self.manual_offset
+                ellapsed: float = millis - self.phase_time - self.manual_phase
                 period = 1000 * 60 / (self.bpm * self.bpm_mult)
 
                 if ellapsed % period >= 0 and ellapsed % period < self.duty:

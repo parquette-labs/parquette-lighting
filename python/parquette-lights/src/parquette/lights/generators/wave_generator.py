@@ -23,10 +23,10 @@ class WaveGenerator(Generator):
         old_period = getattr(self, "_period", None)
         if old_period and old_period > 0 and new_period and new_period > 0:
             millis = time.time() * 1000
-            new_offset = Generator.reanchor_offset(
+            new_phase = Generator.reanchor_phase(
                 millis, old_period, new_period, -self.phase
             )
-            self.phase = -new_offset
+            self.phase = -new_phase
         self._period = new_period
 
     class Shape(Enum):
