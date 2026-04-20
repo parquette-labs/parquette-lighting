@@ -52,38 +52,38 @@ class BPMGenerator(Generator):
     ) -> None:
         """Update BPM and smoothly align phase with detected beat time.
 
-        1. Reanchor phase_ref to preserve cycle position under the new period
-        2. Compute target phase_ref aligned with beat_time_ms
-        3. PLL: nudge phase_ref toward target by alpha fraction of the error
-        4. Re-anchor phase_ref to stay near current time
+        All reanchoring and PLL correction use the 0.25x period (4x the
+        1x beat period). Anchoring to the longest subdivision keeps all
+        shorter multiples (0.5x, 1x, 2x) phase-aligned since they
+        subdivide it evenly.
         """
         millis = self._last_pulse_start if self._last_pulse_start > 0 else 0.0
-        old_period = self.current_period()
+        old_base = 60000.0 / self.bpm * 4.0 if self.bpm > 0 else 0.0
         self.bpm = new_bpm
-        new_period = self.current_period()
+        new_base = 60000.0 / self.bpm * 4.0 if self.bpm > 0 else 0.0
 
-        # Preserve cycle position under new period
-        if old_period > 0 and new_period > 0:
+        # Preserve cycle position under new 0.25x period
+        if old_base > 0 and new_base > 0:
             self.phase_ref = Generator.reanchor_phase(
-                millis, old_period, new_period, self.phase_ref
+                millis, old_base, new_base, self.phase_ref
             )
 
-        # Target: phase_ref where (beat_time_ms - target) % period = 0
+        # Target: phase_ref where (beat_time_ms - target) % base_period = 0
         # Bring target near millis for precision
         target_ref = beat_time_ms
-        if new_period > 0:
-            target_ref += math.floor((millis - beat_time_ms) / new_period) * new_period
+        if new_base > 0:
+            target_ref += math.floor((millis - beat_time_ms) / new_base) * new_base
 
-            # PLL correction: circular error in phase_ref space
-            error = (self.phase_ref - target_ref) % new_period
-            if error > new_period / 2:
-                error -= new_period
+            # PLL correction: circular error at 0.25x period
+            error = (self.phase_ref - target_ref) % new_base
+            if error > new_base / 2:
+                error -= new_base
             self.phase_ref -= error * alpha
 
             # Keep phase_ref near millis
             drift = millis - self.phase_ref
-            if abs(drift) > new_period:
-                self.phase_ref += math.floor(drift / new_period) * new_period
+            if abs(drift) > new_base:
+                self.phase_ref += math.floor(drift / new_base) * new_base
 
     def value(self, millis: float) -> float:
         if not self.bpm_valid or not self.rms_valid:

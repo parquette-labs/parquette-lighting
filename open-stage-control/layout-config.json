@@ -9510,7 +9510,7 @@
             "height": 160,
             "id": "visualizer/rms_history",
             "address": "auto",
-            "top": 880,
+            "top": 1080,
             "rangeY": {
               "min": 0,
               "max": 5000
@@ -9547,7 +9547,7 @@
           },
           {
             "type": "textarea",
-            "top": 840,
+            "top": 1040,
             "left": 120,
             "id": "rms_plot_text",
             "interaction": false,
@@ -9747,49 +9747,6 @@
             "bypass": true
           },
           {
-            "type": "plot",
-            "id": "visualizer/phase_history",
-            "address": "auto",
-            "top": 1080,
-            "left": 10,
-            "width": 440,
-            "height": 160,
-            "interaction": false,
-            "colorWidget": "#4af0ff",
-            "alphaFillOff": 0,
-            "alphaFillOn": 0,
-            "value": "",
-            "default": "",
-            "pips": true,
-            "rangeX": {
-              "min": 0,
-              "max": 600
-            },
-            "rangeY": {
-              "min": 0,
-              "max": 1
-            },
-            "logScaleX": false,
-            "logScaleY": false,
-            "dots": false,
-            "bars": false
-          },
-          {
-            "type": "textarea",
-            "id": "phase_history_text",
-            "top": 1040,
-            "left": 10,
-            "width": 200,
-            "height": 40,
-            "interaction": false,
-            "colorWidget": "#4af0ff",
-            "value": "Beat Phase (0-1)",
-            "default": "",
-            "address": "auto",
-            "decimals": 2,
-            "bypass": true
-          },
-          {
             "type": "fader",
             "interaction": true,
             "colorWidget": "#a4ff4c",
@@ -9950,8 +9907,8 @@
             "address": "auto",
             "left": 1570,
             "range": {
-              "min": 0.2,
-              "max": 30
+              "min": 0.1,
+              "max": 5
             },
             "logScale": true
           },

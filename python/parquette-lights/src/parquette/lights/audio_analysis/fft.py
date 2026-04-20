@@ -85,8 +85,9 @@ class FFTManager(object):
         self.bpm_outlier_min_samples = bpm_outlier_min_samples
         self.bpm_outlier_window: int = 30
         self.smoothed_bpm: float = 0.0
+        self.clusters_valid: bool = True
 
-        self.bpm_history_len: int = 150
+        self.bpm_history_len: int = 75
 
         self.bpm_history: deque = deque(maxlen=self.bpm_history_len)
         self.raw_bpm_history: deque = deque(maxlen=self.bpm_history_len)
@@ -94,7 +95,6 @@ class FFTManager(object):
         self.harmonic_percussive_history: deque = deque(maxlen=self.bpm_history_len)
         self.business_history: deque = deque(maxlen=self.bpm_history_len)
         self.regularity_history: deque = deque(maxlen=self.bpm_history_len)
-        self.phase_history: deque = deque(maxlen=self.bpm_history_len)
 
         # Incremental RMS: per-chunk sum-of-squares avoids np.concatenate every loop
         self.rms_ss: deque = deque()
@@ -173,7 +173,10 @@ class FFTManager(object):
             remaining = outliers
 
         if remaining:
+            self.clusters_valid = False
             return self.simple_tempo_resolve(tempo, window)
+
+        self.clusters_valid = True
 
         if not clusters:
             return tempo
@@ -381,14 +384,6 @@ class FFTManager(object):
 
         self.raw_bpm_history.append(tempo)
         self.bpm_history.append(self.smoothed_bpm)
-        if self.bpms and self.bpms[0].bpm > 0:
-            ref = self.bpms[0]
-            period = ref.current_period()
-            now_ms = time.time() * 1000
-            phase = ((now_ms - ref.phase_ref) % period) / period
-            self.phase_history.append(phase)
-        else:
-            self.phase_history.append(0.0)
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
@@ -414,18 +409,19 @@ class FFTManager(object):
         regularity_pass = len(recent_regularity_vals) == gate_window and all(
             v >= self.min_regularity for v in recent_regularity_vals
         )
-        bpm_valid = business_pass and regularity_pass
+        bpm_valid = business_pass and regularity_pass and self.clusters_valid
         for b in self.bpms:
             b.bpm_valid = bpm_valid
 
         compute_time = time.monotonic() - compute_start_time
 
         self.uidb["reported_tempo"] = reported_tempo
-        self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs}".format(
+        self.uidb["bpm_valid"] = "b={b:.2f}{bs} r={r:.2f}{rs} c={cs}".format(
             b=business,
             bs="✓" if business_pass else "✗",
             r=regularity,
             rs="✓" if regularity_pass else "✗",
+            cs="✓" if self.clusters_valid else "✗",
         )
 
         self.uidb["harmonic_percussive"] = f"{hp_ratio:.2f}"
@@ -662,10 +658,6 @@ class FFTManager(object):
                     self.osc.send_osc(
                         "/visualizer/regularity", list(self.regularity_history)
                     )
-                    self.osc.send_osc(
-                        "/visualizer/phase_history", list(self.phase_history)
-                    )
-
                     self.uidb.update_ui()
 
             compute_time = time.monotonic() - compute_start_time
