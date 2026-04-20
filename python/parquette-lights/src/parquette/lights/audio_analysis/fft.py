@@ -258,15 +258,19 @@ class FFTManager(object):
 
         # reported_tempo = fold_tempo(float(reported_tempo))
 
-        # Reject BPM outliers: skip values that deviate more than the
-        # threshold from the median of the raw history. The median is
-        # robust to up to 50% outliers already in the buffer.
+        # Fold octave multiples: if the raw tempo is close to half or double
+        # the median, halve or double it to stay near the consensus BPM.
+        # Then reject remaining outliers that exceed the threshold.
         tempo = float(reported_tempo)
         bpm_accepted = True
         window = list(self.raw_bpm_history)[-int(self.bpm_outlier_window) :]
         if len(window) >= self.bpm_outlier_min_samples:
             median_bpm = statistics.median(window)
             if median_bpm > 0:
+                while tempo > median_bpm * 1.4:
+                    tempo /= 2.0
+                while tempo < median_bpm * 0.7:
+                    tempo *= 2.0
                 deviation = abs(tempo - median_bpm) / median_bpm
                 bpm_accepted = deviation <= self.bpm_outlier_threshold
 
