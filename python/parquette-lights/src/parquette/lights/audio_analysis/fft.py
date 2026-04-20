@@ -269,9 +269,7 @@ class FFTManager(object):
             period_ms = 60000.0 / self.smoothed_bpm
             elapsed = beat_time_ms - self.phase_ref
             raw_phase = (elapsed % period_ms) / period_ms
-            # Re-anchor reference to stay near current time
-            full_periods = math.floor(elapsed / period_ms)
-            self.phase_ref += full_periods * period_ms
+            self.phase_ref = math.floor(beat_time_ms / period_ms) * period_ms
             angle = raw_phase * 2.0 * math.pi
             if not self.phase_initialized:
                 self.phase_cos = math.cos(angle)
@@ -290,9 +288,7 @@ class FFTManager(object):
             for b in self.bpms:
                 b.bpm = self.smoothed_bpm
                 if self.phase_initialized and self.smoothed_bpm > 0:
-                    period_ms = 60000.0 / self.smoothed_bpm
-                    now_ms = time.time() * 1000
-                    b.phase_time = now_ms - smoothed_phase * period_ms
+                    b.phase_time = smoothed_phase * period_ms
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
