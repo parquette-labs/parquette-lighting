@@ -123,5 +123,5 @@ def test_bpm_valid_gates_output():
 
     bpm.rms_valid = True
     bpm.bpm_valid = True
-    # At t=0 with phase_time=0 and duty=500ms, t=0 is within the pulse window
+    # At t=0 with beat_phase=0 and duty=500ms, t=0 is within the pulse window
     assert bpm.value(0) == 255

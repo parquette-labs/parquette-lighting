@@ -6,7 +6,7 @@ class BPMGenerator(Generator):
     STANDARD_ATTRS = ["amp", "duty", "bpm_mult", "manual_phase", "lpf_alpha"]
 
     duty: int
-    phase_time: float
+    beat_phase: float
     manual_phase: float
 
     def __init__(
@@ -18,14 +18,13 @@ class BPMGenerator(Generator):
         offset: float = 0,
         duty: int = 100,
         bpm: float = 126,
-        phase_time: int = 0,
         lpf_alpha: float = 1.0,
     ):
         super().__init__(
             name=name, category=category, amp=amp, offset=offset, period=0, phase=0
         )
 
-        self.phase_time = phase_time
+        self.beat_phase: float = 0.0
         self.manual_phase = 0
         self.duty = duty
         self.bpm_mult = 1
@@ -38,6 +37,7 @@ class BPMGenerator(Generator):
         self.lpf_alpha = lpf_alpha
         self._lpf_state = offset
         self._pulse_end: float = 0.0
+        self._last_pulse_start: float = -60000.0
 
     def current_period(self) -> float:
         return 1000 * 60 / (self.bpm * self.bpm_mult)
@@ -50,13 +50,19 @@ class BPMGenerator(Generator):
                 if millis < self._pulse_end:
                     raw = self.amp + self.offset
                 else:
-                    elapsed: float = millis - self.phase_time - self.manual_phase
-                    period = 1000 * 60 / (self.bpm * self.bpm_mult)
-                    pos = elapsed % period
-
-                    if pos < self.duty:
+                    period = 60000.0 / (self.bpm * self.bpm_mult)
+                    cycle_pos = (millis % period) / period
+                    phase_dist = (
+                        cycle_pos - self.beat_phase - self.manual_phase / period
+                    ) % 1.0
+                    # Only start a new pulse if at least one period has
+                    # elapsed since the last one. Prevents double-fires
+                    # when beat_phase shifts during convergence.
+                    since_last = millis - self._last_pulse_start
+                    if phase_dist < self.duty / period and since_last >= period:
                         raw = self.amp + self.offset
                         self._pulse_end = millis + self.duty
+                        self._last_pulse_start = millis
                     else:
                         raw = self.offset
             except ZeroDivisionError:
