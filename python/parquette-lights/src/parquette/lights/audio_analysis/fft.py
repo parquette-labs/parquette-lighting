@@ -57,7 +57,7 @@ class FFTManager(object):
         min_business: float = 0.5,
         min_regularity: float = 0.4,
         beat_track_interval: float = 0.2,
-        bpm_publish_interval: float = 5.0,
+        bpm_publish_interval: float = 1,
         bpm_outlier_threshold: float = 0.15,
         bpm_outlier_min_samples: int = 10,
     ) -> None:
@@ -85,10 +85,6 @@ class FFTManager(object):
         self.bpm_outlier_min_samples = bpm_outlier_min_samples
         self.bpm_outlier_window: int = 30
         self.smoothed_bpm: float = 0.0
-        self.phase_cos: float = 1.0
-        self.phase_sin: float = 0.0
-        self.phase_initialized: bool = False
-        self.phase_ref: float = 0.0
 
         self.bpm_history_len: int = 150
 
@@ -123,11 +119,6 @@ class FFTManager(object):
             "/visualizer/enable_fft_spectrum",
             lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
         )
-
-    def smoothed_phase(self) -> float:
-        """Return the smoothed beat phase as a 0-1 fraction of the period."""
-        angle = math.atan2(self.phase_sin, self.phase_cos)
-        return (angle / (2.0 * math.pi)) % 1.0
 
     def config_params(self, osc: OSCManager) -> List[OSCParam]:
         """Preset-saved /audio_config/... binds for FFT and BPM tuning knobs."""
@@ -284,47 +275,33 @@ class FFTManager(object):
             self.tempo_alpha * ema_input + (1 - self.tempo_alpha) * self.smoothed_bpm
         )
 
-        # Beat phase: compute where the detected beat falls within the
-        # current beat period as a 0-1 fraction, using a nearby reference
-        # point to avoid floating-point precision loss from modulus on
-        # huge wall-clock timestamps. Smooth circularly via sin/cos
-        # decomposition so the EMA handles the 0↔1 wrap correctly.
+        # Compute beat time and publish to generators. The BPM generator's
+        # update_bpm_phase handles reanchoring and PLL smoothing internally.
+        beat_time_ms: Optional[float] = None
         if len(beat_frames) > 0 and win_ts and self.smoothed_bpm > 0:
             last_beat_sample = int(beat_frames[-1]) * hop_length
             samples_after = max(0, len(y) - last_beat_sample)
             end_ts = win_ts[-1]
             beat_time_ms = (end_ts - samples_after / sr) * 1000.0
-            period_ms = 60000.0 / self.smoothed_bpm
-            elapsed = beat_time_ms - self.phase_ref
-            raw_phase = (elapsed % period_ms) / period_ms
-            self.phase_ref = math.floor(beat_time_ms / period_ms) * period_ms
-            angle = raw_phase * 2.0 * math.pi
-            if not self.phase_initialized:
-                self.phase_cos = math.cos(angle)
-                self.phase_sin = math.sin(angle)
-                self.phase_initialized = True
-            else:
-                a = self.phase_alpha
-                self.phase_cos = a * math.cos(angle) + (1.0 - a) * self.phase_cos
-                self.phase_sin = a * math.sin(angle) + (1.0 - a) * self.phase_sin
 
-            # Publish to generators only when we have fresh beat data,
-            # throttled to bpm_publish_interval to avoid phase jumps.
-            # All generators share the same BPM and beat_phase so they
-            # pulse in unison.
             current_time = time.monotonic()
             if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
                 self.last_bpm_publish_time = current_time
-                smoothed_phase = self.smoothed_phase()
                 for b in self.bpms:
-                    b.bpm = self.smoothed_bpm
-                    b.beat_phase = smoothed_phase
+                    b.update_bpm_phase(
+                        self.smoothed_bpm, beat_time_ms, self.phase_alpha
+                    )
 
         self.raw_bpm_history.append(tempo)
         self.bpm_history.append(self.smoothed_bpm)
-        self.phase_history.append(
-            self.smoothed_phase() if self.phase_initialized else 0.0
-        )
+        if self.bpms and self.bpms[0].bpm > 0:
+            ref = self.bpms[0]
+            period = ref.current_period()
+            now_ms = time.time() * 1000
+            phase = ((now_ms - ref.phase_ref) % period) / period
+            self.phase_history.append(phase)
+        else:
+            self.phase_history.append(0.0)
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
