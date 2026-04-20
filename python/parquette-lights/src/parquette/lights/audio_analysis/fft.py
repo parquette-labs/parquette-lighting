@@ -1,4 +1,5 @@
 import math
+import statistics
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Optional, List
@@ -56,6 +57,8 @@ class FFTManager(object):
         min_business: float = 0.5,
         min_regularity: float = 0.4,
         beat_track_interval: float = 0.2,
+        bpm_outlier_threshold: float = 0.15,
+        bpm_outlier_min_samples: int = 10,
     ) -> None:
         self.debug = debug
         self.onset_envelope_floor = onset_envelope_floor
@@ -75,6 +78,9 @@ class FFTManager(object):
         self.last_debug_update: float = 0.0
 
         self.beat_track_interval = beat_track_interval
+        self.bpm_outlier_threshold = bpm_outlier_threshold
+        self.bpm_outlier_min_samples = bpm_outlier_min_samples
+        self.bpm_outlier_window: int = 30
         self.smoothed_bpm: float = 0.0
         self.phase_cos: float = 1.0
         self.phase_sin: float = 0.0
@@ -134,6 +140,12 @@ class FFTManager(object):
             OSCParam.bind(osc, "/audio_config/bpm_business_min", self, "min_business"),
             OSCParam.bind(
                 osc, "/audio_config/bpm_regularity_min", self, "min_regularity"
+            ),
+            OSCParam.bind(
+                osc,
+                "/audio_config/bpm_outlier_window",
+                self,
+                "bpm_outlier_window",
             ),
         ]
 
@@ -246,11 +258,21 @@ class FFTManager(object):
 
         # reported_tempo = fold_tempo(float(reported_tempo))
 
-        # Continuously update the smoothed estimate every tick so the IIR
-        # dynamics are unchanged; only the publish to generators is throttled.
+        # Reject BPM outliers: skip values that deviate more than the
+        # threshold from the median of the raw history. The median is
+        # robust to up to 50% outliers already in the buffer.
+        tempo = float(reported_tempo)
+        bpm_accepted = True
+        window = list(self.raw_bpm_history)[-int(self.bpm_outlier_window) :]
+        if len(window) >= self.bpm_outlier_min_samples:
+            median_bpm = statistics.median(window)
+            if median_bpm > 0:
+                deviation = abs(tempo - median_bpm) / median_bpm
+                bpm_accepted = deviation <= self.bpm_outlier_threshold
+
+        ema_input = tempo if bpm_accepted else median_bpm
         self.smoothed_bpm = (
-            self.tempo_alpha * float(reported_tempo)
-            + (1 - self.tempo_alpha) * self.smoothed_bpm
+            self.tempo_alpha * ema_input + (1 - self.tempo_alpha) * self.smoothed_bpm
         )
 
         # Beat phase: compute where the detected beat falls within the
@@ -285,7 +307,7 @@ class FFTManager(object):
                 b.bpm = self.smoothed_bpm
                 b.beat_phase = smoothed_phase
 
-        self.raw_bpm_history.append(float(reported_tempo))
+        self.raw_bpm_history.append(tempo)
         self.bpm_history.append(self.smoothed_bpm)
         self.phase_history.append(
             self.smoothed_phase() if self.phase_initialized else 0.0
