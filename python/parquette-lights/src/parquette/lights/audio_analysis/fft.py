@@ -57,6 +57,7 @@ class FFTManager(object):
         min_business: float = 0.5,
         min_regularity: float = 0.4,
         beat_track_interval: float = 0.2,
+        bpm_publish_interval: float = 5.0,
         bpm_outlier_threshold: float = 0.15,
         bpm_outlier_min_samples: int = 10,
     ) -> None:
@@ -78,6 +79,8 @@ class FFTManager(object):
         self.last_debug_update: float = 0.0
 
         self.beat_track_interval = beat_track_interval
+        self.bpm_publish_interval = bpm_publish_interval
+        self.last_bpm_publish_time: float = 0.0
         self.bpm_outlier_threshold = bpm_outlier_threshold
         self.bpm_outlier_min_samples = bpm_outlier_min_samples
         self.bpm_outlier_window: int = 30
@@ -146,6 +149,12 @@ class FFTManager(object):
                 "/audio_config/bpm_outlier_window",
                 self,
                 "bpm_outlier_window",
+            ),
+            OSCParam.bind(
+                osc,
+                "/audio_config/bpm_publish_interval",
+                self,
+                "bpm_publish_interval",
             ),
         ]
 
@@ -299,13 +308,17 @@ class FFTManager(object):
                 self.phase_cos = a * math.cos(angle) + (1.0 - a) * self.phase_cos
                 self.phase_sin = a * math.sin(angle) + (1.0 - a) * self.phase_sin
 
-            # Publish to generators only when we have fresh beat data.
+            # Publish to generators only when we have fresh beat data,
+            # throttled to bpm_publish_interval to avoid phase jumps.
             # All generators share the same BPM and beat_phase so they
             # pulse in unison.
-            smoothed_phase = self.smoothed_phase()
-            for b in self.bpms:
-                b.bpm = self.smoothed_bpm
-                b.beat_phase = smoothed_phase
+            current_time = time.monotonic()
+            if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
+                self.last_bpm_publish_time = current_time
+                smoothed_phase = self.smoothed_phase()
+                for b in self.bpms:
+                    b.bpm = self.smoothed_bpm
+                    b.beat_phase = smoothed_phase
 
         self.raw_bpm_history.append(tempo)
         self.bpm_history.append(self.smoothed_bpm)
