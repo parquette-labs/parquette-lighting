@@ -10,13 +10,17 @@
 	* !The nudge sometimes goes in the wrong direction race condition?
 * Other lights
 	* sq1, sq2, sq3 don't stutter nicely
+	* Are other bpms affected by the long time stamps
 * Orchestration
 	* !Scenes
 	* !popups to create and manage presets / scenes
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
 	* Some randomization methods inthis
 * FFT/BPM
+	* Shelf / change for the clusters doesn't work
+	* Still small skips
 	* Better bpm mults (no weird ones, 0.25)
+	* Guarantee that a phase change can't re tigger withing the same period
 	* FFT low end is terrible, likely something related to mels, maybe I should drop that
 	* Dynamic range for at least FFT needs to clip (maybe all signal outputs?)
 	* BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode

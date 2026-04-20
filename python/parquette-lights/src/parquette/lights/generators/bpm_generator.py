@@ -96,7 +96,7 @@ class BPMGenerator(Generator):
                     period = self.current_period()
                     elapsed = (millis - self.phase_ref - self.manual_phase) % period
                     since_last = millis - self._last_pulse_start
-                    if elapsed < self.duty and since_last >= period:
+                    if elapsed < self.duty and since_last >= period - self.duty:
                         raw = self.amp + self.offset
                         self._pulse_end = millis + self.duty
                         self._last_pulse_start = millis
