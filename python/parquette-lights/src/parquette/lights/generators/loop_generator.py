@@ -45,26 +45,27 @@ class LoopGenerator(Generator):
         # them in sync. When None, the handler is per-generator.
         self.record_group: Optional[str] = record_group
 
-    def set_recording(self, active: bool, ts_ms: Optional[float] = None) -> None:
+    def set_recording(self, active: bool) -> None:
         """Start or stop recording. Called from OSC thread."""
-        if ts_ms is None:
-            ts_ms = time.time() * 1000
+        current_time_ms = time.time() * 1000
 
         if active:
             self.recording = True
             self.record_buffer = []
-            self.record_start_ms = ts_ms
+            self.record_start_ms = current_time_ms
         else:
             if self.recording and len(self.record_buffer) > 0:
-                new_samples = list(self.record_buffer)
-                duration = ts_ms - self.record_start_ms
+                duration = current_time_ms - self.record_start_ms
+                if duration <= 0:
+                    print("Dropped a loop recording with zero or negative duration")
+                    return
                 # Thread-safe swap: zero length first so value() returns offset
                 self.loop_length = 0
-                self.samples = new_samples
-                if duration > 0:
-                    self.period = duration
-                self.playback_start = ts_ms
-                self.loop_length = len(new_samples)
+                self.period = duration
+                self.samples = list(self.record_buffer)
+                self.playback_start = current_time_ms
+                self.loop_length = len(self.samples)
+
             self.recording = False
             self.record_buffer = []
 
