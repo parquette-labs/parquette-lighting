@@ -1,3 +1,4 @@
+from collections import deque
 from typing import (
     Any,
     List,
@@ -246,6 +247,9 @@ class Mixer(object):
         }
         self.fft_viz_until: float = 0.0
         self.synth_visualizer_until: float = 0.0
+        self.synth_history: deque = deque(
+            [0.0] * self.fft_history_len, maxlen=self.fft_history_len
+        )
         self.fixture_visualizer_until: float = 0.0
 
         # Synth visualizer mirrors the history of a selected source channel.
@@ -391,6 +395,11 @@ class Mixer(object):
                         flush=True,
                     )
 
+        if self.synth_visualizer_active() and self.synth_visualizer_source:
+            source = self.channel_lookup.get(self.synth_visualizer_source)
+            if source is not None:
+                self.synth_history.appendleft(source.value())
+
     def runOutputMix(self) -> None:
         # Clear all accumulators and zero all fixtures
         for mt in self.all_mix_targets():
@@ -400,13 +409,8 @@ class Mixer(object):
             ch.map_output()
         # After all channels mapped, fixtures hold their final accumulated totals
 
-        # Virtual synth visualizer output: forward selected source channel's
-        # history to frontend over OSC, not bound to any DMX fixture.
         if self.synth_visualizer_active() and self.synth_visualizer_source:
-            source = self.channel_lookup.get(self.synth_visualizer_source)
-            if source is not None:
-                sv_history = list(source.history)[: min(200, len(source.history))]
-                self.osc.send_osc("/visualizer/synth_history", sv_history)
+            self.osc.send_osc("/visualizer/synth_history", list(self.synth_history))
 
         if self.fft_viz_active():
             self.osc.send_osc(

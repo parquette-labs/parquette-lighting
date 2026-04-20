@@ -17,6 +17,7 @@
 	* Some randomization methods inthis
 * FFT/BPM
 	* Better bpm mults (no weird ones, 0.25)
+	* FFT low end is terrible, likely something related to mels, maybe I should drop that
 	* Dynamic range for at least FFT needs to clip (maybe all signal outputs?)
 	* BPM offset is still flakey, need to consider how to design a more coherent / human friendly mode
 	* The BPM confidence is kinda bouncy, I want it quick to come on but not too bouncy

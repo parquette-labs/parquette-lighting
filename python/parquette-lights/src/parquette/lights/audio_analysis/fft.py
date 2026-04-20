@@ -76,7 +76,9 @@ class FFTManager(object):
 
         self.bpm_publish_interval = bpm_publish_interval
         self.smoothed_bpm: float = 0.0
-        self.smoothed_phase_time: Optional[float] = None
+        self.phase_cos: float = 1.0
+        self.phase_sin: float = 0.0
+        self.phase_initialized: bool = False
         self.last_bpm_publish_time: float = 0.0
 
         self.bpm_history_len: int = 150
@@ -112,6 +114,11 @@ class FFTManager(object):
             "/visualizer/enable_fft_spectrum",
             lambda addr, *args: self.enable_fft_debug_data(bool(args[0])),
         )
+
+    def smoothed_phase(self) -> float:
+        """Return the smoothed beat phase as a 0-1 fraction of the period."""
+        angle = math.atan2(self.phase_sin, self.phase_cos)
+        return (angle / (2.0 * math.pi)) % 1.0
 
     def config_params(self, osc: OSCManager) -> List[OSCParam]:
         """Preset-saved /audio_config/... binds for FFT and BPM tuning knobs."""
@@ -246,46 +253,44 @@ class FFTManager(object):
             + (1 - self.tempo_alpha) * self.smoothed_bpm
         )
 
-        # Offset: convert the last detected beat (frame index) back to a
-        # wall-clock ms timestamp. Computed every tick so the EMA converges
-        # between publishes, mirroring the BPM smoothing above.
-        new_phase_time: Optional[float] = None
-        if len(beat_frames) > 0 and win_ts:
+        # Beat phase: convert detected beat time to a 0-1 fraction of the
+        # current beat period, then smooth circularly using sin/cos
+        # decomposition so the EMA handles the 0↔1 wrap-around correctly.
+        if len(beat_frames) > 0 and win_ts and self.smoothed_bpm > 0:
             last_beat_sample = int(beat_frames[-1]) * hop_length
             samples_after = max(0, len(y) - last_beat_sample)
             end_ts = win_ts[-1]
-            new_phase_time = (end_ts - samples_after / sr) * 1000.0
-
-        if new_phase_time is not None:
-            if self.smoothed_phase_time is None:
-                self.smoothed_phase_time = new_phase_time
+            beat_time_ms = (end_ts - samples_after / sr) * 1000.0
+            period_ms = 60000.0 / self.smoothed_bpm
+            raw_phase = (beat_time_ms % period_ms) / period_ms
+            angle = raw_phase * 2.0 * math.pi
+            if not self.phase_initialized:
+                self.phase_cos = math.cos(angle)
+                self.phase_sin = math.sin(angle)
+                self.phase_initialized = True
             else:
-                self.smoothed_phase_time = (
-                    self.phase_alpha * new_phase_time
-                    + (1 - self.phase_alpha) * self.smoothed_phase_time
-                )
+                a = self.phase_alpha
+                self.phase_cos = a * math.cos(angle) + (1.0 - a) * self.phase_cos
+                self.phase_sin = a * math.sin(angle) + (1.0 - a) * self.phase_sin
 
         current_time = time.monotonic()
         if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
             self.last_bpm_publish_time = current_time
 
             bpm_int = int(self.smoothed_bpm)
+            smoothed_phase = self.smoothed_phase()
             for b in self.bpms:
                 b.bpm = bpm_int
-                if self.smoothed_phase_time is not None:
-                    b.phase_time = self.smoothed_phase_time
+                if self.phase_initialized and self.smoothed_bpm > 0:
+                    period_ms = 60000.0 / self.smoothed_bpm
+                    now_ms = time.time() * 1000
+                    b.phase_time = now_ms - smoothed_phase * period_ms
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
-        if self.smoothed_phase_time is not None and self.smoothed_bpm > 0:
-            period_ms = 60000.0 / self.smoothed_bpm
-            current_ms = time.time() * 1000
-            phase_frac = (
-                (current_ms - self.smoothed_phase_time) % period_ms
-            ) / period_ms
-            self.phase_history.append(phase_frac)
-        else:
-            self.phase_history.append(0.0)
+        self.phase_history.append(
+            self.smoothed_phase() if self.phase_initialized else 0.0
+        )
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)
