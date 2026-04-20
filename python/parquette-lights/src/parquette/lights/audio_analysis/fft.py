@@ -277,9 +277,15 @@ class FFTManager(object):
 
         self.raw_bpm_history.append(float(reported_tempo))
         self.bpm_history.append(self.smoothed_bpm)
-        self.phase_history.append(
-            self.smoothed_phase_time if self.smoothed_phase_time is not None else 0.0
-        )
+        if self.smoothed_phase_time is not None and self.smoothed_bpm > 0:
+            period_ms = 60000.0 / self.smoothed_bpm
+            current_ms = time.time() * 1000
+            phase_frac = (
+                (current_ms - self.smoothed_phase_time) % period_ms
+            ) / period_ms
+            self.phase_history.append(phase_frac)
+        else:
+            self.phase_history.append(0.0)
 
         # Audio character metrics — see _compute_* helpers below.
         hp_ratio = self.compute_harmonic_percussive_ratio(y, sr)

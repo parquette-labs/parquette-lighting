@@ -9766,8 +9766,8 @@
               "max": 600
             },
             "rangeY": {
-              "min": "auto",
-              "max": "auto"
+              "min": 0,
+              "max": 1
             },
             "logScaleX": false,
             "logScaleY": false,
@@ -9783,7 +9783,7 @@
             "height": 40,
             "interaction": false,
             "colorWidget": "#4af0ff",
-            "value": "Smoothed Phase History",
+            "value": "Beat Phase (0-1)",
             "default": "",
             "address": "auto",
             "decimals": 2,
