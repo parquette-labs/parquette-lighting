@@ -45,9 +45,12 @@ class LoopGenerator(Generator):
         # them in sync. When None, the handler is per-generator.
         self.record_group: Optional[str] = record_group
 
-    def set_recording(self, active: bool) -> None:
+    def set_recording(self, active: bool, ts_ms: Optional[float] = None) -> None:
         """Start or stop recording. Called from OSC thread."""
-        current_time_ms = time.time() * 1000
+        if ts_ms is None:
+            current_time_ms = time.time() * 1000
+        else:
+            current_time_ms = ts_ms
 
         if active:
             self.recording = True
