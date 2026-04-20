@@ -277,10 +277,9 @@ class FFTManager(object):
         if current_time - self.last_bpm_publish_time >= self.bpm_publish_interval:
             self.last_bpm_publish_time = current_time
 
-            bpm_int = int(self.smoothed_bpm)
             smoothed_phase = self.smoothed_phase()
             for b in self.bpms:
-                b.bpm = bpm_int
+                b.bpm = self.smoothed_bpm
                 if self.phase_initialized and self.smoothed_bpm > 0:
                     period_ms = 60000.0 / self.smoothed_bpm
                     now_ms = time.time() * 1000

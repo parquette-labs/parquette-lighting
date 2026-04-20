@@ -37,6 +37,7 @@ class BPMGenerator(Generator):
         # initialized to offset so the first sample doesn't ramp from zero.
         self.lpf_alpha = lpf_alpha
         self._lpf_state = offset
+        self._pulse_end: float = 0.0
 
     def current_period(self) -> float:
         return 1000 * 60 / (self.bpm * self.bpm_mult)
@@ -46,13 +47,18 @@ class BPMGenerator(Generator):
             raw = self.offset
         else:
             try:
-                ellapsed: float = millis - self.phase_time - self.manual_phase
-                period = 1000 * 60 / (self.bpm * self.bpm_mult)
-
-                if ellapsed % period >= 0 and ellapsed % period < self.duty:
+                if millis < self._pulse_end:
                     raw = self.amp + self.offset
                 else:
-                    raw = self.offset
+                    elapsed: float = millis - self.phase_time - self.manual_phase
+                    period = 1000 * 60 / (self.bpm * self.bpm_mult)
+                    pos = elapsed % period
+
+                    if pos < self.duty:
+                        raw = self.amp + self.offset
+                        self._pulse_end = millis + self.duty
+                    else:
+                        raw = self.offset
             except ZeroDivisionError:
                 return 0
 
