@@ -66,6 +66,16 @@ class Fixture(object):
     def run(self) -> None:
         pass
 
+    def post_map_output(self) -> None:
+        """Called once per mixer tick after every channel has finished
+        contributing to this fixture's MixTargets. Default: no-op.
+
+        Fixtures with derived outputs override this hook. The motivating
+        case is a moving-head spot that needs to do a paired
+        coord-system -> pan/tilt conversion once the final accumulated
+        x_coord and y_coord values for the tick are known.
+        """
+
     def send_visualizer(self) -> None:
         pass
 

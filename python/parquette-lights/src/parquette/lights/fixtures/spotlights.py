@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from __future__ import annotations
 
 import threading
@@ -8,10 +9,13 @@ from enum import Enum
 
 
 from ..category import Category
+from ..coord_system_state import CoordSystemState
+from ..osc import OSCManager, OSCParam
+from ..util.coord_system import CoordSystem
+from ..util.coordinates import SpotCoordFrame
 from ..util.math import constrain, value_map
 from .basics import LightFixture, MixTarget
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
-from ..osc import OSCManager
 
 
 class Spot(LightFixture):
@@ -58,8 +62,6 @@ class Spot(LightFixture):
 
         self._pan: DMXValue = 0
         self._tilt: DMXValue = 0
-        self._pan_fine: DMXValue = 0
-        self._tilt_fine: DMXValue = 0
         self._movement_speed: DMXValue = 0
         self._dimming: DMXValue = 0
 
@@ -118,10 +120,6 @@ class Spot(LightFixture):
         self.pan(pan, fine=fine)
         self.tilt(tilt, fine=fine)
 
-    def pantilt_fine(self, pan: DMXValue, tilt: DMXValue) -> None:
-        self.pan_fine(pan)
-        self.tilt_fine(tilt)
-
     def get_pan(self) -> DMXValue:
         return self._pan
 
@@ -143,10 +141,6 @@ class Spot(LightFixture):
             self._pan = int(mapped) << 8
             self.dmx.set_channel(self.addr + self.pan_channel.offset, mapped)
 
-    def pan_fine(self, val: DMXValue) -> None:
-        self._pan_fine = cast(DMXValue, self.pan_fine_channel.map(val))
-        self.dmx.set_channel(self.addr + self.pan_fine_channel.offset, self._pan_fine)
-
     def tilt(self, val: DMXValue, fine: bool = False) -> None:
         if fine:
             int_val = int(constrain(val, 0, 65535))
@@ -161,10 +155,6 @@ class Spot(LightFixture):
             mapped = cast(DMXValue, self.tilt_channel.map(val))
             self._tilt = int(mapped) << 8
             self.dmx.set_channel(self.addr + self.tilt_channel.offset, mapped)
-
-    def tilt_fine(self, val: DMXValue) -> None:
-        self._tilt_fine = cast(DMXValue, self.tilt_fine_channel.map(val))
-        self.dmx.set_channel(self.addr + self.tilt_fine_channel.offset, self._tilt_fine)
 
     def movement_speed(self, val: DMXValue) -> None:
         self._movement_speed = cast(DMXValue, self.movement_speed_channel.map(val))
@@ -435,6 +425,7 @@ class YRXY200Spot(Spot):
         EFFECT_SELECTION = 24
         RANDOM_SELECTION = 32
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         *,
@@ -443,6 +434,7 @@ class YRXY200Spot(Spot):
         position_category: Category,
         dmx: DMXManager,
         addr: int,
+        coord_frame: Optional[SpotCoordFrame] = None,
         osc: Optional[OSCManager] = None,
     ):
         super().__init__(
@@ -459,6 +451,31 @@ class YRXY200Spot(Spot):
         # against the fixture if it ends up too fast (visible color swap mid
         # fade-in) or too slow (dead time at zero brightness).
         self.color_swap_mechanical_time = 0.2
+
+        # Default frame: ceiling-mount, straight down at tilt=100, north pole
+        # horizontal at pan=0 tilt=10. Per-fixture override available if a
+        # particular spot is mounted off-axis.
+        self.coord_frame: SpotCoordFrame = coord_frame or SpotCoordFrame(
+            pan_down=0.0,
+            tilt_down=100.0,
+            pan_north=0.0,
+            tilt_north=10.0,
+            pan_range=(0.0, 540.0),
+            tilt_range=(0.0, 200.0),
+        )
+        # Set by the coord system state during patching wiring. Until then
+        # post_map_output is a no-op (defensive — should never be hit).
+        self.coord_state: Optional[CoordSystemState] = None
+        # The OSCParam bound to /chan/{name}/pantilt/offset. Set by
+        # SpotsBuilder after the mixer creates the virtual channel.
+        # Used by rebind_coords to push refreshed UI values on toggle.
+        self.pantilt_param: Optional[OSCParam] = None
+        # Cached most recent mapping-space x/y values (16-bit). Mid-tick the
+        # MixTargets update one of these; post_map_output runs the paired
+        # conversion using both. Init at 16-bit midpoint so the fixture
+        # starts in a defined state if no input arrives before the first tick.
+        self._x_coord: float = 32767.0
+        self._y_coord: float = 32767.0
 
         self.pan_channel = DMXControlChannel("pan_channel", 0)
         self.tilt_channel = DMXControlChannel("tilt_channel", 2)
@@ -526,19 +543,58 @@ class YRXY200Spot(Spot):
         pos_cat = self.position_category
         self.wrapped_targets = [
             MixTarget(self.dimming, "dimming", self.category),
-            MixTarget(
-                lambda val: self.pan(val, fine=True),
-                "pan",
-                pos_cat,
-                max_value=65535,
-            ),
-            MixTarget(
-                lambda val: self.tilt(val, fine=True),
-                "tilt",
-                pos_cat,
-                max_value=65535,
-            ),
+            # x_coord and y_coord are mapping-space (active CoordSystem)
+            # 16-bit values. The setters only cache; the paired conversion
+            # to real pan/tilt happens in post_map_output once both axes
+            # have finalised for the tick.
+            MixTarget(self.x_coord, "x_coord", pos_cat, max_value=65535),
+            MixTarget(self.y_coord, "y_coord", pos_cat, max_value=65535),
         ]
+
+    def x_coord(self, val: DMXValue) -> None:
+        self._x_coord = float(val)
+
+    def y_coord(self, val: DMXValue) -> None:
+        self._y_coord = float(val)
+
+    def post_map_output(self) -> None:
+        """Convert the cached mapping-space (x, y) into real pan/tilt and
+        write to DMX. Called by the mixer once per tick after every
+        channel has accumulated."""
+        if self.coord_state is None:
+            return
+        real = self.coord_state.active.mapping_to_real(
+            [self._x_coord, self._y_coord],
+            self.coord_frame,
+            current_real=[float(self._pan), float(self._tilt)],
+        )
+        if real is None:
+            # Unreachable mapping point — freeze on the last good real
+            # values so the head doesn't jump.
+            return
+        self.pan(int(real[0]), fine=True)
+        self.tilt(int(real[1]), fine=True)
+
+    def rebind_coords(self, old: CoordSystem, new: CoordSystem) -> None:
+        """Re-express stored mapping-space offsets when the active coord
+        system changes, so the head stays still across the toggle."""
+        real = old.mapping_to_real(
+            [self._x_coord, self._y_coord],
+            self.coord_frame,
+            current_real=[float(self._pan), float(self._tilt)],
+        )
+        if real is None:
+            return
+        new_xy = new.real_to_mapping(real, self.coord_frame)
+        self._x_coord = new_xy[0]
+        self._y_coord = new_xy[1]
+        # Also update the underlying mix-channel offsets so the mixer's
+        # accumulator starts from the re-expressed values on the next tick.
+        if self.pantilt_param is not None:
+            # Push the pair back onto the mix channel (PantiltChannel.offset
+            # is a 2-vec setter that fans into the underlying channels).
+            self.pantilt_param.dispatch_lambda(self.pantilt_param.addr, new_xy)
+            self.pantilt_param.sync()
 
     def send_visualizer(self) -> None:
         super().send_visualizer()

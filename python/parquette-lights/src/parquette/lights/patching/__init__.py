@@ -2,6 +2,7 @@ from typing import List
 
 from ..audio_analysis import FFTManager
 from ..category import Categories
+from ..coord_system_state import CoordSystemState
 from ..dmx import DMXManager
 from ..osc import OSCManager
 from ..util.session_store import SessionStore
@@ -10,6 +11,7 @@ from . import audio, booth, chandelier, channel_levels, hazer, non_saved, plants
 from . import spots, strobes, washes
 
 
+# pylint: disable=too-many-arguments
 def create_builders(
     *,
     osc: OSCManager,
@@ -17,6 +19,7 @@ def create_builders(
     categories: Categories,
     fft_manager: FFTManager,
     session: SessionStore,
+    coord_state: CoordSystemState,
     loop_max_samples: int,
     spot_color_fade: float,
     spot_mechanical_time: float,
@@ -49,6 +52,7 @@ def create_builders(
             dmx,
             categories.spots_light,
             categories.spots_position,
+            coord_state=coord_state,
             loop_max_samples=loop_max_samples,
             bpm_red=reds_b.bpm_red,
             spot_color_fade=spot_color_fade,

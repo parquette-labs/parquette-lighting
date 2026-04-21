@@ -19,12 +19,14 @@ from pythonosc.udp_client import SimpleUDPClient
 
 from parquette.lights.audio_analysis import AudioCapture, FFTManager
 from parquette.lights.category import Categories
+from parquette.lights.coord_system_state import CoordSystemState
 from parquette.lights.dmx import DMXManager
 from parquette.lights.generators import Mixer
 from parquette.lights.osc import OSCManager, OSCParam
 from parquette.lights.patching import create_builders
 from parquette.lights.preset_manager import PresetManager
 from parquette.lights.scene import Scene
+from parquette.lights.util.coord_system import default_systems
 from parquette.lights.util.session_store import SessionStore
 
 
@@ -164,6 +166,11 @@ def server_instance(
     dmx = DMXManager(osc, art_net_ip="127.0.0.1")
 
     session = SessionStore(session_file)
+    coord_state = CoordSystemState(
+        systems=default_systems(),
+        osc=osc,
+        session=session,
+    )
     categories = Categories(osc, session)
 
     audio_capture = AudioCapture(osc, audio_window_secs=5.0)
@@ -182,6 +189,7 @@ def server_instance(
         categories=categories,
         fft_manager=fft_manager,
         session=session,
+        coord_state=coord_state,
         loop_max_samples=500,
         spot_color_fade=0.1,
         spot_mechanical_time=0.45,

@@ -149,6 +149,36 @@ def latlon_to_direction(
     )
 
 
+def pan_tilt_to_latlon(
+    pan_deg: float, tilt_deg: float, frame: SpotCoordFrame
+) -> tuple[float, float]:
+    """Convert (pan, tilt) to (lat, lon) in the same coordinate frame.
+
+    Inverse of latlon_to_pan_tilt. Deterministic — every (pan, tilt) maps
+    to exactly one (lat, lon) (in contrast with the forward direction,
+    which has multiple pan/tilt solutions per direction).
+
+    Steps:
+      1. pan/tilt -> world-frame unit direction via pan_tilt_to_direction.
+      2. Unrotate by pole_azimuth (apply R_z(-pole_azimuth)) to recover
+         dir_pole = (sin lat, cos lat * sin lon, -cos lat * cos lon).
+      3. lat = asin(dp_x); lon = atan2(dp_y, -dp_z).
+
+    Returns lat in [-90, 90] and lon in [-180, 180] (degrees).
+    """
+    dx, dy, dz = pan_tilt_to_direction(
+        pan_deg, tilt_deg, frame.pan_down, frame.tilt_down
+    )
+    c = math.cos(-frame.pole_azimuth_rad)
+    s = math.sin(-frame.pole_azimuth_rad)
+    dp_x = c * dx - s * dy
+    dp_y = s * dx + c * dy
+    dp_z = dz
+    lat_rad = math.asin(max(-1.0, min(1.0, dp_x)))
+    lon_rad = math.atan2(dp_y, -dp_z)
+    return (math.degrees(lat_rad), math.degrees(lon_rad))
+
+
 def direction_to_pan_tilt_candidates(
     direction: tuple[float, float, float],
     frame: SpotCoordFrame,

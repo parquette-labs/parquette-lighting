@@ -7,6 +7,7 @@ from parquette.lights.util.coordinates import (
     latlon_to_direction,
     latlon_to_pan_tilt,
     pan_tilt_to_direction,
+    pan_tilt_to_latlon,
 )
 
 
@@ -198,3 +199,47 @@ def test_continuity_on_smooth_sweep():
     # slack for geometry nonlinearity. Jumping a mirror branch would cost
     # ~180 degrees, so a loose bound still catches regressions.
     assert max_step < 3.0, f"unexpected jump of {max_step:.2f} deg"
+
+
+# pan_tilt_to_latlon — the inverse direction. Anchor cases first.
+
+
+def test_inverse_anchor_straight_down():
+    frame = default_frame()
+    lat, lon = pan_tilt_to_latlon(0, 100, frame)
+    assert abs(lat) < 1e-9
+    assert abs(lon) < 1e-9
+
+
+def test_inverse_anchor_north_pole():
+    frame = default_frame()
+    lat, lon = pan_tilt_to_latlon(0, 10, frame)
+    assert abs(lat - 90) < 1e-9
+    # Longitude is undefined at the pole; atan2(0, 0) returns 0 in cpython,
+    # so don't assert on it here.
+
+
+def test_inverse_equator_plus_y():
+    frame = default_frame()
+    # (pan=90, tilt=10) points beam at +y horizontal -> (lat=0, lon=90)
+    lat, lon = pan_tilt_to_latlon(90, 10, frame)
+    assert abs(lat) < 1e-9
+    assert abs(lon - 90) < 1e-9
+
+
+# Round-trip: lat/lon -> pan/tilt -> lat/lon for a grid of inputs that avoid
+# the pole singularity (where longitude is undefined).
+
+
+def test_round_trip_grid():
+    # Restrict to the lower hemisphere (|lon| <= 80) so directions point
+    # downward through the room and pan/tilt stays in range. Larger |lon|
+    # would aim the beam through the ceiling.
+    frame = default_frame()
+    for lat in (-60, -30, 0, 30, 60):
+        for lon in (-80, -45, -10, 0, 10, 45, 80):
+            pt = latlon_to_pan_tilt(lat, lon, frame, current=frame.range_centre())
+            assert pt is not None, f"unreachable: lat={lat}, lon={lon}"
+            lat2, lon2 = pan_tilt_to_latlon(pt[0], pt[1], frame)
+            assert abs(lat2 - lat) < 1e-6, f"lat: {lat} -> {lat2} via {pt}"
+            assert abs(lon2 - lon) < 1e-6, f"lon: {lon} -> {lon2} via {pt}"

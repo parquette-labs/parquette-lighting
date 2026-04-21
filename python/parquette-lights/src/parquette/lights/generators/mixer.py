@@ -202,25 +202,27 @@ class Mixer(object):
         ]
         self.mix_channels.extend(special_channels)
 
-        # Virtual pantilt channels — expose /chan/{spot}.pantilt/offset as a
-        # single 2-vec that fans into the underlying pan and tilt channels.
-        # Same for pan_fine / tilt_fine. Added to mix_channels so the
+        # Virtual pantilt channels — expose /chan/{spot}/pantilt/offset as a
+        # single 2-vec that fans into the underlying x_coord and y_coord
+        # channels. The underlying channels carry mapping-space values
+        # (active CoordSystem); the spot's post_map_output hook converts to
+        # real pan/tilt at DMX-write time. Added to mix_channels so
         # ChannelLevelsBuilder picks them up for /chan/.../offset bindings;
         # patchbay_param filters them out because they're OSC facades, not
         # routable mixer outputs.
         lookup = {ch.name: ch for ch in self.mix_channels}
         for spot_name in ("spot_1", "spot_2"):
-            pan_ch = lookup.get("{}/pan".format(spot_name))
-            tilt_ch = lookup.get("{}/tilt".format(spot_name))
-            if pan_ch and tilt_ch:
-                pan_ch.offset = 32767
-                tilt_ch.offset = 32767
+            x_ch = lookup.get("{}/x_coord".format(spot_name))
+            y_ch = lookup.get("{}/y_coord".format(spot_name))
+            if x_ch and y_ch:
+                x_ch.offset = 32767
+                y_ch.offset = 32767
                 self.mix_channels.append(
                     PantiltChannel(
                         "{}/pantilt".format(spot_name),
-                        pan_ch.category,
-                        pan_ch,
-                        tilt_ch,
+                        x_ch.category,
+                        x_ch,
+                        y_ch,
                     )
                 )
 
@@ -407,7 +409,11 @@ class Mixer(object):
         # Each channel contributes via accumulation
         for ch in self.mix_channels:
             ch.map_output()
-        # After all channels mapped, fixtures hold their final accumulated totals
+        # After all channels mapped, fixtures hold their final accumulated totals.
+        # Run any per-fixture post-map hooks (e.g. spot coord-system conversion)
+        # now that x/y components are both available.
+        for fixture in self.all_fixtures:
+            fixture.post_map_output()
 
         if self.synth_visualizer_active() and self.synth_visualizer_source:
             self.osc.send_osc("/visualizer/synth_history", list(self.synth_history))

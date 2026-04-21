@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 from ..category import Category
+from ..coord_system_state import CoordSystemState
 from ..dmx import DMXManager
 from ..fixtures import LightFixture, YRXY200Spot
 from ..fixtures.basics import Fixture
@@ -11,6 +12,7 @@ from ..osc import OSCManager, OSCParam
 from .builder import CategoryBuilder
 
 
+# pylint: disable=too-many-arguments
 class SpotsBuilder(CategoryBuilder):
     def __init__(
         self,
@@ -19,12 +21,14 @@ class SpotsBuilder(CategoryBuilder):
         light_category: Category,
         position_category: Category,
         *,
+        coord_state: CoordSystemState,
         loop_max_samples: int,
         bpm_red: BPMGenerator,
         spot_color_fade: float,
         spot_mechanical_time: float,
     ) -> None:
         self.osc = osc
+        self.coord_state = coord_state
         self.light_category = light_category
         self.position_category = position_category
         initial_dimming_amp: float = 200
@@ -53,6 +57,12 @@ class SpotsBuilder(CategoryBuilder):
                 osc=osc,
             ),
         ]
+        # Wire each spot to the coord-system state. Spots register so they
+        # receive rebind_coords() when the active coord system changes.
+        for spot in self.spotlights:
+            spot.coord_state = coord_state
+            coord_state.register(spot)
+
         for spot in self.spotlights:
             spot.dimming(255)
             spot.strobe(False)
@@ -184,6 +194,11 @@ class SpotsBuilder(CategoryBuilder):
             # Standard fixture params (/fixture/{ClassName}/{name}/{attr})
             light_params.extend(fixture.standard_params(osc))
 
+        # Register the virtual /chan/{spot}/pantilt/offset 2-vec OSCParam
+        # for each spot here (rather than letting ChannelLevelsBuilder do it)
+        # so we can hand the param back to the spot — rebind_coords needs
+        # it to push refreshed UI values when the active coord system changes.
+
         # Position params
         spot_pos_gens = [
             self.sin_spot_pos_1,
@@ -195,6 +210,12 @@ class SpotsBuilder(CategoryBuilder):
         pos_params: List[OSCParam] = [
             mixer.patchbay_param(self.position_category),
         ]
+        for spot in self.spotlights:
+            pantilt_ch = mixer.channel_lookup.get("{}/pantilt".format(spot.name))
+            if pantilt_ch is not None:
+                param = pantilt_ch.register_offset(osc)
+                spot.pantilt_param = param
+                pos_params.append(param)
         for gen in spot_pos_gens:
             # Standard generator params (/gen/{type}/{name}/{attr})
             pos_params.extend(gen.standard_params(osc))

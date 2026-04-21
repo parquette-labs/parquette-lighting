@@ -13,9 +13,17 @@ class ChannelLevelsBuilder(CategoryBuilder):
         self.session = session
 
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
-        """Build per-channel offset params, grouped by each channel's category."""
+        """Build per-channel offset params, grouped by each channel's category.
+
+        Virtual channels (e.g. PantiltChannel) are skipped here because the
+        builder that owns the underlying fixture is responsible for their
+        offset OSCParam — it needs the param reference to drive coord-system
+        sync without registering the same OSC address twice.
+        """
         by_category: Dict[Category, List[OSCParam]] = {}
         for ch in mixer.mix_channels:
+            if ch.is_virtual:
+                continue
             on_change = self.session.save if ch.name == "sodium/dimming" else None
             param = ch.register_offset(self.osc, on_change=on_change)
             by_category.setdefault(ch.category, []).append(param)

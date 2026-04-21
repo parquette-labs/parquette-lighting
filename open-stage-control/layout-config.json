@@ -1623,6 +1623,42 @@
             "address": "auto",
             "decimals": 2,
             "bypass": true
+          },
+          {
+            "type": "switch",
+            "top": 360,
+            "left": 10,
+            "id": "coord_system",
+            "interaction": true,
+            "width": 280,
+            "height": 50,
+            "layout": "horizontal",
+            "gridTemplate": "",
+            "value": "",
+            "default": "pantilt",
+            "address": "auto",
+            "decimals": 2,
+            "bypass": false,
+            "wrap": false,
+            "mode": "tap",
+            "values": {
+              "Pan/Tilt": "pantilt",
+              "Lat/Lon": "latlon"
+            }
+          },
+          {
+            "type": "textarea",
+            "top": 360,
+            "left": 300,
+            "id": "coord_system_label",
+            "interaction": false,
+            "width": 200,
+            "height": 50,
+            "value": "#{'spot coords: ' + @{coord_system}}",
+            "default": "",
+            "address": "auto",
+            "decimals": 0,
+            "bypass": true
           }
         ],
         "tabs": [],

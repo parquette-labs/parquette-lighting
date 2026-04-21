@@ -9,12 +9,14 @@ from .generators import Mixer
 from .audio_analysis import FFTManager, AudioCapture
 
 from .category import Category
+from .coord_system_state import CoordSystemState
 from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .patching import Categories, create_builders
 from .preset_manager import PresetManager
 from .scene import Scene
 from .util.client_tracker import ClientTracker
+from .util.coord_system import default_systems
 from .util.session_store import SessionStore
 
 
@@ -217,6 +219,17 @@ def run(
         dmx.setup_dmx(entec_auto)
 
     session = SessionStore(session_file)
+    # Peek the saved session for the user's coord-system preference so the
+    # state is constructed with the right active system before any spot
+    # fixture initializes. The actual full session restore (presets, master
+    # faders) still happens later, after everything is built.
+    early_session = session.load() or {}
+    coord_state = CoordSystemState(
+        systems=default_systems(),
+        osc=osc,
+        session=session,
+        initial_active=early_session.get("coord_system"),
+    )
     categories = Categories(osc, session)
 
     audio_capture = AudioCapture(osc, audio_window_secs=audio_window, debug=debug)
@@ -237,6 +250,7 @@ def run(
         categories=categories,
         fft_manager=fft_manager,
         session=session,
+        coord_state=coord_state,
         loop_max_samples=loop_max_samples,
         spot_color_fade=spot_color_fade,
         spot_mechanical_time=spot_mechanical_time,
@@ -309,6 +323,7 @@ def run(
         return {
             "current_presets": presets.save_current_selection(),
             "masters": masters,
+            "coord_system": coord_state.active_name,
         }
 
     session.bind(session_snapshot)
