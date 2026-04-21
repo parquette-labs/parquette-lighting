@@ -26,7 +26,11 @@ from .math import constrain, value_map
 
 SIXTEEN_BIT_MAX = 65535
 LAT_DEG_RANGE = (-90.0, 90.0)
-LON_DEG_RANGE = (-180.0, 180.0)
+# Longitude is clamped to +/-100 degrees so the slider only spans
+# directions reachable from a ceiling mount. Beyond ~+/-90 the beam points
+# above horizontal; the small overshoot to 100 covers the mirror-tilt
+# branch that lets the fixture still aim at slightly-up horizontals.
+LON_DEG_RANGE = (-100.0, 100.0)
 
 
 class CoordSystem(Protocol):
@@ -105,11 +109,14 @@ class RawCoordSystem:
 
 
 class LatLonCoordSystem:
-    """Treats the 16-bit XY input as latitude (X) and longitude (Y).
+    """Treats the 16-bit XY input as longitude (X) and latitude (Y).
 
     Encoding:
-      X axis 0..65535  <->  lat -90..+90 degrees
-      Y axis 0..65535  <->  lon -180..+180 degrees
+      X axis 0..65535  <->  lon -100..+100 degrees
+      Y axis 0..65535  <->  lat  -90..+90  degrees
+
+    X-is-longitude matches the usual XY-pad feel where horizontal drag
+    sweeps side-to-side and vertical drag sweeps up-and-down in the room.
 
     Real pan/tilt is also 16-bit; converted to/from degrees via the
     frame's pan_range / tilt_range using value_map.
@@ -123,8 +130,8 @@ class LatLonCoordSystem:
         frame: SpotCoordFrame,
         current_real: Optional[List[float]] = None,
     ) -> Optional[List[float]]:
-        lat = value_map(xy[0], 0, SIXTEEN_BIT_MAX, *LAT_DEG_RANGE)
-        lon = value_map(xy[1], 0, SIXTEEN_BIT_MAX, *LON_DEG_RANGE)
+        lon = value_map(xy[0], 0, SIXTEEN_BIT_MAX, *LON_DEG_RANGE)
+        lat = value_map(xy[1], 0, SIXTEEN_BIT_MAX, *LAT_DEG_RANGE)
         current_deg = self._current_to_degrees(current_real, frame)
         result = latlon_to_pan_tilt(lat, lon, frame, current=current_deg)
         if result is None:
@@ -174,8 +181,8 @@ class LatLonCoordSystem:
         )
         lat, lon = pan_tilt_to_latlon(pan_deg, tilt_deg, frame)
         return [
-            value_map(lat, *LAT_DEG_RANGE, 0, SIXTEEN_BIT_MAX),
             value_map(lon, *LON_DEG_RANGE, 0, SIXTEEN_BIT_MAX),
+            value_map(lat, *LAT_DEG_RANGE, 0, SIXTEEN_BIT_MAX),
         ]
 
     @staticmethod

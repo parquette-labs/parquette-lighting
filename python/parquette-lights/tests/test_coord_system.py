@@ -106,8 +106,8 @@ def test_latlon_round_trip_anchor_points():
 
 
 def test_latlon_unreachable_returns_none():
-    """Pointing the beam straight up through the ceiling is unreachable
-    given the default tilt range — mapping_to_real should return None."""
+    """Pointing the beam at the pole is unreachable given a tilt range
+    that only covers near-straight-down — mapping_to_real returns None."""
     sys = LatLonCoordSystem()
     # Constrict tilt to near straight-down. The pole (lat=+90) requires
     # tilt=10 which is outside this range -> no solution.
@@ -119,8 +119,8 @@ def test_latlon_unreachable_returns_none():
         pan_range=(0.0, 540.0),
         tilt_range=(90.0, 110.0),
     )
-    # Map x=65535 -> lat=+90 (the pole)
-    assert sys.mapping_to_real([65535.0, 32767.5], frame) is None
+    # xy[0]=lon, xy[1]=lat. y=65535 -> lat=+90 (the pole).
+    assert sys.mapping_to_real([32767.5, 65535.0], frame) is None
 
 
 # default_systems factory
