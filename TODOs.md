@@ -16,9 +16,11 @@
 	* !popups to create and manage presets / scenes
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
 	* Some randomization methods inthis
+	* The loop gets stuck (maybe because of tick?)
 * FFT/BPM
-	* Shelf / change for the clusters doesn't work
+	* Shelf / change of tempo for the clusters doesn't work
 	* Still small skips
+	* When we have 2 clusters very close in size it will flip flop
 	* Better bpm mults (no weird ones, 0.25)
 	* Guarantee that a phase change can't re tigger withing the same period
 	* FFT low end is terrible, likely something related to mels, maybe I should drop that
@@ -36,8 +38,8 @@
 * Hardware
 	* Debug non SHED fixtures
 * Code structure
-	* !Fix naming conflicts with "offset"
-	* !New offset history not working
+	* Are we sure that intermediate mix values are never sent to DMX?
+	* There should be single register params for things like register_record and register snap
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 
