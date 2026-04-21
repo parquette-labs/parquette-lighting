@@ -3518,11 +3518,11 @@
                   "Under 2": "under_2/dimming",
                   "Tung Spot": "tung_spot/dimming",
                   "Spot 1": "spot_1/dimming",
-                  "Spot 1 Pan": "spot_1/pan",
-                  "Spot 1 Tilt": "spot_1/tilt",
+                  "Spot 1 X": "spot_1/x_coord",
+                  "Spot 1 Y": "spot_1/y_coord",
                   "Spot 2": "spot_2/dimming",
-                  "Spot 2 Pan": "spot_2/pan",
-                  "Spot 2 Tilt": "spot_2/tilt",
+                  "Spot 2 X": "spot_2/x_coord",
+                  "Spot 2 Y": "spot_2/y_coord",
                   "Wash fl": "wash_fl/dimming",
                   "Wash fr": "wash_fr/dimming",
                   "Wash ml": "wash_ml/dimming",
@@ -3970,10 +3970,10 @@
               "loop_spot_pos_2_y"
             ],
             "outputs": [
-              "spot_1/pan",
-              "spot_1/tilt",
-              "spot_2/pan",
-              "spot_2/tilt"
+              "spot_1/x_coord",
+              "spot_1/y_coord",
+              "spot_2/x_coord",
+              "spot_2/y_coord"
             ],
             "exclusive": false
           },
