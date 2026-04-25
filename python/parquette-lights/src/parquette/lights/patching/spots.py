@@ -4,6 +4,7 @@ from ..category import Category
 from ..coord_system_state import CoordSystemState
 from ..dmx import DMXManager
 from ..fixtures import LightFixture, YRXY200Spot
+from ..fixtures.spotlights import PinSpot
 from ..fixtures.basics import Fixture
 from ..generators import WaveGenerator, BPMGenerator, LoopGenerator
 from ..generators.generator import Generator
@@ -63,6 +64,11 @@ class SpotsBuilder(CategoryBuilder):
             spot.coord_state = coord_state
             coord_state.register(spot)
 
+        self.pin_1 = PinSpot(
+            name="pin_1", category=light_category, dmx=dmx, addr=231, osc=osc
+        )
+        self.pin_1.rgbw(0, 0, 0, 0)
+
         for spot in self.spotlights:
             spot.dimming(255)
             spot.strobe(False)
@@ -86,6 +92,16 @@ class SpotsBuilder(CategoryBuilder):
             phase=0,
             offset=0,
             shape=WaveGenerator.Shape.SIN,
+        )
+        self.sqr_spot = WaveGenerator(
+            name="sqr_spot",
+            category=light_category,
+            amp=initial_dimming_amp,
+            period=initial_period,
+            phase=0,
+            offset=0,
+            shape=WaveGenerator.Shape.SQUARE,
+            duty=0.5,
         )
         self.sin_spot_pos_1 = WaveGenerator(
             name="sin_spot_pos_1",
@@ -149,6 +165,7 @@ class SpotsBuilder(CategoryBuilder):
         )
 
         self.sin_spot.register_snap_to(bpm_red, osc)
+        self.sqr_spot.register_snap_to(bpm_red, osc)
         for wave in (
             self.sin_spot_pos_1,
             self.sin_spot_pos_2,
@@ -166,11 +183,12 @@ class SpotsBuilder(CategoryBuilder):
             loop.register_record(osc)
 
     def fixtures(self) -> List[Fixture]:
-        return [self.tung_spot, *self.spotlights]
+        return [self.tung_spot, *self.spotlights, self.pin_1]
 
     def generators(self) -> List[Generator]:
         return [
             self.sin_spot,
+            self.sqr_spot,
             self.sin_spot_pos_1,
             self.sin_spot_pos_2,
             self.sin_spot_pos_3,
@@ -188,11 +206,16 @@ class SpotsBuilder(CategoryBuilder):
             mixer.patchbay_param(self.light_category),
             # Standard generator params (/gen/{ClassName}/{name}/{attr})
             *self.sin_spot.standard_params(osc),
+            *self.sqr_spot.standard_params(osc),
         ]
 
         for fixture in self.spotlights:
             # Standard fixture params (/fixture/{ClassName}/{name}/{attr})
             light_params.extend(fixture.standard_params(osc))
+
+        # PinSpot RGBW color target params (class-level broadcast)
+        light_params.append(self.pin_1.color_param(osc))
+        light_params.append(self.pin_1.w_target_param(osc))
 
         # Register the virtual /chan/{spot}/pantilt/offset 2-vec OSCParam
         # for each spot here (rather than letting ChannelLevelsBuilder do it)

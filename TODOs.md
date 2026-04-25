@@ -8,6 +8,7 @@
 * Spots
 	* ![partial] Pan tilt to XY mapping
 	* !The nudge sometimes goes in the wrong direction race condition?
+	* Spots should auto stop moving when off
 * Other lights
 	* sq1, sq2, sq3 don't stutter nicely
 	* Are other bpms affected by the long time stamps

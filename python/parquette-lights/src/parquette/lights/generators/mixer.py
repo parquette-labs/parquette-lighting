@@ -319,7 +319,9 @@ class Mixer(object):
         self, target_gen: str, target_chan: str, enable: bool
     ) -> None:
         ch = self.channel_lookup[target_chan]
-        gen = next(g for g in self.generators if g.name == target_gen)
+        gen = next((g for g in self.generators if g.name == target_gen), None)
+        if gen is None:
+            return
         if enable and gen not in ch.connected_generators:
             ch.connected_generators.append(gen)
             if self.debug:

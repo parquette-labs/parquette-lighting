@@ -58,6 +58,14 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - Don't use if TYPE_CHECKING, structure code without circular imports or stop on circular imports and discuss how to avoid them
 - When adding a new `patchbay` widget to `open-stage-control/layout-config.json`, copy the shared `css` block from an existing patchbay (e.g. `signal_patchbay/reds`). It widens the input/output node panels to 30% of the container each and enables word-wrap on node labels so long names like `wash_ceil_f.dimming` don't truncate.
 
+## Editing the Open Stage Control layout
+
+When making changes to `open-stage-control/layout-config.json`:
+
+- When resizing a panel (e.g. widening to fit a new child widget), check whether the panel now overlaps any sibling widgets. If so, shift those siblings to clear the overlap. Cascade this check — shifted siblings may in turn overlap with their neighbours. Continue until no overlaps remain.
+- Before placing a new widget, scan all siblings at the same nesting level to find a position that does not overlap any of them.
+- Tabs scroll, so adding content at the bottom is always safe. Adding content in the middle requires verifying surrounding positions.
+
 ## Adding a new fixture category
 
 When adding a new category with fixtures and generators, follow these steps. Use an existing simple category like `plants` or `chandelier` as a reference.
@@ -106,6 +114,38 @@ All new widgets need globally unique IDs. Add to these tabs:
 - Add `<name>_master` and `<name>_master_text` to `ALLOWED_DUPLICATE_IDS` in `tests/ui/test_layout_structure.py`
 
 ### 9. Verify
+- `poetry run poe check` — formatting, lint, types
+- `poetry run poe pytest` — unit + UI tests
+- `poetry run poe test-ui` — UI-specific tests
+
+## Adding a fixture to an existing category
+
+When adding a new fixture to an existing category (not creating a whole new category), follow these steps:
+
+### 1. Create the fixture in the category builder (`patching/<category>.py`)
+- Import the fixture class if not already imported
+- Instantiate the fixture with the correct DMX address and category
+- Add it to the `fixtures()` return list
+
+### 2. Register any fixture-specific OSCParams in `build_params()`
+- If the fixture has color targets (e.g. RGBW), register `color_param()` and `w_target_param()` in the params list
+
+### 3. Add a channel offset fader (`open-stage-control/layout-config.json`)
+- Find the existing group panel for the category in `tab_chan_offsets` (e.g. `spots_group`, `booth_group`)
+- Add a `chan/<fixture>/dimming/offset` fader at the next 85px horizontal slot
+- Add a label textarea below it at top:235
+- Widen the group panel if needed to fit the new fader
+
+### 4. Add to the patchbay outputs
+- Add `<fixture>/dimming` to the category's `signal_patchbay/<category>` outputs array
+
+### 5. Add to the synth visualizer
+- Add an entry for the fixture in the `visualizer/synth_source` switch values
+
+### 6. Add a visualizer panel
+- Add a `viz_<fixture>` panel in `tab_visualizer` with a compact fader and label
+
+### 7. Verify
 - `poetry run poe check` — formatting, lint, types
 - `poetry run poe pytest` — unit + UI tests
 - `poetry run poe test-ui` — UI-specific tests

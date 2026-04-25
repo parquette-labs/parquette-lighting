@@ -999,9 +999,55 @@ class PinSpot(LightFixture):
         super().__init__(
             name=name, category=category, dmx=dmx, addr=addr, num_chans=6, osc=osc
         )
+        self.r_target: DMXValue = 255
+        self.g_target: DMXValue = 255
+        self.b_target: DMXValue = 255
+        self.w_target: DMXValue = 255
+
+    @property
+    def color(self) -> List:
+        return [self.r_target, self.g_target, self.b_target]
+
+    @color.setter
+    def color(self, value: List) -> None:
+        if len(value) >= 3:
+            self.set_dimming_target(r=value[0], g=value[1], b=value[2])
+
+    def color_param(self, osc: OSCManager) -> OSCParam:
+        """Preset-saved class-level color bind at /fixture/PinSpot/color."""
+        addr = "/fixture/{}/color".format(type(self).__name__)
+        return OSCParam.bind(osc, addr, self, "color")
+
+    def w_target_param(self, osc: OSCManager) -> OSCParam:
+        """Preset-saved class-level w_target bind at /fixture/PinSpot/w_target."""
+        addr = "/fixture/{}/w_target".format(type(self).__name__)
+        return OSCParam.bind(osc, addr, self, "w_target")
+
+    def set_dimming_target(
+        self,
+        r: Optional[DMXValue] = None,
+        g: Optional[DMXValue] = None,
+        b: Optional[DMXValue] = None,
+        w: Optional[DMXValue] = None,
+    ) -> None:
+        if not r is None:
+            self.r_target = r
+        if not g is None:
+            self.g_target = g
+        if not b is None:
+            self.b_target = b
+        if not w is None:
+            self.w_target = w
 
     def dimming(self, val: DMXValue) -> None:
-        self.rgbw(val, val, val, val)
+        self._dimming = val
 
-    def rgbw(self, r, g, b, w) -> None:
+        r = value_map(val, 0, 255, 0, self.r_target)
+        g = value_map(val, 0, 255, 0, self.g_target)
+        b = value_map(val, 0, 255, 0, self.b_target)
+        w = value_map(val, 0, 255, 0, self.w_target)
+
+        self.rgbw(r, g, b, w)
+
+    def rgbw(self, r: DMXValue, g: DMXValue, b: DMXValue, w: DMXValue) -> None:
         self.set([255, r, g, b, w, 0])

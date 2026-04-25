@@ -92,7 +92,7 @@ class DMXManager(object):
     passthrough: bool = False
 
     def __init__(
-        self, osc: OSCManager, art_net_ip: str, universe_size: int = 256
+        self, osc: OSCManager, art_net_ip: str, universe_size: int = 512
     ) -> None:
         self.osc = osc
         self.universe_size = universe_size
@@ -200,7 +200,6 @@ class DMXManager(object):
         for i, v in enumerate(self.chans):
             if self.use_art_net:
                 self.art_net_controller.set_single_value(i + 1, v)
-                return
             elif not self.enttec_pro_controller is None:
                 try:
                     self.enttec_pro_controller.set_channel(i + 1, v)
