@@ -6,6 +6,7 @@
 # Notes/Ideas/TODOs
 
 * All black on deploy
+* Non deploy capture script
 * Spots
 	* ![partial] Pan tilt to XY mapping
 	* !The nudge sometimes goes in the wrong direction race condition?
