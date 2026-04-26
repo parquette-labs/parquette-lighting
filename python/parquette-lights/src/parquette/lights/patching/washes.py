@@ -71,14 +71,26 @@ class WashesBuilder(CategoryBuilder):
             name="bpm_wash", category=category, amp=255, offset=0, duty=100
         )
 
+        self.sqr_wash = WaveGenerator(
+            name="sqr_wash",
+            category=category,
+            amp=initial_amp,
+            period=initial_period,
+            phase=0,
+            offset=0,
+            shape=WaveGenerator.Shape.SQUARE,
+            duty=0.5,
+        )
+
         self.sin_wash.register_snap_to(self.bpm_wash, osc)
+        self.sqr_wash.register_snap_to(self.bpm_wash, osc)
         fft_manager.bpms.append(self.bpm_wash)
 
     def fixtures(self) -> List[Fixture]:
         return list(self.all_washes)
 
     def generators(self) -> List[Generator]:
-        return [self.sin_wash, self.bpm_wash]
+        return [self.sin_wash, self.sqr_wash, self.bpm_wash]
 
     def build_params(self, mixer: Mixer) -> Dict[Category, List[OSCParam]]:
         osc = self.osc
@@ -100,6 +112,7 @@ class WashesBuilder(CategoryBuilder):
                 *mixer.stutter_period_params(self.category),
                 # Standard generator params (/gen/{ClassName}/{name}/{attr})
                 *self.sin_wash.standard_params(osc),
+                *self.sqr_wash.standard_params(osc),
                 *self.bpm_wash.standard_params(osc),
             ],
         }
