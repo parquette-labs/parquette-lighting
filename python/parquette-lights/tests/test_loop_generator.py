@@ -110,6 +110,8 @@ def test_record_sample_ignored_when_not_recording():
 
 def test_load_samples():
     gen = LoopGenerator(name="test", category=TEST_CAT, max_samples=100)
-    gen.load_samples([10.0, 20.0, 30.0])
+    # First element is period (ms), rest are sample values
+    gen.load_samples([5000.0, 10.0, 20.0, 30.0])
+    assert gen.period == 5000.0
     assert gen.loop_length == 3
     assert gen.samples == [10.0, 20.0, 30.0]

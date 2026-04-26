@@ -82,9 +82,19 @@ class LoopGenerator(Generator):
         self.record_buffer.append(value)
 
     def load_samples(self, samples: List[float]) -> None:
-        """Restore samples from a preset load."""
+        """Restore samples from a preset load.
+
+        The first element is the loop period (recording duration in ms),
+        followed by the actual sample values.  Legacy data without a
+        period header is accepted — the period stays unchanged.
+        """
+        if len(samples) == 0:
+            return
+        period = samples[0]
+        sample_data = samples[1:]
         self.loop_length = 0
-        self.samples = list(samples)
+        self.period = period
+        self.samples = list(sample_data)
         self.loop_length = len(self.samples)
         self.playback_start = time.time() * 1000
 
@@ -118,7 +128,7 @@ class LoopGenerator(Generator):
         return OSCParam(
             osc,
             addr,
-            lambda: self.samples,
+            lambda: [self.period] + self.samples,
             lambda _a, *args: self.load_samples(
                 list(args[0])
                 if len(args) == 1 and isinstance(args[0], (list, tuple))
