@@ -3468,7 +3468,7 @@
                 "snap": true,
                 "range": {
                   "min": 1,
-                  "max": 5000
+                  "max": 600
                 },
                 "value": 3500,
                 "address": "auto",
@@ -3478,7 +3478,7 @@
                 "touchZone": "all",
                 "spring": false,
                 "doubleTap": false,
-                "logScale": false,
+                "logScale": true,
                 "sensitivity": 1,
                 "steps": "",
                 "default": "",
