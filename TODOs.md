@@ -7,6 +7,8 @@
 
 * All black on deploy
 * Non deploy capture script
+* Recovery mode from the ui
+* Preset for harm reduction, vibes but light
 * Spots
 	* ![partial] Pan tilt to XY mapping
 	* !The nudge sometimes goes in the wrong direction race condition?
