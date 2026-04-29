@@ -1,7 +1,9 @@
 from typing import List, Dict, Tuple, Any, Set, Optional
 
+import os
 import pickle
 import pprint
+import shutil
 from copy import copy
 
 from .category import Categories, Category
@@ -20,11 +22,13 @@ class PresetManager(object):
         enable_save_clear: bool = False,
         debug: bool = False,
         session: Optional[SessionStore] = None,
+        defaults_file: str = "default-params.pickle",
     ) -> None:
         self.osc = osc
         self.exposed_params = exposed_params
         self.categories = categories
         self.filename = filename
+        self.defaults_file = defaults_file
         self.stored_presets: Dict[str, Dict[str, List[Tuple[str, Any]]]] = {}
         self.current_presets: Dict[str, str] = {}
         self.prev_current_presets: Dict[str, str] = {}
@@ -45,6 +49,9 @@ class PresetManager(object):
         osc.dispatcher.map("/preset/reload", lambda _a, _args: self.sync())
         osc.dispatcher.map(
             "/enable_save", lambda _a, args: self.set_enable_save_clear(args)
+        )
+        osc.dispatcher.map(
+            "/preset/restore_defaults", lambda _a, _args: self.restore_defaults()
         )
 
         self.load()
@@ -100,6 +107,26 @@ class PresetManager(object):
 
     def set_enable_save_clear(self, enable: bool) -> None:
         self.enable_save_clear = enable
+
+    def restore_defaults(self) -> None:
+        """Overwrite the active pickle with the defaults snapshot and reload."""
+        if not self.enable_save_clear:
+            return
+        if not os.path.isfile(self.defaults_file):
+            print(
+                'Restore defaults: "{}" not found, skipping.'.format(
+                    self.defaults_file
+                ),
+                flush=True,
+            )
+            return
+        shutil.copyfile(self.defaults_file, self.filename)
+        print(
+            'Restored presets from "{}"'.format(self.defaults_file),
+            flush=True,
+        )
+        self.load()
+        self.sync()
 
     def load(self):
         try:

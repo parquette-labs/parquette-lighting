@@ -120,6 +120,13 @@ from .util.session_store import SessionStore
     help="File to store and load presets from.",
 )
 @click.option(
+    "--defaults-file",
+    default="default-params.pickle",
+    show_default=True,
+    type=str,
+    help="Defaults pickle snapshot used by restore-defaults.",
+)
+@click.option(
     "--audio-window",
     default=5.0,
     show_default=True,
@@ -191,6 +198,7 @@ def run(
     enable_save_clear: bool,
     entec_auto: str,
     presets_file: str,
+    defaults_file: str,
     audio_window: float,
     rms_window: float,
     spot_color_fade: float,
@@ -315,6 +323,7 @@ def run(
         enable_save_clear=enable_save_clear,
         debug=debug,
         session=session,
+        defaults_file=defaults_file,
     )
 
     def session_snapshot():

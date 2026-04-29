@@ -225,6 +225,14 @@ def remote_pull(branch: str) -> None:
     ssh(f"git pull --ff-only origin {shlex.quote(branch)}")
 
 
+def snapshot_defaults() -> None:
+    """Copy the current params.pickle to default-params.pickle on the remote."""
+    step("Remote: snapshot params.pickle → default-params.pickle")
+    pickle_path = "python/parquette-lights/params.pickle"
+    defaults_path = "python/parquette-lights/default-params.pickle"
+    ssh(f"cp {shlex.quote(pickle_path)} {shlex.quote(defaults_path)}")
+
+
 def remote_install() -> None:
     step("Remote: launchd/install.sh -y")
     ssh("./launchd/install.sh -y")
@@ -265,6 +273,7 @@ def main(skip_install: bool, remote_host: str, verbose: bool) -> None:
     ensure_local_clean(root)
     push_local(root, branch)
     remote_pull(branch)
+    snapshot_defaults()
 
     if skip_install:
         click.secho("--skip-install set; not running launchd/install.sh", fg="yellow")

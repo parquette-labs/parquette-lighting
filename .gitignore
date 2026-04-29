@@ -6,3 +6,4 @@ dist
 open-stage-control/server.config
 .claude
 python/parquette-lights/session.pickle
+python/parquette-lights/default-params.pickle
