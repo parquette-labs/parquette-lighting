@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional
 
+import signal
 import sys
 import time
 
@@ -425,6 +426,12 @@ def run(
     runnable_fixtures = [f for f in all_fixtures if f.runnable]
 
     tick_s = tick_ms / 1000
+
+    def handle_sigterm(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     print(
         "Start compute loop (tick_ms={}, {:.0f}Hz)".format(tick_ms, 1000 / tick_ms),
         flush=True,
