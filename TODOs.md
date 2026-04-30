@@ -5,14 +5,10 @@
 
 # Notes/Ideas/TODOs
 
-* All black on deploy
-* Non deploy capture script
-* Recovery mode from the ui
 * Preset for harm reduction, vibes but light
+* Better use of 20ms time slice (can it be smaller)
 * Spots
 	* ![partial] Pan tilt to XY mapping
-	* !The nudge sometimes goes in the wrong direction race condition?
-	* Spots should auto stop moving when off
 * Other lights
 	* sq1, sq2, sq3 don't stutter nicely
 	* Are other bpms affected by the long time stamps
