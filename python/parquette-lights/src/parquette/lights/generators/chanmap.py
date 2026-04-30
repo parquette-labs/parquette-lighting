@@ -12,7 +12,9 @@ MAX_STUTTER_MS: int = 2000
 
 
 class ChannelMapper:
-    def map_output(self, value: float, channel: "MixChannel") -> None:
+    def map_output(
+        self, value: float, channel: "MixChannel", idle: bool = False
+    ) -> None:
         pass
 
     def required_history_ticks(self) -> int:
@@ -25,9 +27,11 @@ class FixedMapper(ChannelMapper):
     def __init__(self, *targets: MixTarget) -> None:
         self.targets = targets
 
-    def map_output(self, value: float, channel: "MixChannel") -> None:
+    def map_output(
+        self, value: float, channel: "MixChannel", idle: bool = False
+    ) -> None:
         for target in self.targets:
-            target(value, accumulate=True)
+            target(value, accumulate=True, idle=idle)
 
 
 class NoOpMapper(ChannelMapper):
@@ -57,7 +61,9 @@ class StutterMapper(ChannelMapper):
             return 1
         return int(MAX_STUTTER_MS * (n - 1) / TICK_MS) + 1
 
-    def map_output(self, value: float, channel: "MixChannel") -> None:
+    def map_output(
+        self, value: float, channel: "MixChannel", idle: bool = False
+    ) -> None:
         max_timeslice = len(channel.history) - 1
         for i, group in enumerate(self.fixture_groups):
             stutter_index = int(
@@ -65,7 +71,7 @@ class StutterMapper(ChannelMapper):
             )
             val = int(constrain(channel.value(stutter_index), 0, 255))
             for target in group:
-                target(val, accumulate=True)
+                target(val, accumulate=True, idle=idle)
 
 
 class MixChannel:
@@ -116,8 +122,24 @@ class MixChannel:
         """Read value from history. timeslice=0 is current, 1 is 20ms ago, etc."""
         return self.history[timeslice]
 
+    def is_idle(self) -> bool:
+        """True when the channel cannot produce non-zero output.
+
+        Uses a small threshold for floating-point comparisons since
+        OSC fader values may not land exactly on zero.
+        """
+        threshold = 0.001
+        if abs(self.offset) > threshold:
+            return False
+        if self.category.master < threshold:
+            return True
+        for gen in self.connected_generators:
+            if abs(gen.amp) > threshold or abs(gen.offset) > threshold:
+                return False
+        return True
+
     def map_output(self) -> None:
-        self.mapper.map_output(self.value(), self)
+        self.mapper.map_output(self.value(), self, idle=self.is_idle())
 
     def register_offset(
         self, osc: OSCManager, on_change: Optional[Callable[[], None]] = None

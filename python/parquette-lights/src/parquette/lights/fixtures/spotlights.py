@@ -60,6 +60,8 @@ class Spot(LightFixture):
                 lambda addr, args, s=self: s.reset(args),
             )
 
+        self.dimming_target: Optional[MixTarget] = None
+
         self._pan: DMXValue = 0
         self._tilt: DMXValue = 0
         self._movement_speed: DMXValue = 0
@@ -116,6 +118,12 @@ class Spot(LightFixture):
     def prisim_rotation(self, val: DMXValue) -> None:
         self.prisim(self.prisim_enabled_value, int(val))
 
+    def is_dark(self) -> bool:
+        """True when the dimming mix target is idle (no active generators)."""
+        if self.dimming_target is None:
+            return False
+        return self.dimming_target.idle
+
     def pantilt(self, pan: int, tilt: int, fine: bool = False) -> None:
         self.pan(pan, fine=fine)
         self.tilt(tilt, fine=fine)
@@ -127,6 +135,8 @@ class Spot(LightFixture):
         return self._tilt
 
     def pan(self, val: DMXValue, fine: bool = False) -> None:
+        if self.is_dark():
+            return
         if fine:
             int_val = int(constrain(val, 0, 65535))
             self._pan = int_val
@@ -142,6 +152,8 @@ class Spot(LightFixture):
             self.dmx.set_channel(self.addr + self.pan_channel.offset, mapped)
 
     def tilt(self, val: DMXValue, fine: bool = False) -> None:
+        if self.is_dark():
+            return
         if fine:
             int_val = int(constrain(val, 0, 65535))
             self._tilt = int_val
@@ -550,6 +562,7 @@ class YRXY200Spot(Spot):
             MixTarget(self.x_coord, "x_coord", pos_cat, max_value=65535),
             MixTarget(self.y_coord, "y_coord", pos_cat, max_value=65535),
         ]
+        self.dimming_target: MixTarget = self.wrapped_targets[0]
 
     def x_coord(self, val: DMXValue) -> None:
         self._x_coord = float(val)

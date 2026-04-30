@@ -31,12 +31,17 @@ class MixTarget:
         self.category: Category = category
         self.max_value: int = max_value
         self.accumulator: float = 0.0
+        self.idle: bool = True
 
-    def __call__(self, value: float, accumulate: bool = False) -> None:
+    def __call__(
+        self, value: float, accumulate: bool = False, idle: bool = False
+    ) -> None:
         if accumulate:
             self.accumulator += value
+            self.idle = self.idle and idle
             self.target(int(constrain(self.accumulator, 0, self.max_value)))
         else:
+            self.idle = True
             self.accumulator = 0.0
             self.target(int(constrain(value, 0, self.max_value)))
 
