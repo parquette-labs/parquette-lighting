@@ -25,7 +25,7 @@ from parquette.lights.generators import Mixer
 from parquette.lights.osc import OSCManager, OSCParam
 from parquette.lights.patching import create_builders
 from parquette.lights.preset_manager import PresetManager
-from parquette.lights.scene import Scene
+from parquette.lights.scene import Scene, SceneManager
 from parquette.lights.util.coord_system import default_systems
 from parquette.lights.util.session_store import SessionStore
 
@@ -259,21 +259,24 @@ def server_instance(
         "/enable_save", lambda _, args: presets.set_enable_save_clear(args)
     )
 
-    # Scene self-registers at /scene/<name>; instantiate the same set of
-    # scenes that server.py registers so the UI→server address diff test
-    # sees them.
-    for scene_name, preset_group in (
+    # SceneManager self-registers OSC handlers for scene management.
+    # Register the same built-in scenes as server.py so the UI→server
+    # address diff test sees them.
+    sm = SceneManager(osc, dmx, presets, categories)
+    for scene_name, preset_all in (
         ("all_black", "Off"),
         ("house_lights", "Static"),
         ("class_lights", "Class"),
     ):
-        Scene(
-            name=scene_name,
-            osc=osc,
-            dmx=dmx,
-            presets=presets,
-            masters={},
-            preset_group=preset_group,
+        sm.register_scene(
+            Scene(
+                name=scene_name,
+                osc=osc,
+                dmx=dmx,
+                presets=presets,
+                masters={},
+                preset_all=preset_all,
+            )
         )
 
     osc.serve(threaded=True)

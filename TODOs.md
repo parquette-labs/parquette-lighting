@@ -6,23 +6,21 @@
 # Notes/Ideas/TODOs
 
 * Preset for harm reduction, vibes but light
-* Better use of 20ms time slice (can it be smaller)
 * Spots
-	* ![partial] Pan tilt to XY mapping
+	* XY mapping doesn't really work well
 * Other lights
-	* sq1, sq2, sq3 don't stutter nicely
 	* Are other bpms affected by the long time stamps
+	* Better use of 20ms time slice (can it be smaller), stobe implementation in particular needs to slice around that
 * Orchestration
 	* !Scenes
 	* !popups to create and manage presets / scenes
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
-	* Some randomization methods inthis
+	* Some randomization methods in this
 	* The loop gets stuck (maybe because of tick?)
 * FFT/BPM
 	* Shelf / change of tempo for the clusters doesn't work
 	* Still small skips
 	* When we have 2 clusters very close in size it will flip flop
-	* Better bpm mults (no weird ones, 0.25)
 	* Guarantee that a phase change can't re tigger withing the same period
 	* FFT low end is terrible, likely something related to mels, maybe I should drop that
 	* Dynamic range for at least FFT needs to clip (maybe all signal outputs?)
@@ -39,8 +37,6 @@
 * Hardware
 	* Debug non SHED fixtures
 * Code structure
-	* Are we sure that intermediate mix values are never sent to DMX?
-	* There should be single register params for things like register_record and register snap
 	* Can I use inheritance from parent frame in open stage control to make more reusabe stage control blocks, e.g. parent called spot_1 which is used in the child address names
 	* Can the backend keep the front end in sync for addresses and/or ui elements
 

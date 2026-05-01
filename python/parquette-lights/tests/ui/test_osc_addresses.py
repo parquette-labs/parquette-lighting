@@ -17,7 +17,11 @@ from tests.conftest import VALUE_BEARING_WIDGET_TYPES, ServerContext, Widget
 
 # Concrete addresses in layout-config.json that are intentionally *not*
 # backed by a server handler. Add entries with a comment explaining why.
-KNOWN_UI_ONLY_ADDRESSES: set[str] = set()
+KNOWN_UI_ONLY_ADDRESSES: set[str] = {
+    # Scene selector dropdown uses onValue script to send to /scene/{name};
+    # its own address is only used to receive values updates from the server.
+    "/scene_selector",
+}
 
 
 def _widget_addresses_to_check(widgets: List[Widget]) -> List[tuple[str, Widget]]:

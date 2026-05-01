@@ -15,7 +15,7 @@ from .osc import OSCManager, OSCParam
 from .dmx import DMXManager
 from .patching import Categories, create_builders
 from .preset_manager import PresetManager
-from .scene import Scene
+from .scene import Scene, SceneManager
 from .util.client_tracker import ClientTracker
 from .util.coord_system import default_systems
 from .util.session_store import SessionStore
@@ -128,6 +128,13 @@ from .util.session_store import SessionStore
     help="Defaults pickle snapshot used by restore-defaults.",
 )
 @click.option(
+    "--scenes-file",
+    default="scenes.pickle",
+    show_default=True,
+    type=str,
+    help="File to store and load user-created scenes from.",
+)
+@click.option(
     "--audio-window",
     default=5.0,
     show_default=True,
@@ -200,6 +207,7 @@ def run(
     entec_auto: str,
     presets_file: str,
     defaults_file: str,
+    scenes_file: str,
     audio_window: float,
     rms_window: float,
     spot_color_fade: float,
@@ -340,55 +348,68 @@ def run(
 
     sodium_ch = mixer.channel_lookup["sodium/dimming"]
 
-    Scene(
-        name="all_black",
-        osc=osc,
-        dmx=dmx,
-        presets=presets,
-        masters={
-            categories.reds: 0,
-            categories.spots_light: 0,
-            categories.washes: 0,
-            categories.booth: 0,
-            categories.plants: 0,
-            categories.chandelier: 0,
-        },
-        preset_group="Off",
-        channel_offsets={sodium_ch: 0},
+    scene_manager = SceneManager(  # noqa: F841  pylint: disable=unused-variable
+        osc, dmx, presets, categories, filename=scenes_file, debug=debug
     )
-    Scene(
-        name="house_lights",
-        osc=osc,
-        dmx=dmx,
-        presets=presets,
-        masters={
-            categories.reds: 1,
-            categories.spots_light: 0,
-            categories.washes: 1,
-            categories.booth: 0,
-            categories.plants: 1,
-            categories.chandelier: 1,
-        },
-        preset_group="Static",
-        channel_offsets={sodium_ch: 255},
-        disable_passthrough=True,
+
+    scene_manager.register_scene(
+        Scene(
+            name="All Black",
+            osc=osc,
+            dmx=dmx,
+            presets=presets,
+            masters={
+                categories.reds: 0,
+                categories.spots_light: 0,
+                categories.washes: 0,
+                categories.booth: 0,
+                categories.plants: 0,
+                categories.chandelier: 0,
+            },
+            preset_all="Off",
+            channel_offsets={sodium_ch: 0},
+            protect_save_clear=True,
+        )
     )
-    Scene(
-        name="class_lights",
-        osc=osc,
-        dmx=dmx,
-        presets=presets,
-        masters={
-            categories.reds: 0.8,
-            categories.spots_light: 0.3,
-            categories.washes: 0.25,
-            categories.booth: 0,
-            categories.plants: 0.5,
-            categories.chandelier: 0.5,
-        },
-        preset_group="Class",
-        channel_offsets={sodium_ch: 0},
-        disable_passthrough=True,
+    scene_manager.register_scene(
+        Scene(
+            name="House Lights",
+            osc=osc,
+            dmx=dmx,
+            presets=presets,
+            masters={
+                categories.reds: 1,
+                categories.spots_light: 0,
+                categories.washes: 1,
+                categories.booth: 0,
+                categories.plants: 1,
+                categories.chandelier: 1,
+            },
+            preset_all="Static",
+            channel_offsets={sodium_ch: 255},
+            disable_passthrough=True,
+            protect_save_clear=True,
+        )
+    )
+    scene_manager.register_scene(
+        Scene(
+            name="Class Lights",
+            osc=osc,
+            dmx=dmx,
+            presets=presets,
+            masters={
+                categories.reds: 0.8,
+                categories.spots_light: 0.3,
+                categories.washes: 0.25,
+                categories.booth: 0,
+                categories.plants: 0.5,
+                categories.chandelier: 0.5,
+            },
+            preset_all="Class",
+            channel_offsets={sodium_ch: 0},
+            disable_passthrough=True,
+            protect_save_clear=True,
+        )
     )
 
     client_tracker = ClientTracker(osc)
