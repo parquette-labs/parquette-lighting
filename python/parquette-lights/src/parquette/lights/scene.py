@@ -117,13 +117,13 @@ class SceneManager:
     the UI.
     """
 
-    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         osc: OSCManager,
         dmx: DMXManager,
         presets: PresetManager,
         categories: Categories,
+        *,
         filename: str = "scenes.pickle",
         debug: bool = False,
     ) -> None:

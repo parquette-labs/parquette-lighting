@@ -49,6 +49,7 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code
 - When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors and `poetry run poe test-ui`
 - Code written should use mypy typing hints
+- Do not use `pylint: disable=too-many-positional-arguments`. Instead, use `*` to make excess parameters keyword-only. The only exception is the main `run()` function in `server.py` (Click parameters must be positional) and `value_map` in `util/math.py` (pure math utility called extensively with positional args).
 - If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.
 - Always try and write object oriented, reusable code. Breakup functions and classes if they are becoming too large. We are trying to make maintable code.
 - When writting comments do not reference claude plans or dialogue with claude in the comment. Instead write comments that will make sense to someone reading the code with no prior context.

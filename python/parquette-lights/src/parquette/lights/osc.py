@@ -87,13 +87,13 @@ _MISSING = object()
 
 
 class OSCParam(object):
-    # pylint: disable-next=too-many-positional-arguments
     def __init__(
         self,
         osc: OSCManager,
         addr: str,
         value_lambda: Callable,
         dispatch_lambda: Callable,
+        *,
         on_change: Optional[Callable[[], None]] = None,
         default_value: Any = _MISSING,
     ) -> None:
