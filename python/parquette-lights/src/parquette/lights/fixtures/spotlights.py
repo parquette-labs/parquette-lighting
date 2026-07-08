@@ -13,6 +13,7 @@ from ..coord_system_state import CoordSystemState
 from ..osc import OSCManager, OSCParam
 from ..util.coord_system import CoordSystem
 from ..util.coordinates import SpotCoordFrame
+from ..util.interpolator import Interpolator
 from ..util.math import constrain, value_map
 from .basics import LightFixture, MixTarget
 from ..dmx import DMXManager, DMXValue, DMXControlChannel, DMXControlRange
@@ -1012,10 +1013,44 @@ class PinSpot(LightFixture):
         super().__init__(
             name=name, category=category, dmx=dmx, addr=addr, num_chans=6, osc=osc
         )
-        self.r_target: DMXValue = 255
-        self.g_target: DMXValue = 255
-        self.b_target: DMXValue = 255
-        self.w_target: DMXValue = 255
+        self.r_interp: Interpolator = Interpolator(255.0)
+        self.g_interp: Interpolator = Interpolator(255.0)
+        self.b_interp: Interpolator = Interpolator(255.0)
+        self.w_interp: Interpolator = Interpolator(255.0)
+        self.color_osc_addr: str = "/fixture/{}/color".format(type(self).__name__)
+        self.w_target_osc_addr: str = "/fixture/{}/w_target".format(type(self).__name__)
+
+    @property
+    def r_target(self) -> DMXValue:
+        return self.r_interp.current
+
+    @r_target.setter
+    def r_target(self, value: DMXValue) -> None:
+        self.r_interp.set_target(float(value), self.pending_fade_ticks)
+
+    @property
+    def g_target(self) -> DMXValue:
+        return self.g_interp.current
+
+    @g_target.setter
+    def g_target(self, value: DMXValue) -> None:
+        self.g_interp.set_target(float(value), self.pending_fade_ticks)
+
+    @property
+    def b_target(self) -> DMXValue:
+        return self.b_interp.current
+
+    @b_target.setter
+    def b_target(self, value: DMXValue) -> None:
+        self.b_interp.set_target(float(value), self.pending_fade_ticks)
+
+    @property
+    def w_target(self) -> DMXValue:
+        return self.w_interp.current
+
+    @w_target.setter
+    def w_target(self, value: DMXValue) -> None:
+        self.w_interp.set_target(float(value), self.pending_fade_ticks)
 
     @property
     def color(self) -> List:
@@ -1024,7 +1059,12 @@ class PinSpot(LightFixture):
     @color.setter
     def color(self, value: List) -> None:
         if len(value) >= 3:
-            self.set_dimming_target(r=value[0], g=value[1], b=value[2])
+            self.set_dimming_target(
+                r=value[0],
+                g=value[1],
+                b=value[2],
+                fade_ticks=self.pending_fade_ticks,
+            )
 
     def color_param(self, osc: OSCManager) -> OSCParam:
         """Preset-saved class-level color bind at /fixture/PinSpot/color."""
@@ -1038,19 +1078,36 @@ class PinSpot(LightFixture):
 
     def set_dimming_target(
         self,
+        *,
         r: Optional[DMXValue] = None,
         g: Optional[DMXValue] = None,
         b: Optional[DMXValue] = None,
         w: Optional[DMXValue] = None,
+        fade_ticks: int = 0,
     ) -> None:
-        if not r is None:
-            self.r_target = r
-        if not g is None:
-            self.g_target = g
-        if not b is None:
-            self.b_target = b
-        if not w is None:
-            self.w_target = w
+        if r is not None:
+            self.r_interp.set_target(float(r), fade_ticks)
+        if g is not None:
+            self.g_interp.set_target(float(g), fade_ticks)
+        if b is not None:
+            self.b_interp.set_target(float(b), fade_ticks)
+        if w is not None:
+            self.w_interp.set_target(float(w), fade_ticks)
+
+    def tick_interpolators(self) -> None:
+        rgb_active = (
+            self.r_interp.active or self.g_interp.active or self.b_interp.active
+        )
+        w_active = self.w_interp.active
+        self.r_interp.tick()
+        self.g_interp.tick()
+        self.b_interp.tick()
+        self.w_interp.tick()
+        if self.osc is not None:
+            if rgb_active:
+                self.osc.send_osc(self.color_osc_addr, self.color)
+            if w_active:
+                self.osc.send_osc(self.w_target_osc_addr, self.w_target)
 
     def dimming(self, val: DMXValue) -> None:
         self._dimming = val

@@ -335,22 +335,25 @@ def run(
         defaults_file=defaults_file,
     )
 
-    def session_snapshot():
-        masters = categories.save_masters()
-        masters["sodium"] = mixer.channel_lookup["sodium/dimming"].offset
-        return {
-            "current_presets": presets.save_current_selection(),
-            "masters": masters,
-            "coord_system": coord_state.active_name,
-        }
-
-    session.bind(session_snapshot)
-
     sodium_ch = mixer.channel_lookup["sodium/dimming"]
 
     scene_manager = SceneManager(  # noqa: F841  pylint: disable=unused-variable
         osc, dmx, presets, categories, filename=scenes_file, debug=debug
     )
+    scene_manager.tick_ms = tick_ms
+
+    def session_snapshot():
+        masters = categories.save_masters()
+        masters["sodium"] = sodium_ch.offset
+        return {
+            "current_presets": presets.save_current_selection(),
+            "masters": masters,
+            "coord_system": coord_state.active_name,
+            "fade_ms": scene_manager.fade_ms,
+        }
+
+    session.bind(session_snapshot)
+    scene_manager.on_fade_change = session.save
 
     scene_manager.register_scene(
         Scene(
@@ -428,7 +431,9 @@ def run(
         masters = restored.get("masters") or {}
         categories.load_masters(masters)
         if "sodium" in masters:
-            mixer.channel_lookup["sodium/dimming"].offset = masters["sodium"]
+            sodium_ch.offset = masters["sodium"]
+        if "fade_ms" in restored:
+            scene_manager.fade_ms = float(restored["fade_ms"])
 
     if debug:
         print("DEBUG channel generator connections after restore:", flush=True)
@@ -468,6 +473,12 @@ def run(
             if dmx.passthrough:
                 dmx.submit_passthrough()
             else:
+                for cat in categories.all:
+                    cat.tick_interpolator()
+                for ch in mixer.mix_channels:
+                    ch.tick_interpolator()
+                for f in all_fixtures:
+                    f.tick_interpolators()
                 mixer.runChannelMix()
                 mixer.runOutputMix()
                 for f in runnable_fixtures:

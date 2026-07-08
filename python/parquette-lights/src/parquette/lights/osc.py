@@ -103,6 +103,8 @@ class OSCParam(object):
         self.on_change = on_change
         self.has_default = default_value is not _MISSING
         self.default_value = default_value if self.has_default else None
+        self.fade_ticks: int = 0
+        self.bind_targets: Optional[List[Any]] = None
 
         def handler(a: str, *osc_args: Any) -> None:
             dispatch_lambda(a, *osc_args)
@@ -112,8 +114,20 @@ class OSCParam(object):
         self.dispatch_lambda = handler
         osc.dispatcher.map(addr, handler)
 
-    def load(self, addr: str, *osc_args: Any, sync: bool = True) -> None:
+    def load(
+        self, addr: str, *osc_args: Any, sync: bool = True, fade_ticks: int = 0
+    ) -> None:
+        self.fade_ticks = fade_ticks
+        if fade_ticks > 0 and self.bind_targets is not None:
+            for t in self.bind_targets:
+                if hasattr(t, "pending_fade_ticks"):
+                    t.pending_fade_ticks = fade_ticks
         self.dispatch_lambda(addr, *osc_args)
+        if fade_ticks > 0 and self.bind_targets is not None:
+            for t in self.bind_targets:
+                if hasattr(t, "pending_fade_ticks"):
+                    t.pending_fade_ticks = 0
+        self.fade_ticks = 0
         if sync:
             self.sync()
 
@@ -155,7 +169,7 @@ class OSCParam(object):
                 value = list(args)
             cls.obj_param_setter(value, field, targets)
 
-        return cls(
+        param = cls(
             osc,
             addr,
             lambda: getattr(primary, field),
@@ -163,6 +177,8 @@ class OSCParam(object):
             on_change=on_change,
             default_value=getattr(primary, field),
         )
+        param.bind_targets = targets
+        return param
 
     @classmethod
     def obj_param_setter(cls, value: Any, field: str, objs: List[Any]) -> None:

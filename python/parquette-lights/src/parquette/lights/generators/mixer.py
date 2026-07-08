@@ -491,7 +491,9 @@ class SignalPatchParam(OSCParam):
             mappings.append(gen_mapping)
         return mappings
 
-    def load(self, addr: str, *args: Any, sync: bool = True) -> None:
+    def load(
+        self, addr: str, *args: Any, sync: bool = True, fade_ticks: int = 0
+    ) -> None:
         for chan_name in self.chan_names:
             self.mixer.clearSignalMatrix(chan_name)
 

@@ -64,7 +64,7 @@ class PresetManager(object):
             all_categories.add(key)
         return all_categories
 
-    def select_all(self, category_preset: str) -> None:
+    def select_all(self, category_preset: str, fade_ticks: int = 0) -> None:
         # Early-out only if we already have a known selection for every
         # category and they all match the target. With empty current_presets
         # (fresh launch, nothing selected yet) `all(...)` over an empty
@@ -86,9 +86,9 @@ class PresetManager(object):
                 cat in self.stored_presets
                 and category_preset in self.stored_presets[cat]
             ):
-                self.select(cat, category_preset, sync=False)
+                self.select(cat, category_preset, sync=False, fade_ticks=fade_ticks)
             else:
-                self.select(cat, "Off", sync=False)
+                self.select(cat, "Off", sync=False, fade_ticks=fade_ticks)
 
         self.sync()
 
@@ -236,7 +236,13 @@ class PresetManager(object):
 
         self.osc.send_osc("/enable_save", int(self.enable_save_clear))
 
-    def select(self, category: str, category_preset: str, sync: bool = True) -> None:
+    def select(
+        self,
+        category: str,
+        category_preset: str,
+        sync: bool = True,
+        fade_ticks: int = 0,
+    ) -> None:
         cat = self.categories.by_name(category)
         if cat not in self.exposed_params:
             # there are no valid exposed params in this category to control
@@ -264,7 +270,9 @@ class PresetManager(object):
         # no OSC sync per-param — we issue one final sync at the end.
         for param in self.exposed_params[cat]:
             if param.has_default:
-                param.load(param.addr, param.default_value, sync=False)
+                param.load(
+                    param.addr, param.default_value, sync=False, fade_ticks=fade_ticks
+                )
 
         # Apply the saved overrides on top of the defaults.
         for param_preset in self.stored_presets[category][category_preset]:
@@ -272,9 +280,9 @@ class PresetManager(object):
             for param in self.exposed_params[cat]:
                 if param.addr == addr:
                     if isinstance(value, (list, tuple)):
-                        param.load(addr, *value, sync=False)
+                        param.load(addr, *value, sync=False, fade_ticks=fade_ticks)
                     else:
-                        param.load(addr, value, sync=False)
+                        param.load(addr, value, sync=False, fade_ticks=fade_ticks)
 
         if sync:
             self.sync()

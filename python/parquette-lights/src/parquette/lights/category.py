@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 from .osc import OSCManager, OSCParam
+from .util.interpolator import Interpolator
 from .util.session_store import SessionStore
 
 
@@ -21,6 +22,7 @@ class Category:
         self.osc = osc
         self.session = session
         self.master: float = 1.0
+        self.master_interp: Interpolator = Interpolator(1.0)
 
         self.master_param: OSCParam = OSCParam.bind(
             osc,
@@ -30,10 +32,20 @@ class Category:
             on_change=session.save,
         )
 
-    def set_master(self, value: float) -> None:
-        """Set master value locally and sync to frontend."""
-        self.master = value
-        self.master_param.sync()
+    def set_master(self, value: float, fade_ticks: int = 0) -> None:
+        """Set master value, optionally interpolating over fade_ticks."""
+        if fade_ticks > 0:
+            self.master_interp.set_target(value, fade_ticks)
+        else:
+            self.master = value
+            self.master_interp.set_target(value)
+            self.master_param.sync()
+
+    def tick_interpolator(self) -> None:
+        """Advance the master interpolator and sync if active."""
+        if self.master_interp.active:
+            self.master = self.master_interp.tick()
+            self.master_param.sync()
 
 
 class Categories:

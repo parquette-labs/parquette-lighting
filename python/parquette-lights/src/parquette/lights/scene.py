@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import os
 import pickle
@@ -48,22 +48,24 @@ class Scene:
         self.disable_passthrough = disable_passthrough
         self.protect_save_clear = protect_save_clear
 
-    def activate(self) -> None:
+    def activate(self, fade_ticks: int = 0) -> None:
         if self.disable_passthrough and self.dmx.passthrough:
             self.dmx.passthrough = False
 
         for channel, offset in self.channel_offsets.items():
-            channel.offset = offset
+            channel.set_offset(offset, fade_ticks)
 
         for category, level in self.masters.items():
-            category.set_master(level)
+            category.set_master(level, fade_ticks)
 
         if self.preset_all is not None:
-            self.presets.select_all(self.preset_all)
+            self.presets.select_all(self.preset_all, fade_ticks=fade_ticks)
 
         if self.presets_by_category:
             for category, preset_name in self.presets_by_category.items():
-                self.presets.select(category.name, preset_name, sync=False)
+                self.presets.select(
+                    category.name, preset_name, sync=False, fade_ticks=fade_ticks
+                )
             self.presets.sync()
 
     def to_dict(self) -> Dict[str, Any]:
@@ -136,6 +138,9 @@ class SceneManager:
 
         self.scenes: Dict[str, Scene] = {}
         self.selected_scene: Optional[Scene] = None
+        self.fade_ms: float = 0.0
+        self.tick_ms: float = 20.0
+        self.on_fade_change: Optional[Callable] = None
 
         osc.dispatcher.map(
             "/scene/create", lambda addr, *args: self.create_scene(str(args[0]))
@@ -143,6 +148,10 @@ class SceneManager:
         osc.dispatcher.map("/scene/save_current", lambda addr, *args: self.save_scene())
         osc.dispatcher.map(
             "/scene/clear_current", lambda addr, *args: self.clear_scene()
+        )
+        osc.dispatcher.map(
+            "/scene/fade_ms",
+            lambda addr, *args: self.set_fade_ms(float(args[0])),
         )
         osc.dispatcher.map(
             "/scene/*", lambda addr, *args: self.on_scene_triggered(addr)
@@ -155,13 +164,25 @@ class SceneManager:
         """Register a scene so it appears in the dropdown."""
         self.scenes[scene.name] = scene
 
+    def set_fade_ms(self, value: float) -> None:
+        """Set fade time and notify session to save."""
+        self.fade_ms = value
+        if self.on_fade_change is not None:
+            self.on_fade_change()
+
+    def fade_ticks(self) -> int:
+        """Convert current fade_ms to tick count."""
+        if self.fade_ms <= 0 or self.tick_ms <= 0:
+            return 0
+        return max(1, int(self.fade_ms / self.tick_ms))
+
     def on_scene_triggered(self, addr: str) -> None:
         """Handle all /scene/* messages: activate and track the scene."""
         name = addr.split("/scene/", 1)[1]
         scene = self.scenes.get(name)
         if scene is not None:
             self.selected_scene = scene
-            scene.activate()
+            scene.activate(fade_ticks=self.fade_ticks())
 
     def capture_current_state(self) -> Scene:
         """Build a Scene from the current lighting state."""
@@ -279,8 +300,9 @@ class SceneManager:
         os.replace(tmp, self.filename)
 
     def sync(self) -> None:
-        """Push scene list to the UI dropdown."""
+        """Push scene list and fade time to the UI."""
         values: Dict[str, str] = {name: name for name in self.scenes}
         self.osc.send_osc("/scene_selector/values", [str(values)])
         if self.selected_scene:
             self.osc.send_osc("/scene_selector", self.selected_scene.name)
+        self.osc.send_osc("/scene/fade_ms", self.fade_ms)

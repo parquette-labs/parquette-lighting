@@ -5,6 +5,7 @@ from . import Generator
 from ..fixtures.basics import MixTarget
 from ..category import Category
 from ..osc import OSCManager, OSCParam
+from ..util.interpolator import Interpolator
 from ..util.math import constrain
 
 TICK_MS: int = 20
@@ -96,6 +97,8 @@ class MixChannel:
         history_size = self.mapper.required_history_ticks()
         self.history: deque = deque([0.0] * history_size, maxlen=history_size)
         self._offset_storage: float = 0.0
+        self.offset_interp: Interpolator = Interpolator(0.0)
+        self.pending_fade_ticks: int = 0
         self.impulse_generator = impulse_generator
         self.impulse_connected = impulse_generator is not None
         self.connected_generators: List[Generator] = []
@@ -106,7 +109,26 @@ class MixChannel:
 
     @offset.setter
     def offset(self, value: Any) -> None:
-        self._offset_storage = float(value)
+        fade = getattr(self, "pending_fade_ticks", 0)
+        if fade > 0:
+            self.offset_interp.set_target(float(value), fade)
+        else:
+            self._offset_storage = float(value)
+            self.offset_interp.set_target(float(value))
+
+    def set_offset(self, value: float, fade_ticks: int = 0) -> None:
+        """Set offset, optionally interpolating over fade_ticks."""
+        if fade_ticks > 0:
+            self.offset_interp.set_target(value, fade_ticks)
+        else:
+            self.offset = value
+
+    def tick_interpolator(self) -> None:
+        """Advance the offset interpolator and sync UI if active."""
+        if self.offset_interp.active:
+            self._offset_storage = self.offset_interp.tick()
+            if hasattr(self, "offset_osc_param") and self.offset_osc_param is not None:
+                self.offset_osc_param.sync()
 
     def tick(self, ts: float) -> None:
         """Compute current value and push into history (O(1) via deque)."""
@@ -145,13 +167,16 @@ class MixChannel:
         self, osc: OSCManager, on_change: Optional[Callable[[], None]] = None
     ) -> OSCParam:
         """Bind /chan/{name}/offset to this channel's offset attribute."""
-        return OSCParam.bind(
+        self.offset_osc_param: Optional[OSCParam] = None
+        param = OSCParam.bind(
             osc,
             "/chan/{}/offset".format(self.name),
             self,
             "offset",
             on_change=on_change,
         )
+        self.offset_osc_param = param
+        return param
 
     @property
     def stutter_period(self) -> int:
