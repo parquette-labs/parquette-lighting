@@ -123,11 +123,16 @@ def classify_remote_dirty(
     return syncable, blocking
 
 
-def handle_remote_dirty(root: Path) -> None:
+def handle_remote_dirty(root: Path, *, overwrite: bool = False) -> None:
     """If the remote tree is dirty, decide what to do.
 
     Runs BEFORE the local commit so that any files we scp down land in the
     local working tree and get folded into the next commit naturally.
+
+    With overwrite=True, uncommitted changes to syncable files on the remote
+    are discarded without prompting, so this deploy overwrites them with the
+    committed versions from the local repo. Blocking (non-syncable) changes
+    still abort.
     """
     step("Checking remote working tree")
     cp = ssh("git status --porcelain", capture=True)
@@ -150,6 +155,17 @@ def handle_remote_dirty(root: Path) -> None:
         for path in blocking:
             click.echo(f"  {path}")
         fail("Resolve manually on the remote before deploying.")
+
+    if overwrite:
+        click.secho(
+            "Overwriting remote uncommitted syncable files with local repo "
+            "versions:",
+            fg="yellow",
+        )
+        for path in syncable:
+            click.echo(f"  {path}")
+            ssh(f"git checkout -- {shlex.quote(path)}")
+        return
 
     click.secho("Remote has uncommitted changes in syncable files:", fg="yellow")
     for path in syncable:
@@ -262,6 +278,15 @@ def remote_install() -> None:
     help="Sync code only, don't run launchd install.sh on the remote.",
 )
 @click.option(
+    "--overwrite-remote-pickles",
+    is_flag=True,
+    help=(
+        "Discard the remote's uncommitted changes to syncable files "
+        "(params/scenes pickles, layout) instead of prompting, so this deploy "
+        "overwrites them with the committed versions from the local repo."
+    ),
+)
+@click.option(
     "--remote-host",
     default=REMOTE_HOST,
     show_default=True,
@@ -273,7 +298,12 @@ def remote_install() -> None:
     is_flag=True,
     help="Echo every shell command (local + remote) before it runs.",
 )
-def main(skip_install: bool, remote_host: str, verbose: bool) -> None:
+def main(
+    skip_install: bool,
+    overwrite_remote_pickles: bool,
+    remote_host: str,
+    verbose: bool,
+) -> None:
     """Deploy local changes to the live parquette-mm machine."""
     global REMOTE_HOST, VERBOSE  # pylint: disable=global-statement
     REMOTE_HOST = remote_host
@@ -286,7 +316,7 @@ def main(skip_install: bool, remote_host: str, verbose: bool) -> None:
     branch = current_branch(root)
     click.echo(f"Branch:    {branch}")
 
-    handle_remote_dirty(root)
+    handle_remote_dirty(root, overwrite=overwrite_remote_pickles)
     ensure_local_clean(root)
     push_local(root, branch)
     remote_pull(branch)
