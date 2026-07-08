@@ -5,6 +5,7 @@
 
 # Notes/Ideas/TODOs
 
+* Auto reconnect entec / DMX
 * Preset for harm reduction, vibes but light
 * local sum / average of freq bands over time so a lot of energy builds in the bands 
 * Strobe hype / build up mode
