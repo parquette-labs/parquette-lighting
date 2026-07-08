@@ -104,7 +104,7 @@
             "decimals": 2,
             "bypass": true,
             "click": false,
-            "onValue": "if (value) send('/scene/All Black', 1)"
+            "onValue": "if (value) { set('scene_selector', 'All Black'); send('/scene/All Black', 1); }"
           },
           {
             "type": "panel",
