@@ -6,14 +6,16 @@
 # Notes/Ideas/TODOs
 
 * Preset for harm reduction, vibes but light
+* local sum / average of freq bands over time so a lot of energy builds in the bands 
+* Strobe hype / build up mode
+* The scenes should include short run phrases that can be queue up (à la live sequencer?)
+* Make sure we aren't doing the too many params pylint
 * Spots
 	* XY mapping doesn't really work well
 * Other lights
 	* Are other bpms affected by the long time stamps
 	* Better use of 20ms time slice (can it be smaller), stobe implementation in particular needs to slice around that
 * Orchestration
-	* !Scenes
-	* !popups to create and manage presets / scenes
 	* Sequencer and orchestrator for short to long term scheduling. It could schedule specific effects or sets of effects to be controlled by the orgestrator
 	* Some randomization methods in this
 	* The loop gets stuck (maybe because of tick?)
