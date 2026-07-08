@@ -135,6 +135,13 @@ from .util.session_store import SessionStore
     help="File to store and load user-created scenes from.",
 )
 @click.option(
+    "--default-scenes-file",
+    default="default-scenes.pickle",
+    show_default=True,
+    type=str,
+    help="Scenes defaults snapshot used by restore-defaults.",
+)
+@click.option(
     "--audio-window",
     default=5.0,
     show_default=True,
@@ -208,6 +215,7 @@ def run(
     presets_file: str,
     defaults_file: str,
     scenes_file: str,
+    default_scenes_file: str,
     audio_window: float,
     rms_window: float,
     spot_color_fade: float,
@@ -349,7 +357,13 @@ def run(
     sodium_ch = mixer.channel_lookup["sodium/dimming"]
 
     scene_manager = SceneManager(  # noqa: F841  pylint: disable=unused-variable
-        osc, dmx, presets, categories, filename=scenes_file, debug=debug
+        osc,
+        dmx,
+        presets,
+        categories,
+        filename=scenes_file,
+        defaults_file=default_scenes_file,
+        debug=debug,
     )
 
     scene_manager.register_scene(
