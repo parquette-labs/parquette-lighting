@@ -156,6 +156,11 @@ class DMXManager(object):
         ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
         self.osc.send_osc("/dmx/port_name/values", [str(ports_dict)])
 
+    def send_status(self, msg: str) -> None:
+        """Push a human-readable DMX status/error line to the UI. Event-driven
+        only -- not re-sent to clients that connect after the event."""
+        self.osc.send_osc("/dmx/status", [msg])
+
     def request_port(self, port: Optional[str]) -> None:
         """Record the desired DMX port. Safe to call from any thread (OSC
         handlers). The change is applied on the compute-loop thread by
@@ -182,6 +187,7 @@ class DMXManager(object):
                     self.apply_desired()
         except Exception as e:  # pylint: disable=broad-exception-caught
             print("DMX tick_device error, dropping device:", e, flush=True)
+            self.send_status("Error: {}".format(e))
             self.handle_device_fault()
 
     def needs_auto_reconnect(self) -> bool:
@@ -205,11 +211,13 @@ class DMXManager(object):
         port = self.desired_port
         if port == self.ART_NET_PORT and not self.art_net_ip:
             print("DMX: art-net has no art_net_ip target; staying off.", flush=True)
+            self.send_status("Error: art-net has no target IP")
             port = None
         if port == self.ART_NET_PORT:
             self.teardown_enttec()
             self.use_art_net = True
             self.active_port = port
+            self.send_status("Connected: art-net {}".format(self.art_net_ip))
         elif port is not None:
             self.use_art_net = False
             self.teardown_artnet_server()
@@ -224,6 +232,7 @@ class DMXManager(object):
             self.use_art_net = False
             self.active_port = None
             self.osc.send_osc("/dmx/port_name", [None])
+            self.send_status("Disconnected")
 
     def open_enttec(self, port: str) -> bool:
         """Open the enttec controller for port. Compute thread. True on ok.
@@ -237,9 +246,11 @@ class DMXManager(object):
             self.next_reconnect_at = 0.0
             self.osc.send_osc("/dmx/port_name", [port])
             print("DMX connected on {}".format(port), flush=True)
+            self.send_status("Connected: {}".format(port))
             return True
         except (OSError, ValueError) as e:
             print("DMX open failed on {}: {}".format(port, e), flush=True)
+            self.send_status("Error: open {} failed: {}".format(port, e))
             self.enttec_pro_controller = None
             self.active_port = None
             return False
@@ -290,6 +301,7 @@ class DMXManager(object):
                 ]
             except (SerialException, AttributeError) as e:
                 print("DMX input read failed:", e, flush=True)
+                self.send_status("Error: read failed: {}".format(e))
                 self.handle_device_fault()
 
         return [0] * self.universe_size
@@ -329,6 +341,7 @@ class DMXManager(object):
             self.enttec_pro_controller.submit()
         except SerialException as e:
             print("DMX write failed, dropping device:", e, flush=True)
+            self.send_status("Error: write failed: {}".format(e))
             self.handle_device_fault()
 
     def close(self, deselect: bool = True) -> None:

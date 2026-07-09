@@ -10389,6 +10389,23 @@
             "values": "OSC{values}"
           },
           {
+            "type": "textarea",
+            "top": 720,
+            "left": 190,
+            "id": "dmx_status_text",
+            "interaction": false,
+            "width": 290,
+            "height": 40,
+            "value": "",
+            "default": "",
+            "address": "/dmx/status",
+            "decimals": 0,
+            "bypass": false,
+            "alphaStroke": 0.2,
+            "alphaFillOff": 0,
+            "alphaFillOn": 0
+          },
+          {
             "type": "button",
             "top": 630,
             "left": 10,
