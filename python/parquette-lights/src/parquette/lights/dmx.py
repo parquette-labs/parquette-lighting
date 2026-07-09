@@ -91,6 +91,8 @@ class DMXManager(object):
     use_art_net: bool = False
     passthrough: bool = False
 
+    ART_NET_PORT = "art-net-node-1"
+
     def __init__(
         self, osc: OSCManager, art_net_ip: str, universe_size: int = 512
     ) -> None:
@@ -105,17 +107,25 @@ class DMXManager(object):
         self.art_net_controller.set_subnet(0)
         self.art_net_controller.set_net(0)
 
+        # Device ownership: OSC handler threads only record the desired port
+        # via request_port(); the real device (enttec controller / art-net
+        # server) is opened, closed, and used exclusively on the compute-loop
+        # thread (tick_device / submit / read_input_universe). This keeps the
+        # device lifecycle single-threaded so it never races with the
+        # concurrent OSC handler threads. active_port tracks what is open.
+        self.desired_port: Optional[str] = None
+        self.active_port: Optional[str] = None
+        self.device_dirty: bool = False
+
         self.osc.dispatcher.map(
             "/dmx/port_refresh", lambda addr, args: self.dmx_port_refresh()
         )
         self.osc.dispatcher.map(
-            "/dmx/port_disconnect", lambda addr, args: self.close(deselect=True)
+            "/dmx/port_disconnect", lambda addr, args: self.request_port(None)
         )
-
         self.osc.dispatcher.map(
-            "/dmx/port_name", lambda addr, args: self.setup_dmx(args)
+            "/dmx/port_name", lambda addr, args: self.request_port(args)
         )
-        self.close()
 
     def passthrough_param(self) -> OSCParam:
         """Bind /dmx/passthrough to DMXManager.passthrough."""
@@ -133,22 +143,79 @@ class DMXManager(object):
         ports_dict = {port: port for port in DMXManager.list_dmx_ports()}
         self.osc.send_osc("/dmx/port_name/values", [str(ports_dict)])
 
-    def setup_dmx(self, port: str) -> None:
-        self.close(deselect=False)
+    def request_port(self, port: Optional[str]) -> None:
+        """Record the desired DMX port. Safe to call from any thread (OSC
+        handlers). The change is applied on the compute-loop thread by
+        tick_device(); passing None disconnects."""
+        self.desired_port = port
+        self.device_dirty = True
 
-        self.use_art_net = port == "art-net-node-1"
+    def tick_device(self) -> None:
+        """Reconcile the DMX device once per compute tick. Compute thread."""
+        self.apply_pending()
 
-        if not self.use_art_net:
+    def apply_pending(self) -> None:
+        """Apply a pending desired-port change. Compute thread only."""
+        if self.device_dirty:
+            self.device_dirty = False
+            self.apply_desired()
+
+    def apply_desired(self) -> None:
+        """Bring the open device in line with desired_port. Compute thread."""
+        port = self.desired_port
+        if port == self.ART_NET_PORT:
+            self.teardown_enttec()
+            self.use_art_net = True
+            self.active_port = port
+        elif port is None:
+            self.teardown_enttec()
+            self.teardown_artnet_server()
+            self.use_art_net = False
+            self.active_port = None
+            self.osc.send_osc("/dmx/port_name", [None])
+        else:
+            self.use_art_net = False
+            self.teardown_artnet_server()
+            if self.active_port != port:
+                self.teardown_enttec()
+            self.open_enttec(port)
+
+    def open_enttec(self, port: str) -> bool:
+        """Open the enttec controller for port. Compute thread. True on ok."""
+        try:
+            self.enttec_pro_controller = EnttecProController(
+                port, auto_submit=False, dmx_size=self.universe_size
+            )
+            self.active_port = port
+            self.osc.send_osc("/dmx/port_name", [port])
+            return True
+        except SerialException as e:
+            print("DMX open failed on {}: {}".format(port, e), flush=True)
+            self.enttec_pro_controller = None
+            self.active_port = None
+            return False
+
+    def teardown_enttec(self) -> None:
+        if self.enttec_pro_controller is not None:
             try:
-                self.enttec_pro_controller = EnttecProController(
-                    port, auto_submit=False, dmx_size=self.universe_size
-                )
-                self.osc.send_osc("/dmx/port_name", [port])
-            except SerialException as e:
-                print(e, flush=True)
-                self.close()
+                self.enttec_pro_controller.close()
+            except:  # bare: best-effort close during teardown
+                pass
+            self.enttec_pro_controller = None
 
-    def _ensure_art_net_server(self) -> None:
+    def teardown_artnet_server(self) -> None:
+        if self.art_net_server is not None:
+            del self.art_net_server
+            self.art_net_server = None
+            self.art_net_listener_id = None
+
+    def handle_device_fault(self) -> None:
+        """A serial read/write raised. Drop the controller (compute thread)
+        so the loop stops using it; desired_port is kept for reconnect."""
+        self.teardown_enttec()
+        self.active_port = None
+
+    def ensure_art_net_server(self) -> None:
         if self.art_net_server is None:
             self.art_net_server = StupidArtnetServer()
             self.art_net_listener_id = self.art_net_server.register_listener(
@@ -157,7 +224,7 @@ class DMXManager(object):
 
     def read_input_universe(self) -> List[int]:
         if self.use_art_net:
-            self._ensure_art_net_server()
+            self.ensure_art_net_server()
             if self.art_net_server is not None:
                 buf = self.art_net_server.get_buffer(self.art_net_listener_id)
                 if buf is None or len(buf) == 0:
@@ -174,6 +241,7 @@ class DMXManager(object):
                 ]
             except (SerialException, AttributeError) as e:
                 print("DMX input read failed:", e, flush=True)
+                self.handle_device_fault()
 
         return [0] * self.universe_size
 
@@ -197,38 +265,31 @@ class DMXManager(object):
             self.chans[chan + i - 1] = v
 
     def submit(self) -> None:
-        for i, v in enumerate(self.chans):
-            if self.use_art_net:
-                self.art_net_controller.set_single_value(i + 1, v)
-            elif not self.enttec_pro_controller is None:
-                try:
-                    self.enttec_pro_controller.set_channel(i + 1, v)
-                except SerialException:
-                    self.close()
-
         if self.use_art_net:
+            for i, v in enumerate(self.chans):
+                self.art_net_controller.set_single_value(i + 1, v)
             self.art_net_controller.show()
             return
-        elif not self.enttec_pro_controller is None:
-            try:
-                self.enttec_pro_controller.submit()
-            except SerialException:
-                self.close()
 
-    def close(self, deselect=True) -> None:
+        if self.enttec_pro_controller is None:
+            return
+
+        try:
+            for i, v in enumerate(self.chans):
+                self.enttec_pro_controller.set_channel(i + 1, v)
+            self.enttec_pro_controller.submit()
+        except SerialException as e:
+            print("DMX write failed, dropping device:", e, flush=True)
+            self.handle_device_fault()
+
+    def close(self, deselect: bool = True) -> None:
+        """Full teardown for shutdown. Clears the desired port so any
+        auto-reconnect stops. Compute-thread / shutdown only."""
         self.use_art_net = False
-
-        if self.art_net_server is not None:
-            del self.art_net_server
-            self.art_net_server = None
-            self.art_net_listener_id = None
-
-        if not self.enttec_pro_controller is None:
-            try:
-                self.enttec_pro_controller.close()
-            except:
-                pass
-            self.enttec_pro_controller = None
-
+        self.desired_port = None
+        self.active_port = None
+        self.device_dirty = False
+        self.teardown_artnet_server()
+        self.teardown_enttec()
         if deselect:
             self.osc.send_osc("/dmx/port_name", [None])

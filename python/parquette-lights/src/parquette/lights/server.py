@@ -238,10 +238,12 @@ def run(
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug_osc_in, debug_osc_out)
     dmx = DMXManager(osc, art_net_ip)
-    dmx.use_art_net = boot_art_net
     dmx.art_net_auto_send(art_net_auto)
     if entec_auto is not None:
-        dmx.setup_dmx(entec_auto)
+        dmx.request_port(entec_auto)
+    elif boot_art_net:
+        dmx.request_port(DMXManager.ART_NET_PORT)
+    dmx.apply_pending()
 
     session = SessionStore(session_file)
     # Peek the saved session for the user's coord-system preference so the
@@ -478,6 +480,8 @@ def run(
         compute_ema = 0.0
         while True:
             compute_start = time.monotonic()
+
+            dmx.tick_device()
 
             if dmx.passthrough:
                 dmx.submit_passthrough()
