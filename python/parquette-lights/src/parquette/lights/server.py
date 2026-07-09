@@ -114,6 +114,12 @@ from .util.session_store import SessionStore
     help="Auto-connect to a given Enttec port on boot (e.g. /dev/tty.usbserial-EN264168).",
 )
 @click.option(
+    "--dmx-auto-reconnect/--no-dmx-auto-reconnect",
+    default=True,
+    show_default=True,
+    help="Automatically reopen the Enttec DMX port if it disconnects.",
+)
+@click.option(
     "--presets-file",
     default="params.pickle",
     show_default=True,
@@ -212,6 +218,7 @@ def run(
     art_net_auto: bool,
     enable_save_clear: bool,
     entec_auto: str,
+    dmx_auto_reconnect: bool,
     presets_file: str,
     defaults_file: str,
     scenes_file: str,
@@ -238,6 +245,7 @@ def run(
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug_osc_in, debug_osc_out)
     dmx = DMXManager(osc, art_net_ip)
+    dmx.auto_reconnect = dmx_auto_reconnect
     dmx.art_net_auto_send(art_net_auto)
     if entec_auto is not None:
         dmx.request_port(entec_auto)

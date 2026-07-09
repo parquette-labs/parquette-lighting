@@ -1,3 +1,4 @@
+import time
 from typing import List, Union, Optional
 
 from DMXEnttecPro import Controller as EnttecProController  # type: ignore[import-untyped]
@@ -92,6 +93,8 @@ class DMXManager(object):
     passthrough: bool = False
 
     ART_NET_PORT = "art-net-node-1"
+    RECONNECT_BACKOFF_START = 1.0
+    RECONNECT_BACKOFF_MAX = 5.0
 
     def __init__(
         self, osc: OSCManager, art_net_ip: str, universe_size: int = 512
@@ -116,6 +119,12 @@ class DMXManager(object):
         self.desired_port: Optional[str] = None
         self.active_port: Optional[str] = None
         self.device_dirty: bool = False
+
+        # Auto-reconnect: retry reopening a dropped enttec port, comport-gated
+        # with exponential backoff. Toggled by --dmx-auto-reconnect.
+        self.auto_reconnect: bool = True
+        self.reconnect_backoff: float = self.RECONNECT_BACKOFF_START
+        self.next_reconnect_at: float = 0.0
 
         self.osc.dispatcher.map(
             "/dmx/port_refresh", lambda addr, args: self.dmx_port_refresh()
@@ -153,6 +162,39 @@ class DMXManager(object):
     def tick_device(self) -> None:
         """Reconcile the DMX device once per compute tick. Compute thread."""
         self.apply_pending()
+        if (
+            self.auto_reconnect
+            and self.enttec_pro_controller is None
+            and self.desired_port not in (None, self.ART_NET_PORT)
+        ):
+            self.try_reconnect()
+
+    def try_reconnect(self) -> None:
+        """Retry opening a dropped enttec port. Compute thread. Gated on the
+        port reappearing in the OS device list, with exponential backoff up
+        to RECONNECT_BACKOFF_MAX between attempts."""
+        now = time.monotonic()
+        if now < self.next_reconnect_at:
+            return
+        port = self.desired_port
+        if port is None or port not in self.list_dmx_ports():
+            # Device not present yet -- wait and back off rather than churning
+            # through failed open() calls on a missing port.
+            self.next_reconnect_at = now + self.reconnect_backoff
+            self.bump_reconnect_backoff()
+            return
+        if self.open_enttec(port):
+            print("DMX reconnected on {}".format(port), flush=True)
+            self.reconnect_backoff = self.RECONNECT_BACKOFF_START
+            self.next_reconnect_at = 0.0
+        else:
+            self.next_reconnect_at = now + self.reconnect_backoff
+            self.bump_reconnect_backoff()
+
+    def bump_reconnect_backoff(self) -> None:
+        self.reconnect_backoff = min(
+            self.reconnect_backoff * 2, self.RECONNECT_BACKOFF_MAX
+        )
 
     def apply_pending(self) -> None:
         """Apply a pending desired-port change. Compute thread only."""
