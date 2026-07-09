@@ -7,6 +7,7 @@ controller and a controllable port list -- no real hardware.
 
 from __future__ import annotations
 
+import time
 from typing import Any, List, Tuple, cast
 
 import pytest
@@ -48,6 +49,7 @@ class FakeController:
         self.port = port
         self.closed = False
         self.fail_on_write = False
+        self.fail_on_read = False
         self.channels = [0] * dmx_size
 
     def set_channel(self, chan: int, val: int) -> None:
@@ -56,6 +58,8 @@ class FakeController:
         self.channels[chan - 1] = val
 
     def get_channel(self, chan: int) -> int:
+        if self.fail_on_read:
+            raise SerialException("simulated read fault")
         return self.channels[chan - 1]
 
     def submit(self) -> None:
@@ -194,3 +198,113 @@ def test_art_net_without_ip_target_stays_off(manager: DMXManager) -> None:
     assert manager.use_art_net is False
     assert manager.active_port is None
     assert ("/dmx/port_name", [None]) in cast(FakeOSC, manager.osc).sent
+
+
+def test_reselecting_active_port_does_not_reopen(manager: DMXManager) -> None:
+    """Re-requesting the already-active port must leave the live controller
+    untouched -- no leaked handle, no mid-show device re-init (H1)."""
+    manager.request_port(PORT)
+    manager.tick_device()
+    ctrl = manager.enttec_pro_controller
+    assert ctrl is not None
+
+    manager.request_port(PORT)  # same port again
+    manager.tick_device()
+    assert manager.enttec_pro_controller is ctrl  # not reopened
+
+
+def test_read_input_fault_drops_controller(manager: DMXManager) -> None:
+    manager.request_port(PORT)
+    manager.tick_device()
+    manager.enttec_pro_controller.fail_on_read = True
+
+    manager.read_input_universe()
+
+    assert manager.enttec_pro_controller is None
+    assert manager.desired_port == PORT  # kept for reconnect
+
+
+def test_reconnect_respects_backoff_timer(manager: DMXManager) -> None:
+    manager.request_port(PORT)
+    manager.tick_device()
+    manager.handle_device_fault()
+
+    manager.next_reconnect_at = time.monotonic() + 999  # gate closed
+    before = manager.reconnect_backoff
+    manager.tick_device()
+
+    assert manager.enttec_pro_controller is None  # no attempt made
+    assert manager.reconnect_backoff == before  # backoff not advanced
+
+
+def test_failed_open_then_recovers(manager: DMXManager) -> None:
+    FakeController.open_should_fail = True
+    manager.request_port(PORT)
+    manager.tick_device()  # open fails
+    assert manager.enttec_pro_controller is None
+    assert manager.desired_port == PORT
+
+    FakeController.open_should_fail = False
+    manager.next_reconnect_at = 0.0
+    manager.tick_device()  # reconnect succeeds
+    assert isinstance(manager.enttec_pro_controller, FakeController)
+
+
+def test_enttec_to_art_net_transition(manager: DMXManager) -> None:
+    manager.request_port(PORT)
+    manager.tick_device()
+    ctrl = manager.enttec_pro_controller
+    assert ctrl is not None
+
+    manager.request_port(DMXManager.ART_NET_PORT)
+    manager.tick_device()
+
+    assert manager.use_art_net is True
+    assert manager.enttec_pro_controller is None
+    assert ctrl.closed is True  # teardown closed the old controller
+    assert manager.active_port == DMXManager.ART_NET_PORT
+
+
+def test_open_survives_os_error(
+    manager: DMXManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A non-SerialException open failure (e.g. OSError) must be caught by
+    open_enttec, not propagate to the compute loop (H2)."""
+
+    class BadController:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise OSError("device busy")
+
+    monkeypatch.setattr(dmx_mod, "EnttecProController", BadController)
+    manager.request_port(PORT)
+    manager.tick_device()  # must not raise
+
+    assert manager.enttec_pro_controller is None
+    assert manager.desired_port == PORT
+
+
+def test_tick_device_survives_unexpected_error(
+    manager: DMXManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An exception open_enttec does not catch must still be swallowed by the
+    tick_device guard so the compute loop never dies (H2 backstop)."""
+
+    class ExplodingController:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            raise RuntimeError("unexpected")
+
+    monkeypatch.setattr(dmx_mod, "EnttecProController", ExplodingController)
+    manager.request_port(PORT)
+    manager.tick_device()  # must not raise
+
+    assert manager.enttec_pro_controller is None
+
+
+def test_list_dmx_ports_survives_comports_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def boom() -> None:
+        raise OSError("iokit enumeration failed")
+
+    monkeypatch.setattr(dmx_mod.slp, "comports", boom)
+    assert DMXManager.list_dmx_ports() == [DMXManager.ART_NET_PORT]

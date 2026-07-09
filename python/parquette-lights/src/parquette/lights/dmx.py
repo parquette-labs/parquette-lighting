@@ -142,9 +142,13 @@ class DMXManager(object):
 
     @classmethod
     def list_dmx_ports(cls) -> List[str]:
-        device = [
-            l.device for l in slp.comports() if l.manufacturer in ("FTDI", "ENTTEC")
-        ]
+        try:
+            device = [
+                l.device for l in slp.comports() if l.manufacturer in ("FTDI", "ENTTEC")
+            ]
+        except OSError as e:
+            print("DMX: listing serial ports failed:", e, flush=True)
+            device = []
         device.append("art-net-node-1")
         return device
 
@@ -162,18 +166,23 @@ class DMXManager(object):
     def tick_device(self) -> None:
         """Reconcile the DMX device once per compute tick (compute thread):
         apply a freshly requested port change, or retry a dropped enttec port
-        once the auto-reconnect backoff gate opens."""
-        if self.device_dirty:
-            self.device_dirty = False
-            self.apply_desired()
-            return
-        if self.needs_auto_reconnect():
-            # Advance the backoff whether or not the port is back yet, so we
-            # neither poll comports() every tick nor churn failed open() calls.
-            self.next_reconnect_at = time.monotonic() + self.reconnect_backoff
-            self.bump_reconnect_backoff()
-            if self.desired_port in self.list_dmx_ports():
+        once the auto-reconnect backoff gate opens. Any device error is caught
+        so it can never take down the compute loop (= blackout)."""
+        try:
+            if self.device_dirty:
+                self.device_dirty = False
                 self.apply_desired()
+                return
+            if self.needs_auto_reconnect():
+                # Advance the backoff whether or not the port is back yet, so
+                # we don't poll comports() every tick nor churn failed opens.
+                self.next_reconnect_at = time.monotonic() + self.reconnect_backoff
+                self.bump_reconnect_backoff()
+                if self.desired_port in self.list_dmx_ports():
+                    self.apply_desired()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print("DMX tick_device error, dropping device:", e, flush=True)
+            self.handle_device_fault()
 
     def needs_auto_reconnect(self) -> bool:
         """Timing gate: auto-reconnect is on, an enttec port is desired but no
@@ -205,8 +214,10 @@ class DMXManager(object):
             self.use_art_net = False
             self.teardown_artnet_server()
             if self.active_port != port:
+                # New port: tear down whatever was open, then open it. If it is
+                # already the active port, leave the live controller untouched.
                 self.teardown_enttec()
-            self.open_enttec(port)
+                self.open_enttec(port)
         else:
             self.teardown_enttec()
             self.teardown_artnet_server()
@@ -227,7 +238,7 @@ class DMXManager(object):
             self.osc.send_osc("/dmx/port_name", [port])
             print("DMX connected on {}".format(port), flush=True)
             return True
-        except SerialException as e:
+        except (OSError, ValueError) as e:
             print("DMX open failed on {}: {}".format(port, e), flush=True)
             self.enttec_pro_controller = None
             self.active_port = None
