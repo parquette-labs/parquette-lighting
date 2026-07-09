@@ -160,76 +160,72 @@ class DMXManager(object):
         self.device_dirty = True
 
     def tick_device(self) -> None:
-        """Reconcile the DMX device once per compute tick. Compute thread."""
-        self.apply_pending()
-        if (
+        """Reconcile the DMX device once per compute tick (compute thread):
+        apply a freshly requested port change, or retry a dropped enttec port
+        once the auto-reconnect backoff gate opens."""
+        if self.device_dirty:
+            self.device_dirty = False
+            self.apply_desired()
+            return
+        if self.needs_auto_reconnect():
+            # Advance the backoff whether or not the port is back yet, so we
+            # neither poll comports() every tick nor churn failed open() calls.
+            self.next_reconnect_at = time.monotonic() + self.reconnect_backoff
+            self.bump_reconnect_backoff()
+            if self.desired_port in self.list_dmx_ports():
+                self.apply_desired()
+
+    def needs_auto_reconnect(self) -> bool:
+        """Timing gate: auto-reconnect is on, an enttec port is desired but no
+        controller is open, and the backoff interval has elapsed."""
+        return (
             self.auto_reconnect
             and self.enttec_pro_controller is None
             and self.desired_port not in (None, self.ART_NET_PORT)
-        ):
-            self.try_reconnect()
-
-    def try_reconnect(self) -> None:
-        """Retry opening a dropped enttec port. Compute thread. Gated on the
-        port reappearing in the OS device list, with exponential backoff up
-        to RECONNECT_BACKOFF_MAX between attempts."""
-        now = time.monotonic()
-        if now < self.next_reconnect_at:
-            return
-        port = self.desired_port
-        if port is None or port not in self.list_dmx_ports():
-            # Device not present yet -- wait and back off rather than churning
-            # through failed open() calls on a missing port.
-            self.next_reconnect_at = now + self.reconnect_backoff
-            self.bump_reconnect_backoff()
-            return
-        if self.open_enttec(port):
-            print("DMX reconnected on {}".format(port), flush=True)
-            self.reconnect_backoff = self.RECONNECT_BACKOFF_START
-            self.next_reconnect_at = 0.0
-        else:
-            self.next_reconnect_at = now + self.reconnect_backoff
-            self.bump_reconnect_backoff()
+            and time.monotonic() >= self.next_reconnect_at
+        )
 
     def bump_reconnect_backoff(self) -> None:
         self.reconnect_backoff = min(
             self.reconnect_backoff * 2, self.RECONNECT_BACKOFF_MAX
         )
 
-    def apply_pending(self) -> None:
-        """Apply a pending desired-port change. Compute thread only."""
-        if self.device_dirty:
-            self.device_dirty = False
-            self.apply_desired()
-
     def apply_desired(self) -> None:
-        """Bring the open device in line with desired_port. Compute thread."""
+        """Bring the open device in line with desired_port. Compute thread. An
+        art-net request with no art_net_ip target is treated as no device."""
         port = self.desired_port
+        if port == self.ART_NET_PORT and not self.art_net_ip:
+            print("DMX: art-net has no art_net_ip target; staying off.", flush=True)
+            port = None
         if port == self.ART_NET_PORT:
             self.teardown_enttec()
             self.use_art_net = True
             self.active_port = port
-        elif port is None:
-            self.teardown_enttec()
-            self.teardown_artnet_server()
-            self.use_art_net = False
-            self.active_port = None
-            self.osc.send_osc("/dmx/port_name", [None])
-        else:
+        elif port is not None:
             self.use_art_net = False
             self.teardown_artnet_server()
             if self.active_port != port:
                 self.teardown_enttec()
             self.open_enttec(port)
+        else:
+            self.teardown_enttec()
+            self.teardown_artnet_server()
+            self.use_art_net = False
+            self.active_port = None
+            self.osc.send_osc("/dmx/port_name", [None])
 
     def open_enttec(self, port: str) -> bool:
-        """Open the enttec controller for port. Compute thread. True on ok."""
+        """Open the enttec controller for port. Compute thread. True on ok.
+        A successful open resets the auto-reconnect backoff."""
         try:
             self.enttec_pro_controller = EnttecProController(
                 port, auto_submit=False, dmx_size=self.universe_size
             )
             self.active_port = port
+            self.reconnect_backoff = self.RECONNECT_BACKOFF_START
+            self.next_reconnect_at = 0.0
             self.osc.send_osc("/dmx/port_name", [port])
+            print("DMX connected on {}".format(port), flush=True)
             return True
         except SerialException as e:
             print("DMX open failed on {}: {}".format(port, e), flush=True)

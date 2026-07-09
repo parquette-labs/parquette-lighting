@@ -251,7 +251,7 @@ def run(
         dmx.request_port(entec_auto)
     elif boot_art_net:
         dmx.request_port(DMXManager.ART_NET_PORT)
-    dmx.apply_pending()
+    dmx.tick_device()
 
     session = SessionStore(session_file)
     # Peek the saved session for the user's coord-system preference so the
