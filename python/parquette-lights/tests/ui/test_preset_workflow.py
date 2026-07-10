@@ -9,6 +9,7 @@ changes.
 
 from __future__ import annotations
 
+import shutil
 from typing import Callable, Optional
 
 from pythonosc.udp_client import SimpleUDPClient
@@ -122,3 +123,34 @@ def test_master_change_drives_dmx_output(
         "mixer→fixture→DMX pipeline may be broken"
     )
     assert max(ctx.dmx.chans) > 0
+
+
+def test_restore_defaults_resets_scenes_to_snapshot(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """/preset/restore_defaults must reload scenes from the defaults snapshot:
+    scenes present in the snapshot come back, and user scenes created after the
+    snapshot are dropped. Exercises the shared restore message that the preset
+    restore button sends."""
+
+    sm = server_instance.scene_manager
+
+    # Create a baseline user scene and snapshot it as the restore default,
+    # mirroring what deploy's snapshot_defaults() does on the remote.
+    osc_client.send_message("/scene/create", "RestoreBaseline")
+    flush()
+    assert "RestoreBaseline" in sm.scenes
+    shutil.copyfile(sm.filename, sm.defaults_file)
+
+    # A scene created after the snapshot should not survive the restore.
+    osc_client.send_message("/scene/create", "RestoreTransient")
+    flush()
+    assert "RestoreTransient" in sm.scenes
+
+    osc_client.send_message("/preset/restore_defaults", 1)
+    flush()
+
+    assert "RestoreBaseline" in sm.scenes
+    assert "RestoreTransient" not in sm.scenes

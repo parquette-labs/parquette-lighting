@@ -144,6 +144,7 @@ class ServerContext:
     tick: Callable[[], None]
     audio_capture: AudioCapture
     session: SessionStore
+    scene_manager: SceneManager
 
 
 @pytest.fixture(scope="session")
@@ -262,7 +263,14 @@ def server_instance(
     # SceneManager self-registers OSC handlers for scene management.
     # Register the same built-in scenes as server.py so the UI→server
     # address diff test sees them.
-    sm = SceneManager(osc, dmx, presets, categories)
+    sm = SceneManager(
+        osc,
+        dmx,
+        presets,
+        categories,
+        filename=str(tmp_dir / "scenes.pickle"),
+        defaults_file=str(tmp_dir / "default-scenes.pickle"),
+    )
     for scene_name, preset_all in (
         ("all_black", "Off"),
         ("house_lights", "Static"),
@@ -294,6 +302,7 @@ def server_instance(
         tick=tick,
         audio_capture=audio_capture,
         session=session,
+        scene_manager=sm,
     )
 
     try:

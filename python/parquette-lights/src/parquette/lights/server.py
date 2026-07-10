@@ -114,6 +114,12 @@ from .util.session_store import SessionStore
     help="Auto-connect to a given Enttec port on boot (e.g. /dev/tty.usbserial-EN264168).",
 )
 @click.option(
+    "--dmx-auto-reconnect/--no-dmx-auto-reconnect",
+    default=True,
+    show_default=True,
+    help="Automatically reopen the Enttec DMX port if it disconnects.",
+)
+@click.option(
     "--presets-file",
     default="params.pickle",
     show_default=True,
@@ -133,6 +139,13 @@ from .util.session_store import SessionStore
     show_default=True,
     type=str,
     help="File to store and load user-created scenes from.",
+)
+@click.option(
+    "--default-scenes-file",
+    default="default-scenes.pickle",
+    show_default=True,
+    type=str,
+    help="Scenes defaults snapshot used by restore-defaults.",
 )
 @click.option(
     "--audio-window",
@@ -205,9 +218,11 @@ def run(
     art_net_auto: bool,
     enable_save_clear: bool,
     entec_auto: str,
+    dmx_auto_reconnect: bool,
     presets_file: str,
     defaults_file: str,
     scenes_file: str,
+    default_scenes_file: str,
     audio_window: float,
     rms_window: float,
     spot_color_fade: float,
@@ -230,10 +245,13 @@ def run(
     osc.set_local(local_ip, local_port)
     osc.set_debug(debug_osc_in, debug_osc_out)
     dmx = DMXManager(osc, art_net_ip)
-    dmx.use_art_net = boot_art_net
+    dmx.auto_reconnect = dmx_auto_reconnect
     dmx.art_net_auto_send(art_net_auto)
     if entec_auto is not None:
-        dmx.setup_dmx(entec_auto)
+        dmx.request_port(entec_auto)
+    elif boot_art_net:
+        dmx.request_port(DMXManager.ART_NET_PORT)
+    dmx.tick_device()
 
     session = SessionStore(session_file)
     # Peek the saved session for the user's coord-system preference so the
@@ -338,7 +356,13 @@ def run(
     sodium_ch = mixer.channel_lookup["sodium/dimming"]
 
     scene_manager = SceneManager(  # noqa: F841  pylint: disable=unused-variable
-        osc, dmx, presets, categories, filename=scenes_file, debug=debug
+        osc,
+        dmx,
+        presets,
+        categories,
+        filename=scenes_file,
+        defaults_file=default_scenes_file,
+        debug=debug,
     )
     scene_manager.tick_ms = tick_ms
 
@@ -469,6 +493,8 @@ def run(
         compute_ema = 0.0
         while True:
             compute_start = time.monotonic()
+
+            dmx.tick_device()
 
             if dmx.passthrough:
                 dmx.submit_passthrough()

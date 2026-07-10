@@ -3,8 +3,8 @@
 
 Workflow:
   1. Inspect the remote working tree over ssh. If it's dirty:
-     - For layout/params files, prompt to (a) scp them down into the local
-       working tree, (b) discard them on the remote, or (c) abort.
+     - For layout/params/scenes files, prompt to (a) scp them down into the
+       local working tree, (b) discard them on the remote, or (c) abort.
      - For any other dirty files, abort with a clear message.
      (Doing this BEFORE the local commit lets any scp'd files land in the
      same commit alongside whatever the user was already editing locally.)
@@ -38,6 +38,7 @@ REMOTE_PATH = "/Users/pq/parquette/parquette-lighting"
 SYNCABLE_PATHS = {
     "open-stage-control/layout-config.json",
     "python/parquette-lights/params.pickle",
+    "python/parquette-lights/scenes.pickle",
 }
 
 # Toggled by the --verbose/-v flag. When True, every shell command (local
@@ -143,7 +144,9 @@ def handle_remote_dirty(root: Path) -> None:
     syncable, blocking = classify_remote_dirty(entries)
 
     if blocking:
-        click.secho("Remote has uncommitted changes outside layout/params:", fg="red")
+        click.secho(
+            "Remote has uncommitted changes outside layout/params/scenes:", fg="red"
+        )
         for path in blocking:
             click.echo(f"  {path}")
         fail("Resolve manually on the remote before deploying.")
@@ -226,11 +229,25 @@ def remote_pull(branch: str) -> None:
 
 
 def snapshot_defaults() -> None:
-    """Copy the current params.pickle to default-params.pickle on the remote."""
-    step("Remote: snapshot params.pickle → default-params.pickle")
-    pickle_path = "python/parquette-lights/params.pickle"
-    defaults_path = "python/parquette-lights/default-params.pickle"
-    ssh(f"cp {shlex.quote(pickle_path)} {shlex.quote(defaults_path)}")
+    """Snapshot params.pickle and scenes.pickle to their default-* copies.
+
+    Runs on the remote after the pull so the just-deployed state becomes the
+    factory-restore baseline. params.pickle is always present (tracked);
+    scenes.pickle is machine-local and may not exist yet, so its copy is
+    guarded.
+    """
+    step("Remote: snapshot params/scenes pickles → default-*")
+    params_path = "python/parquette-lights/params.pickle"
+    params_defaults = "python/parquette-lights/default-params.pickle"
+    ssh(f"cp {shlex.quote(params_path)} {shlex.quote(params_defaults)}")
+
+    scenes_path = "python/parquette-lights/scenes.pickle"
+    scenes_defaults = "python/parquette-lights/default-scenes.pickle"
+    ssh(
+        f"test -f {shlex.quote(scenes_path)} "
+        f"&& cp {shlex.quote(scenes_path)} {shlex.quote(scenes_defaults)} "
+        f"|| echo 'no scenes.pickle yet, skipping scenes default snapshot'"
+    )
 
 
 def remote_install() -> None:

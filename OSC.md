@@ -170,7 +170,7 @@ Actions plus the dropdown bind for picking and listing scenes.
 | `/preset/clear/{category}` | UI → Server | delete the selected preset |
 | `/preset/selector/{category}` | bidirectional | select / echo current preset name |
 | `/preset/reload` | UI → Server | re-sync every preset-tracked param to the frontend (also resyncs the scene dropdown) |
-| `/preset/restore_defaults` | UI → Server | overwrite the active pickle with `default-params.pickle` and reload (gated by `/enable_save`) |
+| `/preset/restore_defaults` | UI → Server | overwrite the active preset and scenes pickles with `default-params.pickle` / `default-scenes.pickle` and reload both (gated by `/enable_save`) |
 
 ## `/coord_system` — Active coord system selector
 

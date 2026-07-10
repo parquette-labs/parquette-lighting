@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Optional
 
 import os
 import pickle
+import shutil
 
 from .category import Categories, Category
 from .dmx import DMXManager
@@ -127,6 +128,7 @@ class SceneManager:
         categories: Categories,
         *,
         filename: str = "scenes.pickle",
+        defaults_file: str = "default-scenes.pickle",
         debug: bool = False,
     ) -> None:
         self.osc = osc
@@ -134,6 +136,7 @@ class SceneManager:
         self.presets = presets
         self.categories = categories
         self.filename = filename
+        self.defaults_file = defaults_file
         self.debug = debug
 
         self.scenes: Dict[str, Scene] = {}
@@ -157,6 +160,10 @@ class SceneManager:
             "/scene/*", lambda addr, *args: self.on_scene_triggered(addr)
         )
         osc.dispatcher.map("/preset/reload", lambda addr, *args: self.sync())
+        osc.dispatcher.map(
+            "/preset/restore_defaults",
+            lambda addr, *args: self.restore_defaults(),
+        )
 
         self.load()
 
@@ -258,6 +265,33 @@ class SceneManager:
         self.sync()
         if self.debug:
             print("Scene cleared: {}".format(name), flush=True)
+
+    def restore_defaults(self) -> None:
+        """Overwrite the scenes pickle with the defaults snapshot and reload.
+
+        Fires on the same /preset/restore_defaults message as the preset
+        restore so scenes and presets reset together. Code-defined protected
+        scenes are kept; only user-created scenes are replaced.
+        """
+        if not self.presets.enable_save_clear:
+            return
+        if not os.path.isfile(self.defaults_file):
+            print(
+                'Restore scenes: "{}" not found, skipping.'.format(self.defaults_file),
+                flush=True,
+            )
+            return
+        shutil.copyfile(self.defaults_file, self.filename)
+        prev_selected = self.selected_scene.name if self.selected_scene else None
+        self.scenes = {
+            name: scene
+            for name, scene in self.scenes.items()
+            if scene.protect_save_clear
+        }
+        self.load()
+        self.selected_scene = self.scenes.get(prev_selected) if prev_selected else None
+        self.sync()
+        print('Restored scenes from "{}"'.format(self.defaults_file), flush=True)
 
     def load(self) -> None:
         """Load scenes from pickle on boot."""
