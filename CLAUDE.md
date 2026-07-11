@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `python/parquette-lights/` — main Python server (Poetry project, package `parquette.lights`). This is the main codebase and the backend server. It orchestrates a DMX lighting system in conjuection with a web UI based on open stage control
 - `open-stage-control/` — Open Stage Control front-end config. `layout-config.json` is the UI layout; other files are server/UI initial state.
-- `launchd/` — launchd plists + `install` script for auto-running the server and Open Stage Control on the mac mini.
+- `launchd/` — launchd plists + `install.sh` script for auto-running the server and Open Stage Control on the mac mini.
 - `esp/` — ESP-based hardware sketches (`controller_base`, `address_changer`, `i2c_scanner`). These will be used to create hardware interfaces sending OSC controls to the server. This can be ignored for now
 - `python/parquette-lights/params.pickle` — persisted preset state. Auto-written when presets are saved/cleared in the UI; commit it to persist.
+- `python/parquette-lights/scenes.pickle` — persisted user scenes. Auto-written when scenes are saved/cleared in the UI; commit it to persist.
 
 ## Common commands
 
@@ -47,7 +48,7 @@ The Open Stage Control front-end (in `open-stage-control/layout-config.json`) is
 - When creating parameters that need to be controlled by the front end, create them as OSCParam and include them in the preset manager so they can be saved and sync'd with the front end
 - When creating parameters assume you need a front end UI element (slider or similar) in the associated tab and that UI element should also have a text area under it with a name and a real time value
 - Use OSCParam.obj_param_setter with OSCParam where possible to avoid redundant code
-- When making changes to python code we should always run `poetry run check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors and `poetry run poe test-ui`
+- When making changes to python code we should always run `poetry run poe check` to format code and check for errors. We should also run `poetry run poe pytest` and check for any test errors and `poetry run poe test-ui`
 - Code written should use mypy typing hints
 - Do not use `pylint: disable=too-many-positional-arguments`. Instead, use `*` to make excess parameters keyword-only. The only exception is the main `run()` function in `server.py` (Click parameters must be positional) and `value_map` in `util/math.py` (pure math utility called extensively with positional args).
 - If you don't see the root cause for a bug don't make changes guessing at the solution, only describe possible debugging approaches.

@@ -5,7 +5,7 @@
 * Install [brew](https://brew.sh/)
 * `brew install pyenv` then [setup pyenv shims](https://github.com/pyenv/pyenv?tab=readme-ov-file#macos)
 * `brew install portaudio`
-* Install python 3.9.9 + (mac mini running 3.13.3), e.g. `pyenv install 3.13.3`
+* Install python ≥ 3.10 (mac mini running 3.13.3), e.g. `pyenv install 3.13.3`
 * Create a pyenv or set global, e.g. `pyenv virtualenv parquette 3.13.3` and `pyenv local parquette` in the repo
 * `pip install poetry` in the pyenv
 * in python/parquette-lights/
@@ -29,7 +29,7 @@ chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 # Launchd setup
 
 * in `launchd/`
-	* `./install` will install and offer to launch the launchctl service
+	* `./install.sh` will install and offer to launch the launchctl service
 	* check status with `launchctl list ca.parquette.lighting.server` `launchctl list ca.parquette.lighting.openstagecontrol` and check for `LastExitStatus = 0`
 	* should auto launch on machine boot
 
@@ -54,7 +54,7 @@ chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 		* `poetry run server`
 		* You may want to auto connect to your DMX with `--entec-auto "/dev/tty.usbserial-EN264168"` or similar
 * Config
-	* Go to [http://192.168.1.245:8080](http://192.168.1.245:8080) in your browser (note only accessible on the internal WiFi)
+	* Go to [http://parquette-house-mm.local:8080](http://parquette-house-mm.local:8080) in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"
 	* DMX
 		* Press "Refresh DMX ports"
