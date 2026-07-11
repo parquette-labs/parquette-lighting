@@ -5,7 +5,7 @@
 * Install [brew](https://brew.sh/)
 * `brew install pyenv` then [setup pyenv shims](https://github.com/pyenv/pyenv?tab=readme-ov-file#macos)
 * `brew install portaudio`
-* Install python 3.9.9 + (mac mini running 3.13.3), e.g. `pyenv install 3.13.3`
+* Install python ≥ 3.10 (mac mini running 3.13.3), e.g. `pyenv install 3.13.3`
 * Create a pyenv or set global, e.g. `pyenv virtualenv parquette 3.13.3` and `pyenv local parquette` in the repo
 * `pip install poetry` in the pyenv
 * in python/parquette-lights/
@@ -29,7 +29,7 @@ chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 # Launchd setup
 
 * in `launchd/`
-	* `./install` will install and offer to launch the launchctl service
+	* `./install.sh` will install and offer to launch the launchctl service
 	* check status with `launchctl list ca.parquette.lighting.server` `launchctl list ca.parquette.lighting.openstagecontrol` and check for `LastExitStatus = 0`
 	* should auto launch on machine boot
 
@@ -54,7 +54,7 @@ chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 		* `poetry run server`
 		* You may want to auto connect to your DMX with `--entec-auto "/dev/tty.usbserial-EN264168"` or similar
 * Config
-	* Go to [http://192.168.1.245:8080](http://192.168.1.245:8080) in your browser (note only accessible on the internal WiFi)
+	* Go to [http://parquette-house-mm.local:8080](http://parquette-house-mm.local:8080) in your browser (note only accessible on the internal WiFi)
 	* Go into "FFT and DMX Setup"
 	* DMX
 		* Press "Refresh DMX ports"
@@ -70,6 +70,19 @@ chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
 		* Press "Start FFT"
 		* You should see audio signal coming in to the FFT visualizer
 
+# Remote access (Tailscale)
+
+Off-LAN, the Open Stage Control UI is reachable over Tailscale — on Severin
+Smith's tailnet as a machine named `parquette`. From any device on the tailnet
+(Tailscale running, MagicDNS on):
+
+```
+http://parquette:8080
+```
+
+macOS clients need the official Tailscale app (not the Homebrew `tailscaled`
+daemon) for the `parquette` name to resolve; otherwise use the machine's tailnet IP.
+
 # Deploying
 
 If you're on the parquette LAN you can use the deploy script to push code to the MM
@@ -83,8 +96,9 @@ poetry run poe deploy
 This wraps `scripts/deploy.py`. It will:
 
 1. Inspect the remote (`parquette-mm`) working tree. If
-   `open-stage-control/layout-config.json` or
-   `python/parquette-lights/params.pickle` were edited live on the mac mini,
+   `open-stage-control/layout-config.json`,
+   `python/parquette-lights/params.pickle`, or
+   `python/parquette-lights/scenes.pickle` were edited live on the mac mini,
    you'll be prompted to (a) `scp` them down into your local checkout, (b)
    discard them on the remote, or (c) abort. Any other dirty files on the
    remote abort the deploy — fix them by hand first.
@@ -93,7 +107,9 @@ This wraps `scripts/deploy.py`. It will:
    message. Closing the editor without saving aborts.
 3. `git push` the current branch to origin.
 4. SSH to the remote, fetch + checkout the same branch, and `git pull --ff-only`.
-5. Run `./launchd/install.sh -y` on the remote to reinstall and restart the
+5. Snapshot the remote's `params.pickle` → `default-params.pickle` and
+   `scenes.pickle` → `default-scenes.pickle` (the baseline `/preset/restore_defaults` restores).
+6. Run `./launchd/install.sh -y` on the remote to reinstall and restart the
    `ca.parquette.lighting.server` and `…openstagecontrol` launchd agents.
 
 Useful flags: `--skip-install` (sync code without restarting launchd),
@@ -112,8 +128,8 @@ remembered state (e.g. start cold for an event) just delete the file:
 rm python/parquette-lights/session.pickle
 ```
 
-This file is intentionally untracked — only `params.pickle` (the saved
-preset library) is committed.
+This file is intentionally untracked — `params.pickle` (saved presets) and
+`scenes.pickle` (saved scenes) are the committed state files.
 
 # Repo information
 

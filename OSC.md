@@ -225,6 +225,8 @@ Actions: `port_refresh`, `port_disconnect`.
 
 Port selection: standard `port_name` + `port_name/values` pattern (see Conventions).
 
+`/dmx/status` (Server → UI) — human-readable connect/error line pushed on connect, disconnect, open failure, or read/write fault. Event-driven only (not re-pushed to clients that join later).
+
 ## `/debug/...` — Debug UI frames
 
 `/debug/fft_frame`, `/debug/audio_frame` — `UIDebugFrame` heartbeat containers (server → UI with debug metrics).
