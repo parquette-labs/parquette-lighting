@@ -29,7 +29,7 @@ from pathlib import Path
 import click
 
 
-REMOTE_HOST = "parquette-mm"
+REMOTE_HOST = "parquette"
 REMOTE_PATH = "/Users/pq/parquette/parquette-lighting"
 
 # Repo-relative paths whose modifications on the remote we are willing to
