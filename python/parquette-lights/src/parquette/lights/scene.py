@@ -161,10 +161,18 @@ class SceneManager:
         """Register a scene so it appears in the dropdown."""
         self.scenes[scene.name] = scene
 
+    def find_scene(self, name: str) -> Optional[Scene]:
+        """Look up a scene by name, case-insensitively."""
+        key = name.strip().lower()
+        for scene in self.scenes.values():
+            if scene.name.lower() == key:
+                return scene
+        return None
+
     def on_scene_triggered(self, addr: str) -> None:
         """Handle all /scene/* messages: activate and track the scene."""
         name = addr.split("/scene/", 1)[1]
-        scene = self.scenes.get(name)
+        scene = self.find_scene(name)
         if scene is not None:
             self.selected_scene = scene
             scene.activate()
@@ -193,15 +201,26 @@ class SceneManager:
         )
 
     def create_scene(self, name: str) -> None:
-        """Capture current state as a new or updated scene."""
+        """Capture current state as a new or updated scene.
+
+        Name matching is case-insensitive: saving "all black" resolves to the
+        protected "All Black" and is refused, and saving a name that differs
+        only in case from an existing user scene overwrites it rather than
+        creating a case-variant duplicate.
+        """
         if not name or not name.strip():
             return
         name = name.strip()
 
-        if name in self.scenes and self.scenes[name].protect_save_clear:
-            if self.debug:
-                print("Scene create: '{}' is protected.".format(name), flush=True)
-            return
+        existing = self.find_scene(name)
+        if existing is not None:
+            if existing.protect_save_clear:
+                if self.debug:
+                    print("Scene create: '{}' is protected.".format(name), flush=True)
+                return
+            # Overwrite in place: keep the existing scene's canonical casing so
+            # we replace its entry instead of adding a case-variant key.
+            name = existing.name
 
         snapshot = self.capture_current_state()
         scene = Scene(
