@@ -143,7 +143,6 @@ class SceneManager:
         osc.dispatcher.map(
             "/scene/create", lambda addr, *args: self.create_scene(str(args[0]))
         )
-        osc.dispatcher.map("/scene/save_current", lambda addr, *args: self.save_scene())
         osc.dispatcher.map(
             "/scene/clear_current", lambda addr, *args: self.clear_scene()
         )
@@ -219,14 +218,6 @@ class SceneManager:
         self.sync()
         if self.debug:
             print("Scene created/updated: {}".format(name), flush=True)
-
-    def save_scene(self) -> None:
-        """Overwrite the selected scene with current state."""
-        if not self.presets.enable_save_clear:
-            return
-        if self.selected_scene is None:
-            return
-        self.create_scene(self.selected_scene.name)
 
     def clear_scene(self) -> None:
         """Delete the currently selected scene."""
