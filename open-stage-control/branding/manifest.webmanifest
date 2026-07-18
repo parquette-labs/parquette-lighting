@@ -1,0 +1,14 @@
+{
+  "name": "Parquette Lighting",
+  "short_name": "Parquette",
+  "description": "Parquette DMX lighting control",
+  "icons": [
+    { "src": "/__APP_DIR__/assets/favicon.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "/__APP_DIR__/assets/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "theme_color": "#21252b",
+  "background_color": "#21252b",
+  "display": "standalone",
+  "orientation": "landscape",
+  "start_url": "/"
+}

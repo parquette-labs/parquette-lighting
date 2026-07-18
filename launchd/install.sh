@@ -15,6 +15,28 @@ project_path=$(dirname "$script_path")
 
 cd $script_path
 ../open-stage-control/build-config.sh
+
+# Install custom Open Stage Control branding (disco-ball favicon, apple-touch
+# icon, and web manifest) into the app bundle. OSC serves these from its own
+# app directory rather than from the session, so they are copied in here on
+# every install and are overwritten whenever Open Stage Control itself is
+# updated — re-run this script after updating OSC to reapply.
+osc_app="/Applications/open-stage-control.app/Contents/Resources/app"
+osc_branding="$project_path/open-stage-control/branding"
+if [ -d "$osc_app/assets" ]; then
+    echo "Installing Open Stage Control branding (favicon, logo, manifest)"
+    [ -f "$osc_branding/favicon.png" ] && cp "$osc_branding/favicon.png" "$osc_app/assets/favicon.png"
+    [ -f "$osc_branding/logo.png" ] && cp "$osc_branding/logo.png" "$osc_app/assets/logo.png"
+    [ -f "$osc_branding/manifest.webmanifest" ] && cp "$osc_branding/manifest.webmanifest" "$osc_app/assets/manifest.webmanifest"
+    osc_index="$osc_app/client/index.html"
+    if [ -f "$osc_index" ] && ! grep -q 'rel="manifest"' "$osc_index"; then
+        echo "  linking manifest into client/index.html"
+        perl -0pi -e 's{(<link rel="shortcut icon"[^>]*>)}{$1\n    <link rel="manifest" href="/__APP_DIR__/assets/manifest.webmanifest"/>}' "$osc_index"
+    fi
+else
+    echo "Open Stage Control app not found at $osc_app; skipping branding install"
+fi
+
 ./uninstall.sh
 
 declare -a services=("ca.parquette.lighting.openstagecontrol" "ca.parquette.lighting.server")
