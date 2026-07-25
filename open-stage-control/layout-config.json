@@ -298,7 +298,7 @@
                 "decimals": 2,
                 "bypass": true,
                 "click": false,
-                "onValue": "if (value) unfocus()"
+                "onValue": "if (value) { unfocus(); send('/scene/create', get('scene_name_input')); }"
               },
               {
                 "type": "button",
