@@ -373,6 +373,7 @@ def run(
         categories,
         filename=scenes_file,
         defaults_file=default_scenes_file,
+        default_channel_offsets={sodium_ch: 0},
         debug=debug,
     )
 

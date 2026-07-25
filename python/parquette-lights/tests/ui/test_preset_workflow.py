@@ -188,3 +188,34 @@ def test_scene_save_creates_named_scene(
     osc_client.send_message("/scene/create", "")
     flush()
     assert set(sm.scenes) == before, "empty name should not create a scene"
+
+
+def test_non_house_scenes_zero_sodium(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """House Lights keeps sodium raised; every other scene -- including
+    user-created ones, which never capture sodium -- drops it to zero via the
+    SceneManager default offset."""
+
+    ctx = server_instance
+    sodium = ctx.mixer.channel_lookup.get("sodium/dimming")
+    assert sodium is not None, "expected a 'sodium/dimming' mix channel"
+
+    osc_client.send_message("/scene/house_lights", 1)
+    flush()
+    assert sodium.offset > 0, "house_lights should raise sodium"
+
+    # A user scene (no captured sodium) must reset it on activation.
+    save_scene_via_ui(osc_client, flush, "SodiumProbe")
+    sodium.offset = 200
+    osc_client.send_message("/scene/SodiumProbe", 1)
+    flush()
+    assert sodium.offset == 0, "a user scene should zero the sodium offset"
+
+    # class_lights is also non-House -> sodium zeroed.
+    sodium.offset = 200
+    osc_client.send_message("/scene/class_lights", 1)
+    flush()
+    assert sodium.offset == 0, "class_lights should zero the sodium offset"

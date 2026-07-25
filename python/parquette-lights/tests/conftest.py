@@ -263,6 +263,7 @@ def server_instance(
     # SceneManager self-registers OSC handlers for scene management.
     # Register the same built-in scenes as server.py so the UI→server
     # address diff test sees them.
+    sodium_ch = mixer.channel_lookup["sodium/dimming"]
     sm = SceneManager(
         osc,
         dmx,
@@ -270,11 +271,12 @@ def server_instance(
         categories,
         filename=str(tmp_dir / "scenes.pickle"),
         defaults_file=str(tmp_dir / "default-scenes.pickle"),
+        default_channel_offsets={sodium_ch: 0},
     )
-    for scene_name, preset_all in (
-        ("all_black", "Off"),
-        ("house_lights", "Static"),
-        ("class_lights", "Class"),
+    for scene_name, preset_all, channel_offsets in (
+        ("all_black", "Off", {sodium_ch: 0.0}),
+        ("house_lights", "Static", {sodium_ch: 255.0}),
+        ("class_lights", "Class", {sodium_ch: 0.0}),
     ):
         sm.register_scene(
             Scene(
@@ -284,6 +286,8 @@ def server_instance(
                 presets=presets,
                 masters={},
                 preset_all=preset_all,
+                channel_offsets=channel_offsets,
+                protect_save_clear=True,
             )
         )
 

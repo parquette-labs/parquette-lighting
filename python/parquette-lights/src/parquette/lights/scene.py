@@ -127,6 +127,7 @@ class SceneManager:
         *,
         filename: str = "scenes.pickle",
         defaults_file: str = "default-scenes.pickle",
+        default_channel_offsets: Optional[Dict[MixChannel, float]] = None,
         debug: bool = False,
     ) -> None:
         self.osc = osc
@@ -135,6 +136,9 @@ class SceneManager:
         self.categories = categories
         self.filename = filename
         self.defaults_file = defaults_file
+        self.default_channel_offsets: Dict[MixChannel, float] = dict(
+            default_channel_offsets or {}
+        )
         self.debug = debug
 
         self.scenes: Dict[str, Scene] = {}
@@ -176,6 +180,14 @@ class SceneManager:
         scene = self.find_scene(name)
         if scene is not None:
             self.selected_scene = scene
+            # Apply default channel offsets (e.g. sodium -> 0) before the scene
+            # runs; the scene's own channel_offsets then override them (House
+            # Lights re-raises sodium to full). Any scene that doesn't set a
+            # channel -- including every user-created scene -- falls back to the
+            # default, so non-House scenes always drop sodium to zero.
+            # activate()'s preset sync then pushes the new offset to the fader.
+            for channel, offset in self.default_channel_offsets.items():
+                channel.offset = offset
             scene.activate()
 
     def capture_current_state(self) -> Scene:
