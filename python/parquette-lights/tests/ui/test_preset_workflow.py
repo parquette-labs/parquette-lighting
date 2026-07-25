@@ -36,6 +36,19 @@ def _find_numeric_param(ctx: ServerContext, category_name: str) -> Optional[OSCP
     return None
 
 
+def save_scene_via_ui(
+    osc_client: SimpleUDPClient, flush: Callable[..., None], name: str
+) -> None:
+    """Save a scene the way the UI does after the reliability fix: the name
+    field streams its committed value to /scene_name_input, then the Save
+    button fires a bare /scene/create that uses the server's staged name."""
+
+    osc_client.send_message("/scene_name_input", name)
+    flush()
+    osc_client.send_message("/scene/create", 1)
+    flush()
+
+
 def test_preset_selection_updates_current_presets(
     server_instance: ServerContext,
     osc_client: SimpleUDPClient,
@@ -139,14 +152,12 @@ def test_restore_defaults_resets_scenes_to_snapshot(
 
     # Create a baseline user scene and snapshot it as the restore default,
     # mirroring what deploy's snapshot_defaults() does on the remote.
-    osc_client.send_message("/scene/create", "RestoreBaseline")
-    flush()
+    save_scene_via_ui(osc_client, flush, "RestoreBaseline")
     assert "RestoreBaseline" in sm.scenes
     shutil.copyfile(sm.filename, sm.defaults_file)
 
     # A scene created after the snapshot should not survive the restore.
-    osc_client.send_message("/scene/create", "RestoreTransient")
-    flush()
+    save_scene_via_ui(osc_client, flush, "RestoreTransient")
     assert "RestoreTransient" in sm.scenes
 
     osc_client.send_message("/preset/restore_defaults", 1)
@@ -154,3 +165,33 @@ def test_restore_defaults_resets_scenes_to_snapshot(
 
     assert "RestoreBaseline" in sm.scenes
     assert "RestoreTransient" not in sm.scenes
+
+
+def test_scene_save_uses_staged_name(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """A bare /scene/create saves under the name last staged via
+    /scene_name_input. This is the server-side name capture that replaced the
+    racy client-side read of the text field (which dropped or truncated
+    names, e.g. 'Red Disco' -> 'Re')."""
+
+    sm = server_instance.scene_manager
+
+    save_scene_via_ui(osc_client, flush, "Red Disco")
+    assert "Red Disco" in sm.scenes, "staged name was not used for /scene/create"
+
+    # Re-staging a new name and creating must save the full new name, not a
+    # stale or partial one.
+    save_scene_via_ui(osc_client, flush, "Blue Groove")
+    assert "Blue Groove" in sm.scenes
+    assert "Red Disco" in sm.scenes  # earlier scene untouched
+
+    # A create with an empty staged name must be a no-op, not save a blank.
+    before = set(sm.scenes)
+    osc_client.send_message("/scene_name_input", "")
+    flush()
+    osc_client.send_message("/scene/create", 1)
+    flush()
+    assert set(sm.scenes) == before, "empty staged name should not create a scene"
