@@ -219,3 +219,36 @@ def test_non_house_scenes_zero_sodium(
     osc_client.send_message("/scene/class_lights", 1)
     flush()
     assert sodium.offset == 0, "class_lights should zero the sodium offset"
+
+
+def test_scene_update_captures_new_preset_selection(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """Re-saving an existing scene must capture the CURRENT preset selection,
+    not the one from when the scene was first saved. The server-side update
+    (create_scene overwriting by name) has always worked -- this pins that
+    contract down; the reported "update doesn't stick" bug was in the Save
+    button, which failed to send /scene/create when the name field was
+    pre-filled by selecting a scene rather than typed."""
+
+    sm = server_instance.scene_manager
+    reds = server_instance.categories.by_name(RED_CATEGORY_NAME)
+
+    osc_client.send_message(f"/preset/selector/{RED_CATEGORY_NAME}", "UpdatePresetOne")
+    flush()
+    save_scene_via_ui(osc_client, flush, "UpdateProbe")
+    scene = sm.find_scene("UpdateProbe")
+    assert scene is not None and scene.presets_by_category is not None
+    assert scene.presets_by_category[reds] == "UpdatePresetOne"
+
+    # Change the selection and re-save under the SAME name (an update).
+    osc_client.send_message(f"/preset/selector/{RED_CATEGORY_NAME}", "UpdatePresetTwo")
+    flush()
+    save_scene_via_ui(osc_client, flush, "UpdateProbe")
+    scene = sm.find_scene("UpdateProbe")
+    assert scene is not None and scene.presets_by_category is not None
+    assert (
+        scene.presets_by_category[reds] == "UpdatePresetTwo"
+    ), "re-saving an existing scene did not capture the new preset selection"
