@@ -7,6 +7,7 @@ siblings, children exceeding their parent, and missing `patchbay` CSS.
 
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -251,3 +252,63 @@ def test_top_level_tabs_present(layout_widgets: List[Widget], expected_id: str) 
     assert (
         expected_id in ids
     ), f"Top-level tab {expected_id!r} missing from layout-config.json"
+
+
+# Each /visualizer/enable_* heartbeat is sent from the root widget (its
+# onValue plus a 1s onCreate interval) gated on the *active tab index*. Those
+# indices are hardcoded, so any tab reorder must keep them in sync with the
+# tab positions — otherwise the matching visualizer silently freezes (the
+# Color-tab insertion shifted FFT/DMX and Visualizer and did exactly that).
+VISUALIZER_ENABLE_TAB = {
+    "enable_fft_spectrum": "tab_fft_dmx",
+    "enable_fft_gen_timeseries": "tab_fft_dmx",
+    "enable_synth": "tab_synth_controls",
+    "enable_fixture": "tab_visualizer",
+}
+
+
+def find_root(node: Any) -> Optional[Dict[str, Any]]:
+    if isinstance(node, dict):
+        if node.get("type") == "root":
+            return node
+        for value in node.values():
+            found = find_root(value)
+            if found is not None:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = find_root(value)
+            if found is not None:
+                return found
+    return None
+
+
+def enable_gate_indices(script: str, enable: str) -> List[int]:
+    """Tab indices the root scripts compare against for a given enable name."""
+    esc = re.escape(enable)
+    hits = re.findall(rf'{esc}",\s*\(value ==\s*(\d+)\)', script)  # onValue ternary
+    hits += re.findall(rf"if \(v ==\s*(\d+)\)[^;{{]*\{{[^}}]*{esc}", script)  # grouped
+    hits += re.findall(
+        rf'if \(v ==\s*(\d+)\) send\("/visualizer/{esc}"', script
+    )  # single
+    return [int(h) for h in hits]
+
+
+@pytest.mark.parametrize("enable,tab_id", sorted(VISUALIZER_ENABLE_TAB.items()))
+def test_visualizer_enable_indices_track_tab_positions(
+    layout_json: Dict[str, Any], enable: str, tab_id: str
+) -> None:
+    """Guards the root widget's hardcoded visualizer-enable tab indices."""
+    root = find_root(layout_json)
+    assert root is not None, "root widget not found in layout"
+    tab_index = {t["id"]: i for i, t in enumerate(root["tabs"])}
+    assert tab_id in tab_index, f"{tab_id!r} missing from root tabs"
+    expected = tab_index[tab_id]
+
+    script = (root.get("onValue") or "") + "\n" + (root.get("onCreate") or "")
+    found = enable_gate_indices(script, enable)
+    assert found, f"no tab-index gate found for {enable!r} in root onValue/onCreate"
+    assert all(i == expected for i in found), (
+        f"{enable!r} is gated on tab index(es) {sorted(set(found))} but "
+        f"{tab_id!r} is at index {expected} — update the root onValue/onCreate"
+    )
