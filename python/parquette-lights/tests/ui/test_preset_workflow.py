@@ -36,6 +36,17 @@ def _find_numeric_param(ctx: ServerContext, category_name: str) -> Optional[OSCP
     return None
 
 
+def save_scene_via_ui(
+    osc_client: SimpleUDPClient, flush: Callable[..., None], name: str
+) -> None:
+    """Save a scene the way the UI does after the reliability fix: the name
+    field's commit sends /scene/create with its value, so the name and the
+    save trigger arrive as one atomic message (no cross-message race)."""
+
+    osc_client.send_message("/scene/create", name)
+    flush()
+
+
 def test_preset_selection_updates_current_presets(
     server_instance: ServerContext,
     osc_client: SimpleUDPClient,
@@ -139,14 +150,12 @@ def test_restore_defaults_resets_scenes_to_snapshot(
 
     # Create a baseline user scene and snapshot it as the restore default,
     # mirroring what deploy's snapshot_defaults() does on the remote.
-    osc_client.send_message("/scene/create", "RestoreBaseline")
-    flush()
+    save_scene_via_ui(osc_client, flush, "RestoreBaseline")
     assert "RestoreBaseline" in sm.scenes
     shutil.copyfile(sm.filename, sm.defaults_file)
 
     # A scene created after the snapshot should not survive the restore.
-    osc_client.send_message("/scene/create", "RestoreTransient")
-    flush()
+    save_scene_via_ui(osc_client, flush, "RestoreTransient")
     assert "RestoreTransient" in sm.scenes
 
     osc_client.send_message("/preset/restore_defaults", 1)
@@ -154,3 +163,59 @@ def test_restore_defaults_resets_scenes_to_snapshot(
 
     assert "RestoreBaseline" in sm.scenes
     assert "RestoreTransient" not in sm.scenes
+
+
+def test_scene_save_creates_named_scene(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """/scene/create carries the scene name in a single message (the field's
+    own commit), so the full name is saved atomically — no cross-message race,
+    no partial or dropped names (the 'Red Disco' -> 'Re' bug)."""
+
+    sm = server_instance.scene_manager
+
+    save_scene_via_ui(osc_client, flush, "Red Disco")
+    assert "Red Disco" in sm.scenes, "scene name from /scene/create was not saved"
+
+    save_scene_via_ui(osc_client, flush, "Blue Groove")
+    assert "Blue Groove" in sm.scenes
+    assert "Red Disco" in sm.scenes  # earlier scene untouched
+
+    # An empty name must be a no-op, not create a blank scene.
+    before = set(sm.scenes)
+    osc_client.send_message("/scene/create", "")
+    flush()
+    assert set(sm.scenes) == before, "empty name should not create a scene"
+
+
+def test_non_house_scenes_zero_sodium(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """House Lights keeps sodium raised; every other scene -- including
+    user-created ones, which never capture sodium -- drops it to zero via the
+    SceneManager default offset."""
+
+    ctx = server_instance
+    sodium = ctx.mixer.channel_lookup.get("sodium/dimming")
+    assert sodium is not None, "expected a 'sodium/dimming' mix channel"
+
+    osc_client.send_message("/scene/house_lights", 1)
+    flush()
+    assert sodium.offset > 0, "house_lights should raise sodium"
+
+    # A user scene (no captured sodium) must reset it on activation.
+    save_scene_via_ui(osc_client, flush, "SodiumProbe")
+    sodium.offset = 200
+    osc_client.send_message("/scene/SodiumProbe", 1)
+    flush()
+    assert sodium.offset == 0, "a user scene should zero the sodium offset"
+
+    # class_lights is also non-House -> sodium zeroed.
+    sodium.offset = 200
+    osc_client.send_message("/scene/class_lights", 1)
+    flush()
+    assert sodium.offset == 0, "class_lights should zero the sodium offset"

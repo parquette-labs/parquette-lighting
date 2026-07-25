@@ -156,8 +156,7 @@ Actions plus the dropdown bind for picking and listing scenes.
 
 | Address | Direction | Purpose |
 |---|---|---|
-| `/scene/create` | UI → Server | capture current state as a scene; payload is the scene name string |
-| `/scene/save_current` | UI → Server | overwrite the currently selected scene |
+| `/scene/create` | UI → Server | save a scene from the current state (create, or overwrite by name); payload is the scene name string |
 | `/scene/clear_current` | UI → Server | delete the currently selected scene |
 | `/scene_selector` | bidirectional | echo / select the active scene name |
 | `/scene_selector/values` | Server → UI | scene-name → name dict for the dropdown |
@@ -247,5 +246,5 @@ Widgets in `open-stage-control/layout-config.json` that send to additional addre
 |---|---|
 | Top-level tab switcher | `/visualizer/enable_fft_spectrum`, `/visualizer/enable_fft_gen_timeseries`, `/visualizer/enable_synth`, `/visualizer/enable_fixture` (one address per active-tab index) |
 | Scene dropdown | `/scene/{value}` whenever a scene name is picked |
-| Scene name buttons | `/scene/create`, `/scene/save_current`, `/scene/clear_current` |
+| Scene name buttons | `/scene/create`, `/scene/clear_current` |
 | Spot pantilt nudge buttons (per spot, 4 directions) | `/chan/spot_{1,2}/pantilt/offset` (read-modify-write by `spot_{1,2}_nudge_step`) |

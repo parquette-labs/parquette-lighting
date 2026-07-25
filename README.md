@@ -95,7 +95,7 @@ poetry run poe deploy
 
 This wraps `scripts/deploy.py`. It will:
 
-1. Inspect the remote (`parquette-mm`) working tree. If
+1. Inspect the remote (`parquette`) working tree. If
    `open-stage-control/layout-config.json`,
    `python/parquette-lights/params.pickle`, or
    `python/parquette-lights/scenes.pickle` were edited live on the mac mini,

@@ -129,6 +129,7 @@ class SceneManager:
         *,
         filename: str = "scenes.pickle",
         defaults_file: str = "default-scenes.pickle",
+        default_channel_offsets: Optional[Dict[MixChannel, float]] = None,
         debug: bool = False,
     ) -> None:
         self.osc = osc
@@ -137,6 +138,9 @@ class SceneManager:
         self.categories = categories
         self.filename = filename
         self.defaults_file = defaults_file
+        self.default_channel_offsets: Dict[MixChannel, float] = dict(
+            default_channel_offsets or {}
+        )
         self.debug = debug
 
         self.scenes: Dict[str, Scene] = {}
@@ -146,9 +150,9 @@ class SceneManager:
         self.on_fade_change: Optional[Callable] = None
 
         osc.dispatcher.map(
-            "/scene/create", lambda addr, *args: self.create_scene(str(args[0]))
+            "/scene/create",
+            lambda addr, *args: self.create_scene(str(args[0]) if args else ""),
         )
-        osc.dispatcher.map("/scene/save_current", lambda addr, *args: self.save_scene())
         osc.dispatcher.map(
             "/scene/clear_current", lambda addr, *args: self.clear_scene()
         )
@@ -183,13 +187,30 @@ class SceneManager:
             return 0
         return max(1, int(self.fade_ms / self.tick_ms))
 
+    def find_scene(self, name: str) -> Optional[Scene]:
+        """Look up a scene by name, case-insensitively."""
+        key = name.strip().lower()
+        for scene in self.scenes.values():
+            if scene.name.lower() == key:
+                return scene
+        return None
+
     def on_scene_triggered(self, addr: str) -> None:
         """Handle all /scene/* messages: activate and track the scene."""
         name = addr.split("/scene/", 1)[1]
-        scene = self.scenes.get(name)
+        scene = self.find_scene(name)
         if scene is not None:
             self.selected_scene = scene
-            scene.activate(fade_ticks=self.fade_ticks())
+            # Apply default channel offsets (e.g. sodium -> 0) before the scene
+            # runs; the scene's own channel_offsets then override them (House
+            # Lights re-raises sodium to full). Any scene that doesn't set a
+            # channel -- including every user-created scene -- falls back to the
+            # default, so non-House scenes always drop sodium to zero. Fading the
+            # default keeps sodium in step with the rest of the scene's fade.
+            fade_ticks = self.fade_ticks()
+            for channel, offset in self.default_channel_offsets.items():
+                channel.set_offset(offset, fade_ticks)
+            scene.activate(fade_ticks=fade_ticks)
 
     def capture_current_state(self) -> Scene:
         """Build a Scene from the current lighting state."""
@@ -215,15 +236,26 @@ class SceneManager:
         )
 
     def create_scene(self, name: str) -> None:
-        """Capture current state as a new or updated scene."""
+        """Capture current state as a new or updated scene.
+
+        Name matching is case-insensitive: saving "all black" resolves to the
+        protected "All Black" and is refused, and saving a name that differs
+        only in case from an existing user scene overwrites it rather than
+        creating a case-variant duplicate.
+        """
         if not name or not name.strip():
             return
         name = name.strip()
 
-        if name in self.scenes and self.scenes[name].protect_save_clear:
-            if self.debug:
-                print("Scene create: '{}' is protected.".format(name), flush=True)
-            return
+        existing = self.find_scene(name)
+        if existing is not None:
+            if existing.protect_save_clear:
+                if self.debug:
+                    print("Scene create: '{}' is protected.".format(name), flush=True)
+                return
+            # Overwrite in place: keep the existing scene's canonical casing so
+            # we replace its entry instead of adding a case-variant key.
+            name = existing.name
 
         snapshot = self.capture_current_state()
         scene = Scene(
@@ -240,14 +272,6 @@ class SceneManager:
         self.sync()
         if self.debug:
             print("Scene created/updated: {}".format(name), flush=True)
-
-    def save_scene(self) -> None:
-        """Overwrite the selected scene with current state."""
-        if not self.presets.enable_save_clear:
-            return
-        if self.selected_scene is None:
-            return
-        self.create_scene(self.selected_scene.name)
 
     def clear_scene(self) -> None:
         """Delete the currently selected scene."""
