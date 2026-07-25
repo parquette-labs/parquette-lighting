@@ -233,7 +233,7 @@
                 "decimals": 2,
                 "bypass": false,
                 "values": "OSC{values}",
-                "onValue": "if (value) { set('scene_name_input', value); send('/scene_name_input', value); send('/scene/' + value, 1); }",
+                "onValue": "if (value) { set('scene_name_input', value, {sync: false}); send('/scene/' + value, 1); }",
                 "icon": "true",
                 "align": "center"
               },
@@ -266,14 +266,15 @@
                 "default": "",
                 "address": "auto",
                 "decimals": 2,
-                "bypass": false,
+                "bypass": true,
                 "align": "center",
                 "unit": "",
                 "noCanvas": false,
                 "asYouType": false,
                 "numeric": false,
                 "validation": "",
-                "maxLength": ""
+                "maxLength": "",
+                "onValue": "if (value) send('/scene/create', value)"
               },
               {
                 "type": "button",
@@ -297,7 +298,7 @@
                 "decimals": 2,
                 "bypass": true,
                 "click": false,
-                "onValue": "if (value) send('/scene/create', 1)"
+                "onValue": "if (value) unfocus()"
               },
               {
                 "type": "button",

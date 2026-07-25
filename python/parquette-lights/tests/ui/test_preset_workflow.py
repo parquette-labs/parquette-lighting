@@ -40,12 +40,10 @@ def save_scene_via_ui(
     osc_client: SimpleUDPClient, flush: Callable[..., None], name: str
 ) -> None:
     """Save a scene the way the UI does after the reliability fix: the name
-    field streams its committed value to /scene_name_input, then the Save
-    button fires a bare /scene/create that uses the server's staged name."""
+    field's commit sends /scene/create with its value, so the name and the
+    save trigger arrive as one atomic message (no cross-message race)."""
 
-    osc_client.send_message("/scene_name_input", name)
-    flush()
-    osc_client.send_message("/scene/create", 1)
+    osc_client.send_message("/scene/create", name)
     flush()
 
 
@@ -167,31 +165,26 @@ def test_restore_defaults_resets_scenes_to_snapshot(
     assert "RestoreTransient" not in sm.scenes
 
 
-def test_scene_save_uses_staged_name(
+def test_scene_save_creates_named_scene(
     server_instance: ServerContext,
     osc_client: SimpleUDPClient,
     flush: Callable[..., None],
 ) -> None:
-    """A bare /scene/create saves under the name last staged via
-    /scene_name_input. This is the server-side name capture that replaced the
-    racy client-side read of the text field (which dropped or truncated
-    names, e.g. 'Red Disco' -> 'Re')."""
+    """/scene/create carries the scene name in a single message (the field's
+    own commit), so the full name is saved atomically — no cross-message race,
+    no partial or dropped names (the 'Red Disco' -> 'Re' bug)."""
 
     sm = server_instance.scene_manager
 
     save_scene_via_ui(osc_client, flush, "Red Disco")
-    assert "Red Disco" in sm.scenes, "staged name was not used for /scene/create"
+    assert "Red Disco" in sm.scenes, "scene name from /scene/create was not saved"
 
-    # Re-staging a new name and creating must save the full new name, not a
-    # stale or partial one.
     save_scene_via_ui(osc_client, flush, "Blue Groove")
     assert "Blue Groove" in sm.scenes
     assert "Red Disco" in sm.scenes  # earlier scene untouched
 
-    # A create with an empty staged name must be a no-op, not save a blank.
+    # An empty name must be a no-op, not create a blank scene.
     before = set(sm.scenes)
-    osc_client.send_message("/scene_name_input", "")
+    osc_client.send_message("/scene/create", "")
     flush()
-    osc_client.send_message("/scene/create", 1)
-    flush()
-    assert set(sm.scenes) == before, "empty staged name should not create a scene"
+    assert set(sm.scenes) == before, "empty name should not create a scene"

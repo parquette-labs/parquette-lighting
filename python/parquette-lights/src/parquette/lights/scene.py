@@ -139,14 +139,10 @@ class SceneManager:
 
         self.scenes: Dict[str, Scene] = {}
         self.selected_scene: Optional[Scene] = None
-        self.staged_name: str = ""
 
         osc.dispatcher.map(
-            "/scene_name_input",
-            lambda addr, *args: self.stage_name(str(args[0]) if args else ""),
-        )
-        osc.dispatcher.map(
-            "/scene/create", lambda addr, *args: self.create_scene(self.staged_name)
+            "/scene/create",
+            lambda addr, *args: self.create_scene(str(args[0]) if args else ""),
         )
         osc.dispatcher.map(
             "/scene/clear_current", lambda addr, *args: self.clear_scene()
@@ -204,16 +200,6 @@ class SceneManager:
             masters=masters,
             presets_by_category=presets_by_cat,
         )
-
-    def stage_name(self, name: str) -> None:
-        """Store the scene-name field's latest committed value from the UI.
-
-        The name is captured server-side as the field commits (on Enter/blur)
-        rather than read at button-click time, so /scene/create resolves it by
-        message-receive order and avoids a client-side race with the text
-        input's blur-commit.
-        """
-        self.staged_name = name
 
     def create_scene(self, name: str) -> None:
         """Capture current state as a new or updated scene.
