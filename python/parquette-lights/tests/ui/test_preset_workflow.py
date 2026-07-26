@@ -252,3 +252,35 @@ def test_scene_update_captures_new_preset_selection(
     assert (
         scene.presets_by_category[reds] == "UpdatePresetTwo"
     ), "re-saving an existing scene did not capture the new preset selection"
+
+
+def test_master_fade_starts_from_current_master(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """A scene fade must interpolate the master from its CURRENT value, not a
+    stale master_interp value. A direct write (what the UI master fader does via
+    OSCParam.obj_param_setter) used to leave master_interp.current stale, so the
+    next scene fade jumped the master -- and thus spot brightness -- to that
+    stale value at the start of the crossfade."""
+
+    cat = server_instance.categories.spots_light
+
+    # Simulate a UI master fader move: a direct field write, exactly what
+    # OSCParam.obj_param_setter does for a bound plain attribute.
+    cat.master = 0.8
+    assert cat.master == 0.8
+
+    # A scene now crossfades the master down to 0.5 over 10 ticks.
+    cat.set_master(0.5, fade_ticks=10)
+    cat.tick_interpolator()
+
+    # One tick of a 0.8 -> 0.5 fade should ease the master slightly below 0.8;
+    # it must NOT jump upward toward a stale interpolator value.
+    assert (
+        0.5 <= cat.master < 0.8
+    ), f"master jumped to {cat.master} at fade start instead of easing from 0.8"
+
+    # Leave a clean, non-fading state so session-scoped siblings are unaffected.
+    cat.master = 1.0

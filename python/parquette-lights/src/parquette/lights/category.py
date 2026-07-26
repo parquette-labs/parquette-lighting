@@ -21,7 +21,6 @@ class Category:
         self.name = name
         self.osc = osc
         self.session = session
-        self.master: float = 1.0
         self.master_interp: Interpolator = Interpolator(1.0)
 
         self.master_param: OSCParam = OSCParam.bind(
@@ -32,19 +31,39 @@ class Category:
             on_change=session.save,
         )
 
+    @property
+    def master(self) -> float:
+        """Current master level, read straight from the interpolator.
+
+        Making this a property (rather than a plain attribute) gives a single
+        source of truth: direct writes -- e.g. the UI master fader arriving via
+        OSCParam.obj_param_setter -- and scene fades share the same backing
+        value and can never diverge. Previously a direct write left
+        master_interp.current stale, so the next scene fade started from that
+        stale value and the master (and thus spot brightness) jumped at the
+        start of the crossfade.
+        """
+        return self.master_interp.current
+
+    @master.setter
+    def master(self, value: float) -> None:
+        # A direct write snaps the interpolator to the value and cancels any
+        # in-flight fade -- mirrors MixChannel.offset. Grabbing the master
+        # fader mid-fade thus takes over cleanly instead of being clobbered.
+        self.master_interp.set_target(float(value), 0)
+
     def set_master(self, value: float, fade_ticks: int = 0) -> None:
         """Set master value, optionally interpolating over fade_ticks."""
         if fade_ticks > 0:
             self.master_interp.set_target(value, fade_ticks)
         else:
             self.master = value
-            self.master_interp.set_target(value)
             self.master_param.sync()
 
     def tick_interpolator(self) -> None:
         """Advance the master interpolator and sync if active."""
         if self.master_interp.active:
-            self.master = self.master_interp.tick()
+            self.master_interp.tick()
             self.master_param.sync()
 
 
