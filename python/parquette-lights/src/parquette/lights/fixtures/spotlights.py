@@ -1,8 +1,6 @@
 # pylint: disable=too-many-lines
 from __future__ import annotations
 
-import threading
-import time
 from typing import cast, List, Optional
 
 from enum import Enum
@@ -82,10 +80,26 @@ class Spot(LightFixture):
         self.prisim_enabled_value: bool = False
         self.prisim_rotation_value: DMXValue = 0
 
+        # Colour-wheel swap transition. A mechanical wheel can't crossfade, so
+        # on a colour change the fixture dips to black, swaps the wheel while
+        # dark, then fades back up. Implemented as a tick-based envelope
+        # (advanced in tick_interpolators) so it can span the scene crossfade
+        # time rather than a fixed duration.
         self.color_swap_fade_multiplier: float = 1.0
-        self.color_swap_fade_time: float = -1.0
-        self.color_swap_mechanical_time: float = 0.0
-        self.color_swap_fade_cancel: threading.Event = threading.Event()
+        self.color_swap_fade_time: float = (
+            -1.0
+        )  # seconds; manual-change fade (<0 snaps)
+        self.color_swap_mechanical_time: float = (
+            0.0  # seconds held dark for the wheel move
+        )
+        self.swap_phase: str = "idle"  # idle | fade_out | settle | fade_in
+        self.swap_elapsed: int = 0
+        self.swap_fade_out_ticks: int = 0
+        self.swap_settle_ticks: int = 0
+        self.swap_fade_in_ticks: int = 0
+        self.swap_start_mult: float = 1.0
+        self.swap_pending_color: int = 0
+        self.swap_frozen_dimming: float = 0.0
 
     @property
     def color_index(self) -> int:
@@ -180,9 +194,14 @@ class Spot(LightFixture):
         # writes us every 10ms) see their requested level. The fade multiplier
         # only scales what we actually push to DMX.
         self._dimming = cast(DMXValue, self.dimming_channel.map(val))
+        # During the fade-out we dip the OLD brightness to black; from the dark
+        # point onward we track the live (target) level as it fades back up.
+        source = (
+            self.swap_frozen_dimming if self.swap_phase == "fade_out" else self._dimming
+        )
         self.dmx.set_channel(
             self.addr + self.dimming_channel.offset,
-            int(self._dimming * self.color_swap_fade_multiplier),
+            int(source * self.color_swap_fade_multiplier),
         )
 
     def strobe(self, enable: bool, rate: Optional[int] = None) -> None:
@@ -207,12 +226,17 @@ class Spot(LightFixture):
 
     def color(self, index: int, override_swap_fade: bool = False) -> None:
         clamped = int(constrain(index, 0, len(self.colors()) - 1))
+        fade_ticks = self.swap_transition_ticks()
 
-        if override_swap_fade or self.color_swap_fade_time < 0:
+        if override_swap_fade or fade_ticks <= 0 or clamped == self.color_index_value:
+            # Instant swap: fade disabled, no crossfade, or unchanged colour.
+            # Abort any in-flight dip so the wheel lands on the new colour.
+            self.swap_phase = "idle"
+            self.color_swap_fade_multiplier = 1.0
             self._color_direct(clamped)
             return
 
-        self._start_color_swap_fade(clamped)
+        self.start_color_swap(clamped, fade_ticks)
 
     def _color_direct(self, index: int) -> None:
         self.color_index_value = index
@@ -221,86 +245,81 @@ class Spot(LightFixture):
             self.color_channel.map(range_index=self.color_index_value),
         )
 
-    def _start_color_swap_fade(self, color_index: int) -> None:
-        # Cancel any in-flight fade. The old thread checks the event on its
-        # next 10ms tick and bails out, leaving color_swap_fade_multiplier wherever it
-        # happens to be — the new thread picks up from there.
-        self.color_swap_fade_cancel.set()
-        self.color_swap_fade_cancel = threading.Event()
+    def swap_transition_ticks(self) -> int:
+        """Length of the whole dip in ticks: the scene crossfade if one is in
+        progress, else the manual colour-fade time, else 0 (snap)."""
+        if self.pending_fade_ticks > 0:
+            return self.pending_fade_ticks
+        if self.color_swap_fade_time > 0:
+            # pylint: disable-next=import-outside-toplevel
+            import parquette.lights.generators.chanmap as chanmap_module
 
-        thread = threading.Thread(
-            target=self._color_fade_sequence,
-            args=(color_index, self.color_swap_fade_cancel),
-            daemon=True,
+            tick_s = chanmap_module.TICK_MS / 1000.0
+            return max(1, round(self.color_swap_fade_time / tick_s))
+        return 0
+
+    def start_color_swap(self, index: int, fade_ticks: int) -> None:
+        """Begin a tick-based dip: fade out, swap the wheel while dark, fade in.
+
+        fade_out and fade_in each get ``(fade_ticks - dark_gap) / 2``; the dark
+        gap is the mechanical wheel-change time. ``swap_phase`` is assigned last
+        so the compute thread that advances the envelope never sees a partially
+        configured transition.
+        """
+        # pylint: disable-next=import-outside-toplevel
+        import parquette.lights.generators.chanmap as chanmap_module
+
+        tick_s = chanmap_module.TICK_MS / 1000.0
+        settle = (
+            max(1, round(self.color_swap_mechanical_time / tick_s))
+            if self.color_swap_mechanical_time > 0
+            else 0
         )
-        thread.start()
+        available = fade_ticks - settle
+        if available < 2:
+            # Too short to fade; still hold dark long enough to hide the move.
+            fade_out = fade_in = 1
+        else:
+            fade_out = fade_in = available // 2
 
-    def _color_fade_sequence(
-        self, color_index: int, cancel_event: threading.Event
-    ) -> None:
-        fade_time = self.color_swap_fade_time
-        if fade_time <= 0:
-            self._color_direct(color_index)
-            self.color_swap_fade_multiplier = 1.0
+        self.swap_frozen_dimming = float(self._dimming)
+        self.swap_pending_color = index
+        self.swap_fade_out_ticks = fade_out
+        self.swap_settle_ticks = settle
+        self.swap_fade_in_ticks = fade_in
+        self.swap_start_mult = self.color_swap_fade_multiplier
+        self.swap_elapsed = 0
+        self.swap_phase = "fade_out"
+
+    def tick_interpolators(self) -> None:
+        """Advance the colour-wheel dip envelope one tick (called every frame)."""
+        phase = self.swap_phase
+        if phase == "idle":
             return
 
-        # Wall-clock driven so we don't drift when individual time.sleep
-        # calls oversleep (which they reliably do under GIL pressure on
-        # macOS). Each phase records its own start instant and computes
-        # progress as elapsed / duration; the total wall-clock time of
-        # each phase is therefore accurate to within one `tick`.
-        tick = 0.01
-
-        # ---- fade out ----
-        # Scale duration to current multiplier so that interrupting a
-        # near-bright in-progress fade still feels snappy instead of
-        # taking the full fade_time.
-        start_mult = self.color_swap_fade_multiplier
-        if start_mult > 0.0:
-            fade_out_duration = fade_time * start_mult
-            t0 = time.monotonic()
-            while True:
-                if cancel_event.is_set():
-                    return
-                elapsed = time.monotonic() - t0
-                if elapsed >= fade_out_duration:
-                    break
-                self.color_swap_fade_multiplier = start_mult * (
-                    1.0 - elapsed / fade_out_duration
-                )
-                time.sleep(tick)
-
-        if cancel_event.is_set():
-            return
-
-        self.color_swap_fade_multiplier = 0.0
-
-        # ---- swap color while dark ----
-        self._color_direct(color_index)
-
-        # ---- mechanical settle ----
-        if self.color_swap_mechanical_time > 0:
-            t0 = time.monotonic()
-            while time.monotonic() - t0 < self.color_swap_mechanical_time:
-                if cancel_event.is_set():
-                    return
-                time.sleep(tick)
-
-        if cancel_event.is_set():
-            return
-
-        # ---- fade in ----
-        t0 = time.monotonic()
-        while True:
-            if cancel_event.is_set():
-                return
-            elapsed = time.monotonic() - t0
-            if elapsed >= fade_time:
-                break
-            self.color_swap_fade_multiplier = elapsed / fade_time
-            time.sleep(tick)
-
-        self.color_swap_fade_multiplier = 1.0
+        self.swap_elapsed += 1
+        if phase == "fade_out":
+            frac = self.swap_elapsed / self.swap_fade_out_ticks
+            self.color_swap_fade_multiplier = max(
+                0.0, self.swap_start_mult * (1.0 - frac)
+            )
+            if self.swap_elapsed >= self.swap_fade_out_ticks:
+                self.color_swap_fade_multiplier = 0.0
+                self._color_direct(self.swap_pending_color)  # swap the wheel while dark
+                self.swap_elapsed = 0
+                self.swap_phase = "settle" if self.swap_settle_ticks > 0 else "fade_in"
+        elif phase == "settle":
+            self.color_swap_fade_multiplier = 0.0
+            if self.swap_elapsed >= self.swap_settle_ticks:
+                self.swap_elapsed = 0
+                self.swap_phase = "fade_in"
+        elif phase == "fade_in":
+            self.color_swap_fade_multiplier = min(
+                1.0, self.swap_elapsed / self.swap_fade_in_ticks
+            )
+            if self.swap_elapsed >= self.swap_fade_in_ticks:
+                self.color_swap_fade_multiplier = 1.0
+                self.swap_phase = "idle"
 
     def white(self, override_swap_fade: bool = False) -> None:
         self.color(0, override_swap_fade=override_swap_fade)

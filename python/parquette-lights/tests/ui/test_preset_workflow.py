@@ -14,6 +14,7 @@ from typing import Callable, Optional
 
 from pythonosc.udp_client import SimpleUDPClient
 
+from parquette.lights.fixtures.spotlights import Spot
 from parquette.lights.osc import OSCParam
 from tests.conftest import ServerContext
 
@@ -284,3 +285,60 @@ def test_master_fade_starts_from_current_master(
 
     # Leave a clean, non-fading state so session-scoped siblings are unaffected.
     cat.master = 1.0
+
+
+def test_spot_color_swap_dips_then_fades_up(
+    server_instance: ServerContext,
+    osc_client: SimpleUDPClient,
+    flush: Callable[..., None],
+) -> None:
+    """A moving-head colour change over a scene fade runs a tick-based dip:
+    the multiplier fades out to 0, the wheel swaps only while dark, holds for
+    the mechanical settle, then fades back to 1. fade_out = fade_in =
+    (fade_ticks - dark_gap) / 2, dark_gap = the wheel-change time."""
+
+    spot = next((f for f in server_instance.all_fixtures if isinstance(f, Spot)), None)
+    assert spot is not None, "expected a moving-head Spot fixture"
+
+    spot.color_swap_mechanical_time = 0.1  # 5 ticks at 20 ms
+    spot.color_index_value = 0
+    spot._dimming = 200
+    spot.color_swap_fade_multiplier = 1.0
+    spot.swap_phase = "idle"
+
+    # Kick off a swap to a different colour over a 20-tick scene fade, the way
+    # a preset load does (pending_fade_ticks set around the color_index write).
+    spot.pending_fade_ticks = 20
+    spot.color(3)
+    spot.pending_fade_ticks = 0
+
+    # (20 - 5) / 2 = 7 ticks per side.
+    assert spot.swap_phase == "fade_out"
+    assert spot.swap_fade_out_ticks == 7
+    assert spot.swap_settle_ticks == 5
+    assert spot.swap_fade_in_ticks == 7
+
+    mults = []
+    swap_tick = None
+    for i in range(30):
+        spot.tick_interpolators()
+        mults.append(spot.color_swap_fade_multiplier)
+        if spot.color_index_value == 3 and swap_tick is None:
+            swap_tick = i
+
+    assert min(mults) == 0.0, "spot never dipped fully to black"
+    # The wheel swaps only after the fade-out completes (while dark).
+    assert swap_tick is not None and swap_tick == 6
+    assert mults[swap_tick] == 0.0, "wheel swapped while still lit"
+    # Fades back up and settles.
+    assert spot.color_swap_fade_multiplier == 1.0
+    assert spot.swap_phase == "idle"
+    assert spot.color_index_value == 3
+
+    # Same colour with a fade must NOT dip -- just a normal (no-op) fade.
+    spot.swap_phase = "idle"
+    spot.color_swap_fade_multiplier = 1.0
+    spot.pending_fade_ticks = 20
+    spot.color(3)
+    spot.pending_fade_ticks = 0
+    assert spot.swap_phase == "idle", "unchanged colour should not trigger a dip"
